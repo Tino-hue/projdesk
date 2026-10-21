@@ -53,7 +53,11 @@
 ### One-shot Build
 
 ```bash
+# Linux / macOS
 make all
+
+# Windows PowerShell
+.\build.ps1
 ```
 
 ### Step by Step
