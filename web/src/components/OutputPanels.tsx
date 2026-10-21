@@ -1,11 +1,16 @@
-﻿import type { KernelOutput, DropReason } from '../lib/types';
+import { useRef, useEffect } from 'react';
+import type { KernelOutput, DropReason, ModelInput } from '../lib/types';
 import { DropReport } from './DropReport';
 import { CoverageMatrix } from './CoverageMatrix';
+import { HighlightedCode, diffLines } from './CodeHighlight';
+import { ModelDiagram } from './ModelDiagram';
 
 interface Props {
   output: KernelOutput | null;
   openapiDialect: string;
   sqlDialect: string;
+  model: ModelInput;
+  known: ModelInput[];
 }
 
 function copyToClipboard(text: string) {
@@ -55,45 +60,82 @@ const DIALECT_LABELS: Record<string, string> = {
   Mysql: 'MySQL',
 };
 
-export function OutputPanels({ output, openapiDialect, sqlDialect }: Props) {
+export function OutputPanels({ output, openapiDialect, sqlDialect, model, known }: Props) {
+  const prevOutputRef = useRef<KernelOutput | null>(null);
+  useEffect(() => {
+    if (output) prevOutputRef.current = output;
+  }, [output]);
+
   if (!output) {
     return <div className="flex items-center justify-center h-full text-slate-400 text-sm">Edit model on the left; four panels refresh live.</div>;
   }
 
+  // Compute changed lines vs previous output
+  const prev = prevOutputRef.current;
+  const changed = {
+    jsonSchema: prev ? diffLines(prev.jsonSchema, output.jsonSchema) : new Set<number>(),
+    openapi: prev ? diffLines(prev.openapi, output.openapi) : new Set<number>(),
+    sql: prev ? diffLines(prev.sql, output.sql) : new Set<number>(),
+    graphql: prev ? diffLines(prev.graphql, output.graphql) : new Set<number>(),
+  };
+  // If first render, no changes
+  const isFirst = !prev;
+  const changeSets = {
+    jsonSchema: isFirst ? new Set<number>() : changed.jsonSchema,
+    openapi: isFirst ? new Set<number>() : changed.openapi,
+    sql: isFirst ? new Set<number>() : changed.sql,
+    graphql: isFirst ? new Set<number>() : changed.graphql,
+  };
+
   const panels = [
-    { key: 'jsonSchema' as const, dropKey: 'jsonSchema' as const, title: 'JSON Schema 2020-12', ext: 'json' },
-    { key: 'openapi' as const, dropKey: 'openapi' as const, title: `${DIALECT_LABELS[openapiDialect] || 'OpenAPI'} Schema Object`, ext: 'json' },
-    { key: 'sql' as const, dropKey: 'sql' as const, title: `SQL DDL (${DIALECT_LABELS[sqlDialect] || 'Postgres'})`, ext: 'sql' },
-    { key: 'graphql' as const, dropKey: 'graphql' as const, title: 'GraphQL SDL', ext: 'graphql' },
+    { key: 'jsonSchema' as const, dropKey: 'jsonSchema' as const, title: 'JSON Schema 2020-12', ext: 'json', lang: 'json' },
+    { key: 'openapi' as const, dropKey: 'openapi' as const, title: `${DIALECT_LABELS[openapiDialect] || 'OpenAPI'} Schema Object`, ext: 'json', lang: 'json' },
+    { key: 'sql' as const, dropKey: 'sql' as const, title: `SQL DDL (${DIALECT_LABELS[sqlDialect] || 'Postgres'})`, ext: 'sql', lang: 'sql' },
+    { key: 'graphql' as const, dropKey: 'graphql' as const, title: 'GraphQL SDL', ext: 'graphql', lang: 'graphql' },
   ];
 
   return (
     <div>
+      {/* Toolbar */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <span className="text-xs text-slate-400">Four projections live</span>
+        <span className="text-xs text-slate-400">
+          Four projections live
+          <span className="ml-2 text-amber-500 text-xs">
+            {Object.values(changeSets).some((s) => s.size > 0) ? '●  lines highlighted = just changed' : ''}
+          </span>
+        </span>
         <div className="flex gap-2">
           <button className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" onClick={() => copyAll(output)}>Copy All</button>
           <button className="px-3 py-1.5 text-xs bg-slate-200 hover:bg-slate-300 rounded" onClick={() => exportAll(output)}>Export All</button>
         </div>
       </div>
+
+      {/* Model diagram */}
+      <ModelDiagram model={model} known={known} />
+
+      {/* Coverage matrix */}
       <CoverageMatrix drops={output.drops} />
+
+      {/* Four panels */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 px-4 pb-4">
         {panels.map((panel) => {
           const text = (output[panel.key] as string) || '';
           const drops = (output.drops[panel.dropKey] as DropReason[]) || [];
+          const changes = changeSets[panel.key];
           return (
             <div key={panel.key} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-semibold text-slate-700">{panel.title}</h2>
                   {drops.length > 0 && <span className="drop-badge bg-amber-100 text-amber-700">{drops.length} drops</span>}
+                  {changes.size > 0 && <span className="drop-badge bg-blue-100 text-blue-700">{changes.size} changed</span>}
                 </div>
                 <div className="flex gap-1">
                   <button className="px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded" onClick={() => copyToClipboard(text)}>Copy</button>
                   <button className="px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded" onClick={() => downloadFile(`projdesk.${panel.ext}`, text)}>Export</button>
                 </div>
               </div>
-              <div className="code-block max-h-[360px]">{text}</div>
+              <HighlightedCode code={text} lang={panel.lang} changedLines={changes} />
               <DropReport drops={drops} />
             </div>
           );
@@ -102,4 +144,3 @@ export function OutputPanels({ output, openapiDialect, sqlDialect }: Props) {
     </div>
   );
 }
-

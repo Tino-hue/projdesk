@@ -140,11 +140,12 @@ export default function App() {
           </div>
         </div>
         <div className="flex-1 overflow-auto">
-          <OutputPanels output={output} openapiDialect={openapiDialect} sqlDialect={sqlDialect} />
+          <OutputPanels output={output} openapiDialect={openapiDialect} sqlDialect={sqlDialect} model={model} known={known} />
         </div>
       </div>
     </div>
   );
 }
+
 
 
