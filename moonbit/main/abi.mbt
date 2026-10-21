@@ -1,8 +1,7 @@
-// ABI 层：前端 JSON ↔ moonmodel.Model 的双向转换
-// 前端只传数据，不做任何投影算法
+// ABI layer: frontend JSON <-> moonmodel.Model
 
 ///|
-/// 从 JSON 解析类型（支持简单类型字符串和复合类型对象）
+/// Parse Type from JSON
 fn parse_type(j : Json) -> @moonmodel.Type {
   match j {
     String(s) =>
@@ -36,7 +35,7 @@ fn parse_type(j : Json) -> @moonmodel.Type {
 }
 
 ///|
-/// 从 JSON 解析 Check
+/// Parse Check from JSON
 fn parse_check(j : Json?) -> @moonmodel.Check {
   match j {
     None => @moonmodel.check
@@ -89,7 +88,6 @@ fn parse_check(j : Json?) -> @moonmodel.Check {
         Some(True) => true
         _ => false
       }
-      // 直接构造 Check 结构体
       {
         least,
         most,
@@ -110,7 +108,7 @@ fn parse_check(j : Json?) -> @moonmodel.Check {
 }
 
 ///|
-/// 从 JSON 解析 Field
+/// Parse Field from JSON
 fn parse_field(j : Json) -> @moonmodel.Field {
   let map = match j {
     Object(m) => m
@@ -154,7 +152,7 @@ fn parse_field(j : Json) -> @moonmodel.Field {
 }
 
 ///|
-/// 从 JSON 解析 Model
+/// Parse Model from JSON
 fn parse_model(j : Json) -> @moonmodel.Model {
   let map = match j {
     Object(m) => m
@@ -176,21 +174,16 @@ fn parse_model(j : Json) -> @moonmodel.Model {
 }
 
 ///|
-/// 解析输入的中间结果
+/// Parsed input with dialect options
 pub(all) struct Input {
   model : @moonmodel.Model
   known : Array[@moonmodel.Model]
-} derive(Eq, @debug.Debug)
+  openapi_dialect : String
+  sql_dialect : String
+}
 
 ///|
-pub extend Input with Eq::{equal, not_equal}
-
-///|
-pub extend Input with Debug::{to_repr}
-
-///|
-/// 解析输入 JSON
-/// 格式：{ "name": "...", "doc": "...", "fields": [...], "known": [{...}, ...] }
+/// Parse input JSON with optional dialect fields
 pub fn parse_input(text : String) -> Input {
   let j = @jsonparse.parse_json(text)
   let map = match j {
@@ -202,5 +195,13 @@ pub fn parse_input(text : String) -> Input {
     Some(Array(items)) => items.map(parse_model)
     _ => []
   }
-  { model, known }
+  let openapi_dialect = match map.get("openapiDialect") {
+    Some(String(s)) => s
+    _ => "OpenApi30"
+  }
+  let sql_dialect = match map.get("sqlDialect") {
+    Some(String(s)) => s
+    _ => "Postgres"
+  }
+  { model, known, openapi_dialect, sql_dialect }
 }

@@ -253,3 +253,25 @@ test "User preset has Ref to Address" {
 
 
 
+
+// ---- dialect switching ----
+
+test "SQL Postgres vs Sqlite vs Mysql produce different type names" {
+  let m = @moonmodel.Model::new("T", [@moonmodel.Field::new("x", Bool)])
+  let (pg, _) = project_sql(m, dialect="Postgres")
+  let (lite, _) = project_sql(m, dialect="Sqlite")
+  let (my, _) = project_sql(m, dialect="Mysql")
+  assert_true(pg.contains("BOOLEAN"), msg="Postgres uses BOOLEAN")
+  assert_true(lite.contains("INTEGER"), msg="Sqlite uses INTEGER for Bool")
+  assert_true(my.contains("TINYINT"), msg="Mysql uses TINYINT(1)")
+}
+
+test "OpenAPI 3.0 uses nullable flag not type array" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("x", Text, nullable=true),
+  ])
+  let (text30, _) = project_openapi(m, dialect="OpenApi30")
+  let (text31, _) = project_openapi(m, dialect="OpenApi31")
+  assert_true(text30.contains("nullable"), msg="3.0 has nullable flag")
+  assert_true(text31.contains("null"), msg="3.1 uses type array")
+}

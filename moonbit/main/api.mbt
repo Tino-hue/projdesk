@@ -1,4 +1,4 @@
-// ProjDesk WASM API
+﻿// ProjDesk WASM API
 //
 // Compile: moon build --target wasm-gc --release
 // JS instantiate: { builtins: ["js-string"], importedStringConstants: "_" }
@@ -11,7 +11,7 @@ pub fn project_from_json(input_json : String) -> String {
   if input.model.name == "" {
     return error_json("input JSON missing model name")
   }
-  let result = project_all(input.model, input.known)
+  let result = project_all(input.model, input.known, openapi_dialect=input.openapi_dialect, sql_dialect=input.sql_dialect)
   result_to_json(result)
 }
 
@@ -171,3 +171,4 @@ fn error_json(msg : String) -> String {
   out["error"] = Json::string(msg)
   Json::object(out).stringify()
 }
+

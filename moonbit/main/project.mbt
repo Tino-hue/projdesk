@@ -14,22 +14,46 @@ pub(all) struct ProjectionResult {
 }
 
 ///|
-/// Run all four projections
+/// Parse OpenAPI dialect string to enum
+fn parse_open_dialect(s : String) -> @open.Dialect {
+  match s {
+    "Swagger20" => Swagger20
+    "OpenApi31" => OpenApi31
+    _ => OpenApi30
+  }
+}
+
+///|
+/// Parse SQL dialect string to enum
+fn parse_sql_dialect(s : String) -> @sql.Dialect {
+  match s {
+    "Sqlite" => Sqlite
+    "Mysql" => Mysql
+    _ => Postgres
+  }
+}
+
+///|
+/// Run all four projections with dialect options
 pub fn project_all(
   model : @moonmodel.Model,
   known : Array[@moonmodel.Model],
+  openapi_dialect~ : String = "OpenApi30",
+  sql_dialect~ : String = "Postgres",
 ) -> ProjectionResult {
   // JSON Schema 2020-12
   let json_doc = @json.document(model, known~)
   let json_text = json_doc.stringify(indent=2)
   let dj = drops_json_schema(model)
-  // OpenAPI 3.0 Schema Object
-  let open_schema = @open.of(model, dialect=OpenApi30)
+  // OpenAPI Schema Object
+  let od = parse_open_dialect(openapi_dialect)
+  let open_schema = @open.of(model, dialect=od)
   let open_text = open_schema.stringify(indent=2)
   let dopen = drops_openapi(model)
-  // SQL DDL (Postgres)
-  let sql_text = @sql.table(model, dialect=Postgres)
-  let (_cols, sql_skipped) = @sql.of(model, dialect=Postgres)
+  // SQL DDL
+  let sd = parse_sql_dialect(sql_dialect)
+  let sql_text = @sql.table(model, dialect=sd)
+  let (_cols, sql_skipped) = @sql.of(model, dialect=sd)
   let dsql = drops_sql(model, sql_skipped)
   // GraphQL SDL
   let all_models : Array[@moonmodel.Model] = [model]
@@ -51,8 +75,6 @@ pub fn project_all(
   }
 }
 
-// ---- Pluggable projector functions (bonus: each returns text + drop list) ----
-
 ///|
 /// JSON Schema 2020-12 projection
 pub fn project_json_schema(
@@ -64,21 +86,25 @@ pub fn project_json_schema(
 }
 
 ///|
-/// OpenAPI 3.0 Schema Object projection
+/// OpenAPI projection with dialect
 pub fn project_openapi(
   model : @moonmodel.Model,
+  dialect~ : String = "OpenApi30",
 ) -> (String, Array[DropReason]) {
-  let schema = @open.of(model, dialect=OpenApi30)
+  let od = parse_open_dialect(dialect)
+  let schema = @open.of(model, dialect=od)
   (schema.stringify(indent=2), drops_openapi(model))
 }
 
 ///|
-/// SQL DDL (Postgres) projection
+/// SQL projection with dialect
 pub fn project_sql(
   model : @moonmodel.Model,
+  dialect~ : String = "Postgres",
 ) -> (String, Array[DropReason]) {
-  let ddl = @sql.table(model, dialect=Postgres)
-  let (_cols, skipped) = @sql.of(model, dialect=Postgres)
+  let sd = parse_sql_dialect(dialect)
+  let ddl = @sql.table(model, dialect=sd)
+  let (_cols, skipped) = @sql.of(model, dialect=sd)
   (ddl, drops_sql(model, skipped))
 }
 
