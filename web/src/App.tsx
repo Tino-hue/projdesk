@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import type { KernelInput, KernelOutput, ModelInput, FieldInput, PresetModel } from './lib/types';
 import { project, getPresets } from './lib/wasm';
+import { importModel, downloadModel } from './lib/modelio';
 import { FieldEditor } from './components/FieldEditor';
 import { OutputPanels } from './components/OutputPanels';
 
@@ -90,6 +91,20 @@ export default function App() {
               <option value="Sqlite">SQLite</option>
               <option value="Mysql">MySQL</option>
             </select>
+            <button className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded" onClick={() => downloadModel(model)}>Save JSON</button>
+            <label className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded cursor-pointer">
+              Load JSON
+              <input type="file" accept=".json" className="hidden" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                file.text().then((text) => {
+                  const m = importModel(text);
+                  if (m) { setModel(m); setKnown([]); }
+                  else setError('Invalid model JSON');
+                });
+                e.target.value = '';
+              }} />
+            </label>
             <select className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white" value="" onChange={(e) => e.target.value && loadPreset(e.target.value)}>
               <option value="">Load preset...</option>
               {presets.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
@@ -131,3 +146,5 @@ export default function App() {
     </div>
   );
 }
+
+
