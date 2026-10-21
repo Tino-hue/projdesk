@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { KernelInput, KernelOutput, ModelInput, PresetModel } from './lib/types';
 import { project, getPresets } from './lib/wasm';
 import { importModel, downloadModel } from './lib/modelio';
@@ -8,6 +8,8 @@ import { useTheme } from './lib/theme';
 import { FieldList } from './components/FieldList';
 import { OutputPanels } from './components/OutputPanels';
 import { DiffPanel } from './components/DiffPanel';
+import { VersionSnapshots, TemplateLibrary } from './components/Versions';
+import { importFromSchema } from './lib/wasm';
 
 function makeEmptyModel(name: string): ModelInput {
   return { name, doc: '', fields: [{ name: '', kind: 'Text', required: true, nullable: false, doc: '', default: null, check: {} }] };
@@ -181,6 +183,17 @@ export default function App() {
             <option value="">+ Preset...</option>
             {presets.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
           </select>
+          <label className="px-2 py-1 text-xs bg-violet-100 dark:bg-violet-900/40 hover:bg-violet-200 rounded cursor-pointer" title="Import from JSON Schema">FromSchema<input type="file" accept=".json" className="hidden" onChange={(e) => {
+            const f = e.target.files?.[0]; if (!f) return;
+            f.text().then(async (t) => {
+              try {
+                const m = await importFromSchema(t);
+                const entry = { id: genId(), model: m };
+                setModels((p) => [...p, entry]);
+                setActiveId(entry.id);
+              } catch { setError('Failed to parse schema'); }
+            }); e.target.value = '';
+          }} /></label>
           <label className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded cursor-pointer">Import<input type="file" accept=".json" className="hidden" onChange={(e) => {
             const f = e.target.files?.[0]; if (!f) return;
             f.text().then((t) => { const m = importModel(t); if (m) { const entry = { id: genId(), model: m }; setModels((p) => [...p, entry]); setActiveId(entry.id); } else setError('Invalid JSON'); }); e.target.value = '';
@@ -229,6 +242,8 @@ export default function App() {
 
         {/* Right: output panels */}
         <div className="flex-1 overflow-auto">
+          <TemplateLibrary onSelect={(m) => { const entry = { id: genId(), model: m }; setModels((p) => [...p, entry]); setActiveId(entry.id); }} />
+          <VersionSnapshots model={activeModel || makeEmptyModel('')} onRestore={(m) => updateModel(m)} />
           <DiffPanel model={activeModel || makeEmptyModel('')} snapshots={snapshots} />
           <OutputPanels output={output} openapiDialect={openapiDialect} sqlDialect={sqlDialect} model={activeModel || makeEmptyModel('')} known={known} />
         </div>
