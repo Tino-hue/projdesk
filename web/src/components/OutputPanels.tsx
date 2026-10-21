@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+﻿import { useRef, useEffect } from 'react';
 import type { KernelOutput, DropReason, ModelInput } from '../lib/types';
 import { DropReport } from './DropReport';
 import { CoverageMatrix } from './CoverageMatrix';
@@ -40,6 +40,9 @@ function copyAll(output: KernelOutput) {
     '=== OpenAPI ===', output.openapi,
     '=== SQL DDL ===', output.sql,
     '=== GraphQL SDL ===', output.graphql,
+    '=== TypeScript ===', output.typescript || '',
+    '=== Zod ===', output.zod || '',
+    '=== Prisma ===', output.prisma || '',
   ].join('\n\n');
   copyToClipboard(text);
 }
@@ -49,6 +52,9 @@ function exportAll(output: KernelOutput) {
   downloadFile('openapi.json', output.openapi);
   downloadFile('schema.sql', output.sql);
   downloadFile('schema.graphql', output.graphql);
+  downloadFile('types.ts', output.typescript || '');
+  downloadFile('schema.zod.ts', output.zod || '');
+  downloadFile('schema.prisma', output.prisma || '');
 }
 
 const DIALECT_LABELS: Record<string, string> = {
@@ -101,7 +107,7 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
         <span className="text-xs text-slate-400">
           Four projections live
           <span className="ml-2 text-amber-500 text-xs">
-            {Object.values(changeSets).some((s) => s.size > 0) ? '●  lines highlighted = just changed' : ''}
+            {Object.values(changeSets).some((s) => s.size > 0) ? '鈼? lines highlighted = just changed' : ''}
           </span>
         </span>
         <div className="flex gap-2">
@@ -144,3 +150,4 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
     </div>
   );
 }
+

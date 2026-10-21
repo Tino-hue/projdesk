@@ -398,3 +398,68 @@ test "parse_input with malformed JSON returns empty model" {
   let input = parse_input("not json at all")
   assert_eq(input.model.name, "")
 }
+
+// ---- TypeScript / Zod / Prisma codegen ----
+
+test "TypeScript projection produces valid interface" {
+  let m = @moonmodel.Model::new("User", [
+    @moonmodel.Field::new("id", Big),
+    @moonmodel.Field::new("name", Text),
+    @moonmodel.Field::new("age", Int, required=false),
+    @moonmodel.Field::new("active", Bool),
+    @moonmodel.Field::new("tags", List(Text), required=false),
+    @moonmodel.Field::new("meta", Dict(Text), required=false),
+    @moonmodel.Field::new("home", Ref("Address"), required=false),
+  ])
+  let known = [@moonmodel.Model::new("Address", [@moonmodel.Field::new("line", Text)])]
+  let ts = project_typescript(m, known)
+  assert_true(ts.contains("export interface User {"))
+  assert_true(ts.contains("export interface Address {"))
+  assert_true(ts.contains("id: number"))
+  assert_true(ts.contains("name: string"))
+  assert_true(ts.contains("age?: number"))
+  assert_true(ts.contains("tags?: string[]"))
+  assert_true(ts.contains("home?: Address"))
+}
+
+test "Zod projection produces valid schema" {
+  let m = @moonmodel.Model::new("User", [
+    @moonmodel.Field::new("id", Big),
+    @moonmodel.Field::new("name", Text),
+    @moonmodel.Field::new("avatar", Bytes, nullable=true, required=false),
+  ])
+  let zod = project_zod(m, [])
+  assert_true(zod.contains("import { z }"))
+  assert_true(zod.contains("export const UserSchema = z.object({"))
+  assert_true(zod.contains("z.number().int()"))
+  assert_true(zod.contains("z.string()"))
+  assert_true(zod.contains(".optional()"))
+  assert_true(zod.contains(".nullable()"))
+  assert_true(zod.contains("export type User = z.infer"))
+}
+
+test "Prisma projection produces valid model" {
+  let m = @moonmodel.Model::new("User", [
+    @moonmodel.Field::new("id", Big, check=@moonmodel.Check::new(unique=true)),
+    @moonmodel.Field::new("name", Text),
+    @moonmodel.Field::new("created", Stamp),
+  ])
+  let prisma = project_prisma(m, [])
+  assert_true(prisma.contains("model User {"))
+  assert_true(prisma.contains("id BigInt @unique"))
+  assert_true(prisma.contains("name String"))
+  assert_true(prisma.contains("created DateTime"))
+}
+
+test "TypeScript Nest type inlines fields" {
+  let nested = @moonmodel.Model::new("", [@moonmodel.Field::new("city", Text)])
+  let m = @moonmodel.Model::new("T", [@moonmodel.Field::new("addr", Nest(nested))])
+  let ts = project_typescript(m, [])
+  assert_true(ts.contains("city: string"))
+}
+
+test "Prisma List type uses array syntax" {
+  let m = @moonmodel.Model::new("T", [@moonmodel.Field::new("tags", List(Text))])
+  let prisma = project_prisma(m, [])
+  assert_true(prisma.contains("tags String[]"))
+}

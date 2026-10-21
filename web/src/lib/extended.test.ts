@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+﻿import { describe, it, expect } from 'vitest';
 import type { KernelInput, KernelOutput, ModelInput, FieldInput, TypeSpec, CheckInput } from './types';
 
 describe('Type encoding edge cases', () => {
@@ -94,7 +94,7 @@ describe('required/nullable truth table', () => {
 describe('Kernel output shape validation', () => {
   it('has all required top-level keys', () => {
     const output: KernelOutput = {
-      ok: true, jsonSchema: '', openapi: '', sql: '', graphql: '',
+      ok: true, jsonSchema: '', openapi: '', sql: '', graphql: '', typescript: '', zod: '', prisma: '',
       drops: { jsonSchema: [], openapi: [], sql: [], graphql: [] },
     };
     expect(output).toHaveProperty('ok');
@@ -132,3 +132,4 @@ describe('ModelInput validation', () => {
     expect(m.fields).toHaveLength(20);
   });
 });
+

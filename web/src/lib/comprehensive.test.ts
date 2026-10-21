@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+﻿import { describe, it, expect } from 'vitest';
 import type { KernelInput, KernelOutput, ModelInput, FieldInput, TypeSpec, CheckInput, DropReason } from './types';
 
 describe('TypeSpec: every variant round-trips', () => {
@@ -132,7 +132,7 @@ describe('KernelOutput: drop reason structure', () => {
 
   it('all four drop arrays are present and typed', () => {
     const output: KernelOutput = {
-      ok: true, jsonSchema: '{}', openapi: '{}', sql: 'CREATE TABLE x();', graphql: 'type X {}',
+      ok: true, jsonSchema: '{}', openapi: '{}', sql: 'CREATE TABLE x();', graphql: 'type X {}', typescript: '', zod: '', prisma: '',
       drops: {
         jsonSchema: [{ field: 'a', constraint: 'unique', why: 'x' }],
         openapi: [],
@@ -195,3 +195,4 @@ describe('Edge cases', () => {
     expect(round.sqlDialect).toBe('Mysql');
   });
 });
+

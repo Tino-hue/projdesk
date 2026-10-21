@@ -76,6 +76,9 @@ export interface KernelOutput {
   openapi: string;
   sql: string;
   graphql: string;
+  typescript: string;
+  zod: string;
+  prisma: string;
   drops: {
     jsonSchema: DropReason[];
     openapi: DropReason[];
@@ -86,4 +89,5 @@ export interface KernelOutput {
 
 /** 棰勮妯″瀷 */
 export interface PresetModel extends ModelInput {}
+
 
