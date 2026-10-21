@@ -29,7 +29,6 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // 加载预设
   useEffect(() => {
     getPresets()
       .then((p) => {
@@ -44,7 +43,6 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 自动投影（防抖）
   const runProjection = useCallback(async (m: ModelInput, k: ModelInput[]) => {
     if (m.fields.length === 0) {
       setOutput(null);
@@ -101,7 +99,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-slate-500">加载 MoonBit 内核…</div>
+        <div className="text-lg text-slate-500">Loading MoonBit kernel...</div>
       </div>
     );
   }
@@ -114,11 +112,11 @@ export default function App() {
             <h1 className="text-xl font-bold text-slate-800">
               ProjDesk
               <span className="ml-2 text-sm font-normal text-slate-500">
-                一定义，四张图
+                One Definition, Four Projections
               </span>
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              模型描述 → JSON Schema / OpenAPI / SQL DDL / GraphQL SDL 同步投影
+              JSON Schema / OpenAPI / SQL DDL / GraphQL SDL
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -127,7 +125,7 @@ export default function App() {
               value=""
               onChange={(e) => e.target.value && loadPreset(e.target.value)}
             >
-              <option value="">加载预设…</option>
+              <option value="">Load preset...</option>
               {presets.map((p) => (
                 <option key={p.name} value={p.name}>
                   {p.name}
@@ -145,12 +143,12 @@ export default function App() {
       )}
 
       <div className="flex-1 flex flex-col lg:flex-row">
-        {/* 左侧：模型编辑器 */}
+        {/* Left: model editor */}
         <div className="lg:w-[420px] border-r border-slate-200 bg-white overflow-y-auto">
           <div className="p-4 space-y-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">
-                模型名称
+                Model name
               </label>
               <input
                 type="text"
@@ -163,7 +161,7 @@ export default function App() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">
-                文档
+                Doc
               </label>
               <input
                 type="text"
@@ -178,19 +176,19 @@ export default function App() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-medium text-slate-500">
-                  字段（{model.fields.length}）
+                  Fields ({model.fields.length})
                 </label>
                 <button
                   className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                   onClick={addField}
                 >
-                  + 添加字段
+                  + Add field
                 </button>
               </div>
               <div className="space-y-3">
                 {model.fields.map((field, i) => (
                   <FieldEditor
-                    key={i}
+                    key={`${i}-${field.name}`}
                     field={field}
                     onChange={(f) => updateField(i, f)}
                     onRemove={() => removeField(i)}
@@ -201,7 +199,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 右侧：四栏输出 */}
+        {/* Right: four output panels */}
         <div className="flex-1 overflow-auto">
           <OutputPanels output={output} />
         </div>
