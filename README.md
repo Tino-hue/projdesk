@@ -1,6 +1,6 @@
-# ProjDesk — One Definition, Four Projections
+﻿# ProjDesk 鈥?One Definition, Four Projections
 
-> **A pure-browser "model description → multi-target projection" workbench.**
+> **A pure-browser "model description 鈫?multi-target projection" workbench.**
 > Declare a business object with a form, and the page simultaneously generates and live-refreshes: **JSON Schema / OpenAPI / SQL DDL / GraphQL SDL**.
 
 **Difference from Depsight**: Depsight performs dependency analysis and supply-chain diagnostics. ProjDesk operates at the metadata/contract layer for multi-target projection generation. The two have zero functional overlap and this is not a continuation of the same work.
@@ -13,42 +13,24 @@
 
 ### Three Product Principles
 
-1. **One source of truth, four projections** — all projection algorithms live in the MoonBit kernel; the frontend must never implement schema/sql/sdl generation itself.
-2. **Honest projection** — constraints a target cannot carry must be shown as "dropped + reason"; never silently beautify or discard.
-3. **Demo first** — any edit must refresh all four panels smoothly; prefer cutting features over laggy interaction.
+1. **One source of truth, four projections** 鈥?all projection algorithms live in the MoonBit kernel; the frontend must never implement schema/sql/sdl generation itself.
+2. **Honest projection** 鈥?constraints a target cannot carry must be shown as "dropped + reason"; never silently beautify or discard.
+3. **Demo first** 鈥?any edit must refresh all four panels smoothly; prefer cutting features over laggy interaction.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Web Frontend (React)               │
-│   Form Editor ──→ ABI Serialize ──→ 4-Panel Display │
-│                 (TypeScript)       + Drop Reports   │
-└────────────────────────┬────────────────────────────┘
-                         │ JSON string (js-string builtins)
-                         ▼
-┌─────────────────────────────────────────────────────┐
-│              MoonBit Kernel (wasm-gc)               │
-│                                                     │
-│  parse_input ──→ moonmodel.Model ──→ project_all     │
-│                                      │              │
-│                    ┌─────────────────┼──────────┐   │
-│                    ▼        ▼        ▼          ▼   │
-│               JSON Schema  OpenAPI  SQL DDL  SDL    │
-│               + drops      + drops  + drops  +drops │
-│                                                     │
-│  Dependency: moonbitstack/moonmodel                 │
-└─────────────────────────────────────────────────────┘
-```
+鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹?                 Web Frontend (React)               鈹?鈹?  Form Editor 鈹€鈹€鈫?ABI Serialize 鈹€鈹€鈫?4-Panel Display 鈹?鈹?                (TypeScript)       + Drop Reports   鈹?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                         鈹?JSON string (js-string builtins)
+                         鈻?鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹?             MoonBit Kernel (wasm-gc)               鈹?鈹?                                                    鈹?鈹? parse_input 鈹€鈹€鈫?moonmodel.Model 鈹€鈹€鈫?project_all     鈹?鈹?                                     鈹?             鈹?鈹?                   鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?  鈹?鈹?                   鈻?       鈻?       鈻?         鈻?  鈹?鈹?              JSON Schema  OpenAPI  SQL DDL  SDL    鈹?鈹?              + drops      + drops  + drops  +drops 鈹?鈹?                                                    鈹?鈹? Dependency: moonbitstack/moonmodel                 鈹?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?```
 
 ## Quick Start
 
 ### Prerequisites
 
 - [MoonBit toolchain](https://www.moonbitlang.cn/)
-- Node.js ≥ 18
+- Node.js 鈮?18
 
 ### One-shot Build
 
@@ -103,7 +85,7 @@ ProjDesk adds on top:
 - **WASM ABI**: JSON string in/out browser calling interface
 - **Preset models**: User / Order / Address
 
-> **Compatibility note**: moonmodel 0.1.0 uses the deprecated `Int32` type (renamed to `Int` in current MoonBit). A minimal `Int32→Int` patch is applied to the `.mooncakes` cache source at build time, without changing business logic.
+> **Compatibility note**: moonmodel 0.1.0 uses the deprecated `Int32` type (renamed to `Int` in current MoonBit). A minimal `Int32鈫扞nt` patch is applied to the `.mooncakes` cache source at build time, without changing business logic.
 
 ---
 
@@ -117,7 +99,7 @@ ProjDesk adds on top:
 | **`raise` + `try/catch`** | JSON parse error handling |
 | **wasm-gc + js-string** | String params zero-copy to JS |
 | **`#export_name`** | Stable ABI exports |
-| **Contract tests** | 21 `moon test` cases locking required×nullable×four-target semantics |
+| **Contract tests** | 21 `moon test` cases locking required脳nullable脳four-target semantics |
 
 ---
 
@@ -161,3 +143,4 @@ ProjDesk adds on top:
 ## License
 
 MIT
+
