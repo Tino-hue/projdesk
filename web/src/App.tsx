@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import type { KernelInput, KernelOutput, ModelInput, FieldInput, PresetModel } from './lib/types';
 import { project, getPresets } from './lib/wasm';
 import { importModel, downloadModel } from './lib/modelio';
 import { HistoryManager, encodeToHash, decodeFromHash } from './lib/history';
+import { saveState, loadState, clearState } from './lib/persistence';
 import { FieldEditor } from './components/FieldEditor';
 import { OutputPanels } from './components/OutputPanels';
 
@@ -81,15 +82,25 @@ export default function App() {
     });
   }, [models, activeId, openapiDialect, sqlDialect]);
 
-  // Load from URL hash on mount
+  // Load from URL hash or localStorage on mount
   useEffect(() => {
     const hash = location.hash.slice(1);
-    if (!hash) return;
-    const data = decodeFromHash(hash);
-    if (data && Array.isArray(data.models) && data.models.length > 0) {
-      const entries = data.models.map((m: unknown) => ({ id: genId(), model: m as ModelInput }));
+    if (hash) {
+      const data = decodeFromHash(hash);
+      if (data && Array.isArray(data.models) && data.models.length > 0) {
+        const entries = data.models.map((m: unknown) => ({ id: genId(), model: m as ModelInput }));
+        setModels(entries);
+        setActiveId(data.activeId || entries[0].id);
+        return;
+      }
+    }
+    const saved = loadState();
+    if (saved) {
+      const entries = saved.models.map((m) => ({ id: genId(), model: m.model as ModelInput }));
       setModels(entries);
-      setActiveId(data.activeId || entries[0].id);
+      setActiveId(saved.activeId || entries[0].id);
+      if (saved.openapiDialect) setOpenapiDialect(saved.openapiDialect as OpenApiDialect);
+      if (saved.sqlDialect) setSqlDialect(saved.sqlDialect as SqlDialect);
     }
   }, []);
 
@@ -112,6 +123,16 @@ export default function App() {
     const t = setTimeout(() => { if (models.length > 0) saveSnapshot(); }, 500);
     return () => clearTimeout(t);
   }, [models, activeId, saveSnapshot]);
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (models.length > 0) {
+        saveState({ models, activeId, openapiDialect, sqlDialect });
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [models, activeId, openapiDialect, sqlDialect]);
 
   // Load presets
   useEffect(() => {
@@ -214,6 +235,7 @@ export default function App() {
           <button className="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded disabled:opacity-40" disabled={!canRedo} onClick={redo} title="Ctrl+Shift+Z">Redo</button>
           <button className="px-2 py-1 text-xs bg-emerald-500 text-white rounded hover:bg-emerald-600" onClick={shareUrl}>Share</button>
           {shareMsg && <span className="text-xs text-emerald-600">{shareMsg}</span>}
+          <button className="px-2 py-1 text-xs text-slate-400 hover:text-red-500 rounded" onClick={() => { clearState(); location.reload(); }} title="Clear saved data">Reset</button>
         </div>
       </header>
 
@@ -265,3 +287,4 @@ export default function App() {
     </div>
   );
 }
+
