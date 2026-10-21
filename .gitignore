@@ -1,0 +1,26 @@
+# Build outputs
+moonbit/_build/
+web/dist/
+web/node_modules/
+
+# MoonBit
+*.wasm.map
+*.core
+*.mi
+.mooncakes/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+
+# MiMo internal
+.mimocode/
+
+# tsbuildinfo
+*.tsbuildinfo
