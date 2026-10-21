@@ -1,0 +1,68 @@
+{
+  "name": "projdesk-vscode",
+  "displayName": "ProjDesk",
+  "description": "One model description, seven projections — JSON Schema / OpenAPI / SQL / GraphQL / TypeScript / Zod / Prisma",
+  "version": "0.1.0",
+  "publisher": "Tino-hue",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other", "Programming Languages"],
+  "activationEvents": ["onLanguage:json", "workspaceContains:**/*model*.json"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "projdesk.generate",
+        "title": "ProjDesk: Generate Projections"
+      },
+      {
+        "command": "projdesk.generateAll",
+        "title": "ProjDesk: Generate All Formats"
+      },
+      {
+        "command": "projdesk.preview",
+        "title": "ProjDesk: Preview in Browser"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "projdesk.generate",
+          "when": "resourceLangId == json",
+          "group": "projdesk"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ProjDesk",
+      "properties": {
+        "projdesk.outputDir": {
+          "type": "string",
+          "default": "generated",
+          "description": "Output directory for generated schemas"
+        },
+        "projdesk.sqlDialect": {
+          "type": "string",
+          "enum": ["Postgres", "Sqlite", "Mysql"],
+          "default": "Postgres",
+          "description": "SQL dialect"
+        },
+        "projdesk.openapiDialect": {
+          "type": "string",
+          "enum": ["OpenApi30", "OpenApi31", "Swagger20"],
+          "default": "OpenApi30",
+          "description": "OpenAPI dialect"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "~5.6.0"
+  }
+}
