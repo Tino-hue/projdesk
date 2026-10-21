@@ -1,7 +1,7 @@
-# Build outputs
+﻿# Build outputs
 moonbit/_build/
 web/dist/
-web/node_modules/
+node_modules/
 
 # MoonBit
 *.wasm.map
@@ -24,3 +24,4 @@ Thumbs.db
 
 # tsbuildinfo
 *.tsbuildinfo
+
