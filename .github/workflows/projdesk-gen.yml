@@ -1,0 +1,29 @@
+name: ProjDesk Generate
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_path:
+        description: 'Path to model JSON'
+        required: true
+        default: 'models/model.json'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate projections
+        run: |
+          node cli/index.js gen "${{ github.event.inputs.model_path }}" --out ./generated
+
+      - name: Upload generated schemas
+        uses: actions/upload-artifact@v4
+        with:
+          name: projdesk-schemas
+          path: generated/

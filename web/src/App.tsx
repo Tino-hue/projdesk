@@ -7,6 +7,7 @@ import { saveState, loadState, clearState } from './lib/persistence';
 import { useTheme } from './lib/theme';
 import { FieldList } from './components/FieldList';
 import { OutputPanels } from './components/OutputPanels';
+import { DiffPanel } from './components/DiffPanel';
 
 function makeEmptyModel(name: string): ModelInput {
   return { name, doc: '', fields: [{ name: '', kind: 'Text', required: true, nullable: false, doc: '', default: null, check: {} }] };
@@ -34,6 +35,23 @@ export default function App() {
   const historyRef = useRef(new HistoryManager());
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+
+  const [snapshots, setSnapshots] = useState<{ label: string; data: string }[]>([]);
+
+  // Update snapshots from history
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (models.length > 0) {
+        setSnapshots((prev) => {
+          const entry = { label: new Date().toLocaleTimeString() + ' - ' + (models.find(m => m.id === activeId)?.model.name || ''), data: JSON.stringify(models.find(m => m.id === activeId)?.model || {}) };
+          // Keep last 10 unique snapshots
+          const next = [...prev.filter((s) => s.data !== entry.data), entry].slice(-10);
+          return next;
+        });
+      }
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [models, activeId]);
 
   const active = models.find((m) => m.id === activeId);
   const activeModel = active?.model;
@@ -211,10 +229,12 @@ export default function App() {
 
         {/* Right: output panels */}
         <div className="flex-1 overflow-auto">
+          <DiffPanel model={activeModel || makeEmptyModel('')} snapshots={snapshots} />
           <OutputPanels output={output} openapiDialect={openapiDialect} sqlDialect={sqlDialect} model={activeModel || makeEmptyModel('')} known={known} />
         </div>
       </div>
     </div>
   );
 }
+
 
