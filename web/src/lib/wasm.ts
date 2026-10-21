@@ -1,10 +1,11 @@
 ﻿// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
 
-import type { KernelInput, KernelOutput, PresetModel } from './types';
+import type { KernelInput, KernelOutput, PresetModel, ModelInput } from './types';
 
 interface ProjDeskExports {
   project_from_json(input: string): string;
   get_presets_json(): string;
+  import_from_json_schema_str(text: string): string;
 }
 
 let exportsPromise: Promise<ProjDeskExports> | null = null;
@@ -48,4 +49,12 @@ export async function getPresets(): Promise<PresetModel[]> {
   const presetsJson = kernel.get_presets_json();
   return JSON.parse(presetsJson) as PresetModel[];
 }
+
+export async function importFromSchema(schemaText: string): Promise<ModelInput> {
+  const kernel = await getKernel();
+  const modelJson = kernel.import_from_json_schema_str(schemaText);
+  return JSON.parse(modelJson) as ModelInput;
+}
+
+
 
