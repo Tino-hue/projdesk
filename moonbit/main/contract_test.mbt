@@ -275,3 +275,179 @@ test "OpenAPI 3.0 uses nullable flag not type array" {
   assert_true(text30.contains("nullable"), msg="3.0 has nullable flag")
   assert_true(text31.contains("null"), msg="3.1 uses type array")
 }
+
+// ---- extended contract tests ----
+
+test "empty model produces empty-ish output" {
+  let m = @moonmodel.Model::new("Empty", [])
+  let result = project_all(m, [])
+  assert_true(result.json_schema.length() > 0)
+  assert_true(result.sql.length() > 0)
+  assert_true(result.graphql.length() > 0)
+}
+
+test "every Check constraint appears in JSON Schema output" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("x", Text, check=@moonmodel.Check::new(
+      shortest=1, longest=10, pattern="^a", format="email",
+    )),
+    @moonmodel.Field::new("y", Real, check=@moonmodel.Check::new(
+      least=0.0, most=100.0, over=-1.0, under=101.0, step=0.5,
+    )),
+  ])
+  let (text, _) = project_json_schema(m, [])
+  assert_true(text.contains("minLength"), msg="shortest->minLength")
+  assert_true(text.contains("maxLength"), msg="longest->maxLength")
+  assert_true(text.contains("pattern"), msg="pattern")
+  assert_true(text.contains("minimum"), msg="least->minimum")
+  assert_true(text.contains("maximum"), msg="most->maximum")
+  assert_true(text.contains("exclusiveMinimum"), msg="over->exclusiveMinimum")
+  assert_true(text.contains("exclusiveMaximum"), msg="under->exclusiveMaximum")
+  assert_true(text.contains("multipleOf"), msg="step->multipleOf")
+}
+
+test "options become enum in JSON Schema" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("x", Text, check=@moonmodel.Check::new(options=[
+      Json::string("a"), Json::string("b"),
+    ])),
+  ])
+  let (text, _) = project_json_schema(m, [])
+  assert_true(text.contains("enum"))
+  assert_true(text.contains("\"a\""))
+  assert_true(text.contains("\"b\""))
+}
+
+test "distinct becomes uniqueItems in JSON Schema" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("x", List(Text), check=@moonmodel.Check::new(distinct=true)),
+  ])
+  let (text, _) = project_json_schema(m, [])
+  assert_true(text.contains("uniqueItems"))
+}
+
+test "List of Text projects as array in JSON Schema" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("tags", List(Text)),
+  ])
+  let (text, _) = project_json_schema(m, [])
+  assert_true(text.contains("array"))
+  assert_true(text.contains("items"))
+}
+
+test "Dict of Int projects as object with additionalProperties" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("meta", Dict(Int)),
+  ])
+  let (text, _) = project_json_schema(m, [])
+  assert_true(text.contains("additionalProperties"))
+}
+
+test "Ref projects as reference in JSON Schema" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("home", Ref("Address")),
+  ])
+  let known = [@moonmodel.Model::new("Address", [@moonmodel.Field::new("line", Text)])]
+  let (text, _) = project_json_schema(m, known)
+  assert_true(text.contains("$ref"))
+  assert_true(text.contains("Address"))
+}
+
+test "SQL Postgres projects List as array column" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("tags", List(Text)),
+  ])
+  let (text, _) = project_sql(m, dialect="Postgres")
+  assert_true(text.contains("TEXT[]"), msg="Postgres array type")
+}
+
+test "SQL Sqlite skips List field" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("tags", List(Text)),
+    @moonmodel.Field::new("name", Text),
+  ])
+  let (text, drops) = project_sql(m, dialect="Sqlite")
+  assert_true(text.contains("name"))
+  assert_false(text.contains("tags"))
+  assert_true(drops.length() > 0)
+}
+
+test "SQL options produce IN clause" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("status", Text, check=@moonmodel.Check::new(options=[
+      Json::string("a"), Json::string("b"),
+    ])),
+  ])
+  let (text, _) = project_sql(m)
+  assert_true(text.contains("IN"))
+  assert_true(text.contains("'a'"))
+  assert_true(text.contains("'b'"))
+}
+
+test "SQL bounds produce CHECK clause" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("age", Int, check=@moonmodel.Check::new(least=0.0, most=150.0)),
+  ])
+  let (text, _) = project_sql(m)
+  assert_true(text.contains("CHECK"))
+  assert_true(text.contains(">="))
+  assert_true(text.contains("<="))
+}
+
+test "GraphQL Big maps to String" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("id", Big),
+  ])
+  let (text, _) = project_graphql(m, [])
+  assert_true(text.contains("id: String"))
+}
+
+test "GraphQL List of Text produces [String!]!" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("tags", List(Text)),
+  ])
+  let (text, _) = project_graphql(m, [])
+  assert_true(text.contains("[String!]"))
+}
+
+test "GraphQL Ref produces named type reference" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("home", Ref("Address")),
+  ])
+  let (text, _) = project_graphql(m, [])
+  assert_true(text.contains("home: Address"))
+}
+
+test "GraphQL declares DateTime and Base64 scalars for Stamp and Bytes" {
+  let m = @moonmodel.Model::new("T", [
+    @moonmodel.Field::new("joined", Stamp),
+    @moonmodel.Field::new("avatar", Bytes),
+  ])
+  let (text, _) = project_graphql(m, [])
+  assert_true(text.contains("scalar DateTime"))
+  assert_true(text.contains("scalar Base64"))
+}
+
+test "presets project successfully with all four targets" {
+  for m in presets() {
+    let result = project_all(m, [])
+    assert_true(result.json_schema.length() > 0, msg=m.name + " json_schema")
+    assert_true(result.openapi.length() > 0, msg=m.name + " openapi")
+    assert_true(result.sql.length() > 0, msg=m.name + " sql")
+    assert_true(result.graphql.length() > 0, msg=m.name + " graphql")
+  }
+}
+
+test "Input with dialects is parsed correctly" {
+  let json_str = "{\"name\":\"T\",\"doc\":\"\",\"fields\":[],\"openapiDialect\":\"OpenApi31\",\"sqlDialect\":\"Sqlite\"}"
+  let input = parse_input(json_str)
+  assert_eq(input.openapi_dialect, "OpenApi31")
+  assert_eq(input.sql_dialect, "Sqlite")
+}
+
+test "Input without dialects defaults correctly" {
+  let json_str = "{\"name\":\"T\",\"doc\":\"\",\"fields\":[]}"
+  let input = parse_input(json_str)
+  assert_eq(input.openapi_dialect, "OpenApi30")
+  assert_eq(input.sql_dialect, "Postgres")
+}
