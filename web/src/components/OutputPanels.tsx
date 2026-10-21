@@ -28,6 +28,23 @@ function downloadFile(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
+function copyAll(output: KernelOutput) {
+  const text = [
+    '=== JSON Schema 2020-12 ===', output.jsonSchema,
+    '=== OpenAPI ===', output.openapi,
+    '=== SQL DDL ===', output.sql,
+    '=== GraphQL SDL ===', output.graphql,
+  ].join('\n\n');
+  copyToClipboard(text);
+}
+
+function exportAll(output: KernelOutput) {
+  downloadFile('schema.json', output.jsonSchema);
+  downloadFile('openapi.json', output.openapi);
+  downloadFile('schema.sql', output.sql);
+  downloadFile('schema.graphql', output.graphql);
+}
+
 const DIALECT_LABELS: Record<string, string> = {
   OpenApi30: 'OpenAPI 3.0',
   OpenApi31: 'OpenAPI 3.1',
@@ -50,27 +67,36 @@ export function OutputPanels({ output, openapiDialect, sqlDialect }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-4">
-      {panels.map((panel) => {
-        const text = (output[panel.key] as string) || '';
-        const drops = (output.drops[panel.dropKey] as DropReason[]) || [];
-        return (
-          <div key={panel.key} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-slate-700">{panel.title}</h2>
-                {drops.length > 0 && <span className="drop-badge bg-amber-100 text-amber-700">{drops.length} drops</span>}
+    <div>
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <span className="text-xs text-slate-400">Four projections live</span>
+        <div className="flex gap-2">
+          <button className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" onClick={() => copyAll(output)}>Copy All</button>
+          <button className="px-3 py-1.5 text-xs bg-slate-200 hover:bg-slate-300 rounded" onClick={() => exportAll(output)}>Export All</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 px-4 pb-4">
+        {panels.map((panel) => {
+          const text = (output[panel.key] as string) || '';
+          const drops = (output.drops[panel.dropKey] as DropReason[]) || [];
+          return (
+            <div key={panel.key} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-slate-700">{panel.title}</h2>
+                  {drops.length > 0 && <span className="drop-badge bg-amber-100 text-amber-700">{drops.length} drops</span>}
+                </div>
+                <div className="flex gap-1">
+                  <button className="px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded" onClick={() => copyToClipboard(text)}>Copy</button>
+                  <button className="px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded" onClick={() => downloadFile(`projdesk.${panel.ext}`, text)}>Export</button>
+                </div>
               </div>
-              <div className="flex gap-1">
-                <button className="px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded" onClick={() => copyToClipboard(text)}>Copy</button>
-                <button className="px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded" onClick={() => downloadFile(`projdesk.${panel.ext}`, text)}>Export</button>
-              </div>
+              <div className="code-block max-h-[360px]">{text}</div>
+              <DropReport drops={drops} />
             </div>
-            <div className="code-block max-h-[360px]">{text}</div>
-            <DropReport drops={drops} />
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
