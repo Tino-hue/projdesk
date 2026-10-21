@@ -1,5 +1,6 @@
-import type { KernelOutput, DropReason } from '../lib/types';
+﻿import type { KernelOutput, DropReason } from '../lib/types';
 import { DropReport } from './DropReport';
+import { CoverageMatrix } from './CoverageMatrix';
 
 interface Props {
   output: KernelOutput | null;
@@ -75,6 +76,7 @@ export function OutputPanels({ output, openapiDialect, sqlDialect }: Props) {
           <button className="px-3 py-1.5 text-xs bg-slate-200 hover:bg-slate-300 rounded" onClick={() => exportAll(output)}>Export All</button>
         </div>
       </div>
+      <CoverageMatrix drops={output.drops} />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 px-4 pb-4">
         {panels.map((panel) => {
           const text = (output[panel.key] as string) || '';
@@ -100,3 +102,4 @@ export function OutputPanels({ output, openapiDialect, sqlDialect }: Props) {
     </div>
   );
 }
+
