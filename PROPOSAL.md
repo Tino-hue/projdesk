@@ -40,5 +40,3 @@ ProjDesk 是一个纯浏览器运行的「模型描述 → 多目标投影」工
 ## GitHub 仓库
 
 https://github.com/Tino-hue/projdesk
-
-内核源码、前端、测试、文档与构建脚本。持续补充 commits 中（要求 ≥ 10 个有效提交）。
