@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import type { KernelInput, KernelOutput, ModelInput, PresetModel } from './lib/types';
 import { project, getPresets } from './lib/wasm';
 import { importModel, downloadModel } from './lib/modelio';
@@ -170,7 +170,7 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col dark:bg-slate-900">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 flex items-center justify-between shrink-0">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
         <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">ProjDesk <span className="text-xs font-normal text-slate-400">One Definition, Four Projections</span></h1>
         <div className="flex items-center gap-1.5">
           <select className="px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-xs bg-white dark:bg-slate-700 dark:text-slate-200" value={openapiDialect} onChange={(e) => setOpenapiDialect(e.target.value as OpenApiDialect)}>
@@ -210,13 +210,13 @@ export default function App() {
 
       {error && <div className="bg-red-50 dark:bg-red-900/30 border-b border-red-200 dark:border-red-800 px-4 py-1 text-xs text-red-700 dark:text-red-300">{error}</div>}
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Sidebar: model list */}
-        <div className="w-[180px] border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex flex-col shrink-0">
+        <div className="lg:w-[180px] w-full lg:h-auto h-[120px] border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex flex-col shrink-0">
           <div className="p-2 border-b border-slate-200 dark:border-slate-700">
             <button className="w-full px-2 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" onClick={addModel}>+ New Model</button>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto lg:block flex lg:flex-col flex-row gap-1 p-1">
             {models.map((m) => (
               <div key={m.id} className={`px-3 py-2 cursor-pointer border-b border-slate-100 dark:border-slate-700 flex items-center justify-between group ${m.id === activeId ? 'bg-blue-50 dark:bg-blue-900/30 border-l-2 border-l-blue-500' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}`} onClick={() => setActiveId(m.id)}>
                 <div><div className="text-xs font-medium text-slate-700 dark:text-slate-200">{m.model.name || '(unnamed)'}</div><div className="text-[10px] text-slate-400">{m.model.fields.length} fields</div></div>
@@ -230,7 +230,7 @@ export default function App() {
         </div>
 
         {/* Center: model editor */}
-        <div className="w-[340px] border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-y-auto shrink-0">
+        <div className="lg:w-[340px] w-full lg:h-auto border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-y-auto shrink-0">
           {activeModel ? (
             <div className="p-3 space-y-3">
               <input type="text" className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded text-sm font-medium bg-white dark:bg-slate-700 dark:text-slate-200" value={activeModel.name} onChange={(e) => updateModel({ name: e.target.value })} placeholder="Model name" />
@@ -251,5 +251,6 @@ export default function App() {
     </div>
   );
 }
+
 
 

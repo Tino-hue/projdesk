@@ -103,7 +103,7 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+      <div className="flex flex-wrap items-center justify-between px-2 sm:px-4 pt-4 pb-2 gap-2">
         <span className="text-xs text-slate-400">
           Four projections live
           <span className="ml-2 text-amber-500 text-xs">
@@ -123,7 +123,7 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
       <CoverageMatrix drops={output.drops} />
 
       {/* Four panels */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 px-4 pb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 px-2 sm:px-4 pb-4">
         {panels.map((panel) => {
           const text = (output[panel.key] as string) || '';
           const drops = (output.drops[panel.dropKey] as DropReason[]) || [];
@@ -150,4 +150,5 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
     </div>
   );
 }
+
 
