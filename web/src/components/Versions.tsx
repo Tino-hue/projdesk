@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import type { ModelInput } from '../lib/types';
 
 interface Snapshot {
@@ -120,6 +120,97 @@ const TEMPLATES = [
       ],
     },
   },
+  {
+    name: 'User Profile',
+    model: {
+      name: 'Profile', doc: 'user profile', fields: [
+        { name: 'userId', kind: 'Big', required: true, nullable: false, doc: 'user ID', default: null, check: { unique: true } },
+        { name: 'displayName', kind: 'Text', required: true, nullable: false, doc: 'display name', default: null, check: { shortest: 1, longest: 50 } },
+        { name: 'bio', kind: 'Text', required: false, nullable: true, doc: 'biography', default: null, check: { longest: 500 } },
+        { name: 'avatarUrl', kind: 'Text', required: false, nullable: true, doc: 'avatar URL', default: null, check: { format: 'uri' } },
+        { name: 'website', kind: 'Text', required: false, nullable: true, doc: 'website', default: null, check: { format: 'uri' } },
+        { name: 'isPublic', kind: 'Bool', required: true, nullable: false, doc: 'public profile', default: true, check: {} },
+        { name: 'joinedAt', kind: 'Stamp', required: true, nullable: false, doc: 'join date', default: null, check: {} },
+      ],
+    },
+  },
+  {
+    name: 'Event / Analytics',
+    model: {
+      name: 'Event', doc: 'analytics event', fields: [
+        { name: 'eventId', kind: 'Big', required: true, nullable: false, doc: 'event ID', default: null, check: { unique: true } },
+        { name: 'eventType', kind: 'Text', required: true, nullable: false, doc: 'event type', default: null, check: { pattern: '^[a-z_]+$' } },
+        { name: 'userId', kind: 'Big', required: false, nullable: true, doc: 'user ID', default: null, check: {} },
+        { name: 'properties', kind: { dict: 'Text' }, required: false, nullable: false, doc: 'event properties', default: null, check: {} },
+        { name: 'timestamp', kind: 'Stamp', required: true, nullable: false, doc: 'event time', default: null, check: {} },
+        { name: 'sessionId', kind: 'Text', required: false, nullable: false, doc: 'session ID', default: null, check: { format: 'uuid' } },
+      ],
+    },
+  },
+  {
+    name: 'Inventory Item',
+    model: {
+      name: 'InventoryItem', doc: 'warehouse inventory', fields: [
+        { name: 'sku', kind: 'Text', required: true, nullable: false, doc: 'SKU code', default: null, check: { unique: true, pattern: '^[A-Z0-9-]+$' } },
+        { name: 'name', kind: 'Text', required: true, nullable: false, doc: 'item name', default: null, check: { shortest: 1, longest: 100 } },
+        { name: 'quantity', kind: 'Int', required: true, nullable: false, doc: 'stock quantity', default: 0, check: { least: 0 } },
+        { name: 'price', kind: 'Real', required: true, nullable: false, doc: 'unit price', default: null, check: { least: 0, step: 0.01 } },
+        { name: 'warehouse', kind: 'Text', required: true, nullable: false, doc: 'warehouse location', default: null, check: { options: ['east', 'west', 'central'] } },
+      ],
+    },
+  },
+  {
+    name: 'API Key',
+    model: {
+      name: 'ApiKey', doc: 'API access key', fields: [
+        { name: 'id', kind: 'Big', required: true, nullable: false, doc: 'key ID', default: null, check: { unique: true } },
+        { name: 'keyHash', kind: 'Text', required: true, nullable: false, doc: 'hashed key', default: null, check: { unique: true, longest: 128 } },
+        { name: 'name', kind: 'Text', required: true, nullable: false, doc: 'key name', default: null, check: { shortest: 1, longest: 50 } },
+        { name: 'scopes', kind: { list: 'Text' }, required: false, nullable: false, doc: 'permissions', default: null, check: { distinct: true } },
+        { name: 'expiresAt', kind: 'Stamp', required: false, nullable: true, doc: 'expiry', default: null, check: {} },
+        { name: 'isActive', kind: 'Bool', required: true, nullable: false, doc: 'active', default: true, check: {} },
+      ],
+    },
+  },
+  {
+    name: 'Notification',
+    model: {
+      name: 'Notification', doc: 'user notification', fields: [
+        { name: 'id', kind: 'Big', required: true, nullable: false, doc: 'notification ID', default: null, check: { unique: true } },
+        { name: 'title', kind: 'Text', required: true, nullable: false, doc: 'title', default: null, check: { shortest: 1, longest: 200 } },
+        { name: 'body', kind: 'Text', required: true, nullable: false, doc: 'message body', default: null, check: { longest: 2000 } },
+        { name: 'channel', kind: 'Text', required: true, nullable: false, doc: 'delivery channel', default: null, check: { options: ['email', 'sms', 'push', 'inapp'] } },
+        { name: 'read', kind: 'Bool', required: true, nullable: false, doc: 'read status', default: false, check: {} },
+        { name: 'sentAt', kind: 'Stamp', required: true, nullable: false, doc: 'sent time', default: null, check: {} },
+      ],
+    },
+  },
+  {
+    name: 'Shipping Label',
+    model: {
+      name: 'Shipment', doc: 'shipping label', fields: [
+        { name: 'trackingNumber', kind: 'Text', required: true, nullable: false, doc: 'tracking number', default: null, check: { unique: true, pattern: '^[A-Z0-9]+$' } },
+        { name: 'carrier', kind: 'Text', required: true, nullable: false, doc: 'carrier', default: null, check: { options: ['fedex', 'ups', 'usps', 'dhl'] } },
+        { name: 'weight', kind: 'Real', required: true, nullable: false, doc: 'weight in kg', default: null, check: { over: 0, step: 0.01 } },
+        { name: 'destination', kind: 'Text', required: true, nullable: false, doc: 'destination address', default: null, check: { shortest: 10, longest: 500 } },
+        { name: 'shippedAt', kind: 'Stamp', required: true, nullable: false, doc: 'ship date', default: null, check: {} },
+        { name: 'delivered', kind: 'Bool', required: true, nullable: false, doc: 'delivered', default: false, check: {} },
+      ],
+    },
+  },
+  {
+    name: 'Survey Response',
+    model: {
+      name: 'SurveyResponse', doc: 'survey response', fields: [
+        { name: 'id', kind: 'Big', required: true, nullable: false, doc: 'response ID', default: null, check: { unique: true } },
+        { name: 'questionId', kind: 'Big', required: true, nullable: false, doc: 'question ID', default: null, check: {} },
+        { name: 'answer', kind: 'Text', required: true, nullable: false, doc: 'answer text', default: null, check: { longest: 5000 } },
+        { name: 'rating', kind: 'Int', required: false, nullable: true, doc: 'rating 1-10', default: null, check: { least: 1, most: 10 } },
+        { name: 'choices', kind: { list: 'Text' }, required: false, nullable: false, doc: 'selected choices', default: null, check: { distinct: true } },
+        { name: 'submittedAt', kind: 'Stamp', required: true, nullable: false, doc: 'submit time', default: null, check: {} },
+      ],
+    },
+  },
 ];
 
 interface TemplateProps {
@@ -147,3 +238,4 @@ export function TemplateLibrary({ onSelect }: TemplateProps) {
     </details>
   );
 }
+
