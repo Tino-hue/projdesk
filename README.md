@@ -1,9 +1,10 @@
-﻿# ProjDesk 鈥?One Definition, Four Projections
+# ProjDesk - One Definition, Four Projections
 
-> **A pure-browser "model description 鈫?multi-target projection" workbench.**
-> Declare a business object with a form, and the page simultaneously generates and live-refreshes: **JSON Schema / OpenAPI / SQL DDL / GraphQL SDL**.
+**Live Demo**: https://tino-hue.github.io/projdesk/
 
-**Difference from Depsight**: Depsight performs dependency analysis and supply-chain diagnostics. ProjDesk operates at the metadata/contract layer for multi-target projection generation. The two have zero functional overlap and this is not a continuation of the same work.
+A pure-browser "model description to multi-target projection" workbench. Declare a business object with a form, and the page simultaneously generates and live-refreshes: **JSON Schema / OpenAPI / SQL DDL / GraphQL SDL**.
+
+**Difference from Depsight**: Depsight performs dependency analysis and supply-chain diagnostics. ProjDesk operates at the metadata/contract layer for multi-target projection generation. The two have zero functional overlap.
 
 ---
 
@@ -13,24 +14,45 @@
 
 ### Three Product Principles
 
-1. **One source of truth, four projections** 鈥?all projection algorithms live in the MoonBit kernel; the frontend must never implement schema/sql/sdl generation itself.
-2. **Honest projection** 鈥?constraints a target cannot carry must be shown as "dropped + reason"; never silently beautify or discard.
-3. **Demo first** 鈥?any edit must refresh all four panels smoothly; prefer cutting features over laggy interaction.
+1. **One source of truth, four projections** - all projection algorithms live in the MoonBit kernel; the frontend never implements schema/sql/sdl generation.
+2. **Honest projection** - constraints a target cannot carry must be shown as "dropped + reason"; never silently beautify or discard.
+3. **Demo first** - any edit must refresh all four panels smoothly.
 
 ---
 
 ## Architecture
 
 ```
-鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹?                 Web Frontend (React)               鈹?鈹?  Form Editor 鈹€鈹€鈫?ABI Serialize 鈹€鈹€鈫?4-Panel Display 鈹?鈹?                (TypeScript)       + Drop Reports   鈹?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                         鈹?JSON string (js-string builtins)
-                         鈻?鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹?             MoonBit Kernel (wasm-gc)               鈹?鈹?                                                    鈹?鈹? parse_input 鈹€鈹€鈫?moonmodel.Model 鈹€鈹€鈫?project_all     鈹?鈹?                                     鈹?             鈹?鈹?                   鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?  鈹?鈹?                   鈻?       鈻?       鈻?         鈻?  鈹?鈹?              JSON Schema  OpenAPI  SQL DDL  SDL    鈹?鈹?              + drops      + drops  + drops  +drops 鈹?鈹?                                                    鈹?鈹? Dependency: moonbitstack/moonmodel                 鈹?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?```
++------------------------------------------------------+
+|                Web Frontend (React)                  |
+|   Form Editor --> ABI Serialize --> 4-Panel Display  |
+|                 (TypeScript)       + Drop Reports    |
++------------------------------------------------------+
+                         |
+                         | JSON string (js-string builtins)
+                         v
++------------------------------------------------------+
+|              MoonBit Kernel (wasm-gc)                |
+|                                                      |
+|  parse_input --> moonmodel.Model --> project_all     |
+|                                       |              |
+|                    +------------------+----------+   |
+|                    v          v         v         v   |
+|               JSON Schema  OpenAPI  SQL DDL     SDL  |
+|               + drops      + drops  + drops   +drops |
+|                                                      |
+|  Dependency: moonbitstack/moonmodel                  |
++------------------------------------------------------+
+```
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
 - [MoonBit toolchain](https://www.moonbitlang.cn/)
-- Node.js 鈮?18
+- Node.js 18+
 
 ### One-shot Build
 
@@ -48,7 +70,6 @@ make all
 # 1. Compile MoonBit kernel
 cd moonbit
 moon build --target wasm-gc --release
-# Artifact: _build/wasm-gc/release/build/main/main.wasm
 
 # 2. Run kernel contract tests
 moon test
@@ -63,29 +84,28 @@ npm run test
 
 # 5. Local preview (port 3000)
 npm run dev
-# Open http://127.0.0.1:3000
 ```
 
 ---
 
 ## Relationship with moonmodel
 
-ProjDesk's projection capabilities are entirely provided by [moonbitstack/moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel):
+ProjDesk's projection capabilities are provided by [moonbitstack/moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel):
 
 | Subpackage | Function |
 |------------|----------|
 | `moonmodel` | Core types: Model / Field / Check / Type |
 | `moonmodel/json` | JSON Schema 2020-12 projection |
-| `moonmodel/open` | OpenAPI Schema Object projection (2.0/3.0/3.1) |
-| `moonmodel/sql` | SQL DDL projection (SQLite/Postgres/MySQL) |
-| `moonmodel/sdl` | GraphQL SDL projection |
+| `moonmodel/open` | OpenAPI Schema Object (2.0/3.0/3.1) |
+| `moonmodel/sql` | SQL DDL (SQLite/Postgres/MySQL) |
+| `moonmodel/sdl` | GraphQL SDL |
 
 ProjDesk adds on top:
-- **Drop-reason analysis**: per-constraint checks whether each target can carry it, outputs structured `DropReason`
-- **WASM ABI**: JSON string in/out browser calling interface
+- **Drop-reason analysis**: per-constraint check with structured `DropReason`
+- **WASM ABI**: JSON string in/out browser interface
 - **Preset models**: User / Order / Address
-
-> **Compatibility note**: moonmodel 0.1.0 uses the deprecated `Int32` type (renamed to `Int` in current MoonBit). A minimal `Int32鈫扞nt` patch is applied to the `.mooncakes` cache source at build time, without changing business logic.
+- **Syntax highlighting + change diff + Canvas model diagram**
+- **Dialect switching, model import/export, coverage matrix**
 
 ---
 
@@ -93,54 +113,33 @@ ProjDesk adds on top:
 
 | Technical Point | Where Used |
 |-----------------|------------|
-| **ADT / enum** | `Type`'s 13 type variants (incl. recursive `List(Type)` / `Dict(Type)` / `Nest(Model)`) |
-| **Pattern matching** | Bidirectional mapping in `parse_type` / `type_to_json` |
-| **`pub(all)` structs** | `DropReason` / `ProjectionResult` cross-package use |
-| **`raise` + `try/catch`** | JSON parse error handling |
-| **wasm-gc + js-string** | String params zero-copy to JS |
-| **`#export_name`** | Stable ABI exports |
-| **Contract tests** | 21 `moon test` cases locking required脳nullable脳four-target semantics |
+| ADT / enum | `Type`'s 13 variants (recursive `List`/`Dict`/`Nest`) |
+| Pattern matching | Bidirectional `parse_type` / `type_to_json` |
+| `pub(all)` structs | `DropReason` / `ProjectionResult` cross-package |
+| `raise` + `try/catch` | JSON parse error handling |
+| wasm-gc + js-string | String zero-copy to JS |
+| `#export_name` | Stable ABI exports |
+| Contract tests | 41 `moon test` cases |
+
+---
+
+## Testing
+
+| Layer | Count | Coverage |
+|-------|-------|----------|
+| Kernel (`moon test`) | 41 | Types, constraints, required/nullable, drops, dialects, presets, ABI |
+| Frontend (`vitest`) | 16 | Serialization, Check fields, nested types, truth table, output shape |
+| **Total** | **57** | All green |
 
 ---
 
 ## Known Limitations
 
-- OpenAPI version fixed at 3.0 (V1 can extend 2.0/3.1 switching)
-- SQL dialect fixed at Postgres (V1 can extend SQLite/MySQL)
 - GraphQL `options` does not auto-generate enum types
-- Multi-model Ref graph / URL sharing not yet implemented
-
----
-
-## Acceptance Checklist
-
-### A. Features
-- [x] Page loads preset samples within 10 seconds, all four panels show output immediately
-- [x] Editing fields/constraints updates all four panels correctly and synchronously
-- [x] `required` and `nullable` are independent, with correct semantics across all four targets
-- [x] Drop reports honestly reflect constraints each target cannot carry, with reasons
-- [x] Copy/export all four artifacts
-- [x] Frontend contains zero schema/sql/sdl generation algorithms
-
-### B. Quality
-- [x] `moon test` all green (21 contract tests)
-- [x] Web-side tests all green (5 ABI tests)
-- [x] `npm run build` passes
-- [x] `make all` completes the full pipeline
-
-### C. Repository
-- [x] README.md (positioning, architecture, steps, limitations)
-- [x] DEMO.md (3-minute demo script)
-- [x] LICENSE (MIT)
-- [x] Makefile
-
-### E. Compliance
-- [x] Zero functional overlap with Depsight
-- [x] No dependency on legacy FractMoon/Depsight business code
+- Multi-model Ref graph editing / URL sharing not yet implemented
 
 ---
 
 ## License
 
 MIT
-
