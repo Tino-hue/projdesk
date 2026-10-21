@@ -7,8 +7,14 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other", "Programming Languages"],
-  "activationEvents": ["onLanguage:json", "workspaceContains:**/*model*.json"],
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:json",
+    "workspaceContains:**/*model*.json"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -44,13 +50,21 @@
         },
         "projdesk.sqlDialect": {
           "type": "string",
-          "enum": ["Postgres", "Sqlite", "Mysql"],
+          "enum": [
+            "Postgres",
+            "Sqlite",
+            "Mysql"
+          ],
           "default": "Postgres",
           "description": "SQL dialect"
         },
         "projdesk.openapiDialect": {
           "type": "string",
-          "enum": ["OpenApi30", "OpenApi31", "Swagger20"],
+          "enum": [
+            "OpenApi30",
+            "OpenApi31",
+            "Swagger20"
+          ],
           "default": "OpenApi30",
           "description": "OpenAPI dialect"
         }
@@ -62,6 +76,7 @@
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
+    "@types/node": "^26.6.5",
     "@types/vscode": "^1.85.0",
     "typescript": "~5.6.0"
   }
