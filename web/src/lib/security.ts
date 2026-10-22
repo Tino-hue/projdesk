@@ -1,16 +1,18 @@
-// Input validation: sanitize all external data (localStorage, URL hash, file import)
+﻿// Input validation: sanitize all external data (localStorage, URL hash, file import)
 
 import type { ModelInput, FieldInput, TypeSpec, CheckInput } from './types';
 
-const VALID_TYPES = new Set(['Bool', 'Int', 'Big', 'Real', 'Text', 'Bytes', 'Stamp', 'Any']);
-const VALID_OPENAPI = new Set(['OpenApi30', 'OpenApi31', 'Swagger20']);
-const VALID_SQL = new Set(['Postgres', 'Sqlite', 'Mysql']);
+import { MODEL_TYPES, OPENAPI_DIALECTS, SQL_DIALECTS, LIMITS } from './constants';
 
-const MAX_FIELD_NAME = 200;
-const MAX_DOC = 5000;
-const MAX_FIELDS = 500;
-const MAX_PATTERN = 1000;
-const MAX_OPTIONS = 100;
+const VALID_TYPES: Set<string> = new Set(MODEL_TYPES);
+const VALID_OPENAPI: Set<string> = new Set(OPENAPI_DIALECTS);
+const VALID_SQL: Set<string> = new Set(SQL_DIALECTS);
+
+const MAX_FIELD_NAME = LIMITS.MAX_FIELD_NAME;
+const MAX_DOC = LIMITS.MAX_DOC;
+const MAX_FIELDS = LIMITS.MAX_FIELDS;
+const MAX_PATTERN = LIMITS.MAX_PATTERN;
+const MAX_OPTIONS = LIMITS.MAX_OPTIONS;
 
 function safeString(v: unknown, maxLen: number): string {
   if (typeof v !== 'string') return '';
@@ -145,3 +147,5 @@ export function escapeSqlIdent(name: string): string {
 export function escapeSqlLiteral(value: string): string {
   return value.replace(/'/g, "''").slice(0, 10000);
 }
+
+
