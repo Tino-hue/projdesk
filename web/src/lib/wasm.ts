@@ -31,7 +31,10 @@ async function loadKernel(): Promise<ProjDeskExports> {
 /** 鑾峰彇鍐呮牳瀹炰緥锛堟噿鍔犺浇 + 缂撳瓨锛?*/
 export async function getKernel(): Promise<ProjDeskExports> {
   if (!exportsPromise) {
-    exportsPromise = loadKernel();
+    exportsPromise = loadKernel().catch((e) => {
+      exportsPromise = null; // Reset for retry
+      throw e;
+    });
   }
   return exportsPromise;
 }
@@ -55,6 +58,7 @@ export async function importFromSchema(schemaText: string): Promise<ModelInput> 
   const modelJson = kernel.import_from_json_schema_str(schemaText);
   return JSON.parse(modelJson) as ModelInput;
 }
+
 
 
 
