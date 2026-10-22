@@ -154,7 +154,15 @@ ProjDesk adds on top:
 
 ---
 
+## Privacy and Data
+
+- All data is stored **locally** in your browser (localStorage). No data is sent to any server.
+- URL sharing encodes your model into the URL hash. Be aware that URLs may be logged in browser history or server logs.
+- Use **Backup** to export your models as a JSON file for safekeeping.
+- Generated schema files may contain your field names and documentation. Review before sharing externally.
+
 ## License
 
 MIT
+
 

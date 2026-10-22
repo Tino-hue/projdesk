@@ -203,7 +203,7 @@ export default function App() {
           <button className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded disabled:opacity-40" disabled={!canUndo} onClick={undo} title="Ctrl+Z">Undo</button>
           <button className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded disabled:opacity-40" disabled={!canRedo} onClick={redo} title="Ctrl+Shift+Z">Redo</button>
           <button className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded" onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')} title="Toggle theme">{resolved === 'dark' ? 'L' : 'D'}</button>
-          <button className="px-2 py-1 text-xs bg-emerald-500 text-white rounded hover:bg-emerald-600" onClick={shareUrl}>Share</button>
+          <button className="px-2 py-1 text-xs bg-emerald-500 text-white rounded hover:bg-emerald-600" onClick={shareUrl} title="Copies URL with model data encoded in hash. URLs may appear in browser history.">Share</button>
           <button className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 rounded" onClick={() => { const b = createBackup(models, activeId, { openapiDialect, sqlDialect, theme: resolved }); downloadBackup(b); markBackupDone(); }} title="Download all models as backup file">Backup</button>
           <label className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 rounded cursor-pointer" title="Restore from backup file">Restore<input type="file" accept=".json" className="hidden" onChange={(e) => {
             const f = e.target.files?.[0]; if (!f) return;
@@ -270,6 +270,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
