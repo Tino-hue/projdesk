@@ -1,5 +1,5 @@
-#!/usr/bin/env pwsh
-# ProjDesk setup script — applies moonmodel compatibility patch and builds
+﻿#!/usr/bin/env pwsh
+# ProjDesk setup script 鈥?applies moonmodel compatibility patch and builds
 # Run this after cloning: .\setup.ps1
 
 $ErrorActionPreference = "Stop"
@@ -20,25 +20,35 @@ Write-Host "[2/3] Applying moonmodel compatibility patch..." -ForegroundColor Ye
 $patchDir = "$root\moonbit\.mooncakes\moonbitstack\moonmodel"
 if (Test-Path $patchDir) {
     $patched = 0
+    $alreadyPatched = $false
     Get-ChildItem $patchDir -Recurse -File -Filter "*.mbt" | ForEach-Object {
         $c = Get-Content $_.FullName -Raw
-        # Only replace type usage Int32, not string literals
-        $c2 = [regex]::Replace($c, '\bInt32\b', 'Int')
+        if ($c -match 'Json::string\("int32"\)') { $alreadyPatched = $true }
+        # Replace type name Int32 -> Int (word boundary, case-sensitive)
+        $c2 = [regex]::Replace($c, '(?<![a-zA-Z"'])Int32(?![a-zA-Z"'])', 'Int')
         if ($c2 -ne $c) {
             Set-Content $_.FullName $c2 -Encoding UTF8
             $patched++
         }
     }
-    # Fix string literal "Int32" that was wrongly replaced to "Int" in format strings
+    # Fix format string if it was corrupted
     $jsonFile = "$patchDir\json\json.mbt"
     if (Test-Path $jsonFile) {
         $c = Get-Content $jsonFile -Raw
-        $c = $c.Replace('Json::string("Int")', 'Json::string("int32")')
-        Set-Content $jsonFile $c -Encoding UTF8
+        if ($c -match 'Json::string\("Int"\)') {
+            $c = $c.Replace('Json::string("Int")', 'Json::string("int32")')
+            Set-Content $jsonFile $c -Encoding UTF8
+            Write-Host "  Fixed format string in json.mbt" -ForegroundColor Yellow
+        }
     }
-    Write-Host "  Patched $patched files" -ForegroundColor Green
+    if ($alreadyPatched -and $patched -eq 0) {
+        Write-Host "  Already patched, skipping" -ForegroundColor Green
+    } else {
+        Write-Host "  Patched $patched files" -ForegroundColor Green
+    }
 } else {
     Write-Host "  WARNING: moonmodel not found at $patchDir" -ForegroundColor Red
+    Write-Host "  Run 'moon build' first to download dependencies" -ForegroundColor Yellow
 }
 
 # 4. Full build + tests
@@ -60,3 +70,4 @@ Pop-Location
 
 Write-Host "`n=== Setup complete! ===" -ForegroundColor Green
 Write-Host "Run 'cd web; npm run dev' to preview at http://127.0.0.1:3000" -ForegroundColor Cyan
+
