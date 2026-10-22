@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -17,4 +17,53 @@ body {
 
 .drop-badge {
   @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* Change highlight animation */
+@keyframes line-flash {
+  0% { background-color: rgba(251, 191, 36, 0.4); }
+  50% { background-color: rgba(251, 191, 36, 0.2); }
+  100% { background-color: rgba(251, 191, 36, 0.1); }
+}
+
+.line-changed {
+  animation: line-flash 1.5s ease-out;
+  border-left: 2px solid #f59e0b;
+  padding-left: 4px;
+  margin-left: -6px;
+}
+
+/* Panel update animation */
+@keyframes panel-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
+  70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.panel-updated {
+  animation: panel-pulse 1s ease-out;
+}
+
+/* Onboarding overlay */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding-card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.dark .onboarding-card {
+  background: #1e293b;
+  color: #f1f5f9;
 }

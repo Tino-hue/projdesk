@@ -1,4 +1,4 @@
-﻿// Lightweight syntax highlighter for JSON / SQL / GraphQL
+// Lightweight syntax highlighter for JSON / SQL / GraphQL
 // Renders <span> tokens with color classes 鈥?no external deps
 
 type Token = { type: string; text: string };
@@ -94,7 +94,7 @@ export function HighlightedCode({ code, lang, changedLines }: { code: string; la
         return (
           <div
             key={i}
-            className={isChanged ? 'bg-amber-500/20 border-l-2 border-amber-400 pl-1 -ml-1' : ''}
+            className={isChanged ? 'line-changed' : ''}
           >
             {line.length === 0 ? '聽' : highlightLine(line, lang)}
           </div>
