@@ -1,72 +1,70 @@
-# ProjDesk 3 分钟演示脚本
+# ProjDesk 3-Minute Demo Script
 
-## 开场（20 秒）
+## Opening (20s)
 
-> 「我是 ProjDesk——一定义，四张图。当你要声明一个业务对象时，不用再写四遍 schema。在这里说一次，四个世界同时看到结果。」
+> "I'm ProjDesk — One Definition, Four Projections. When you need to declare a business object, you shouldn't write four schemas. Say it once here, and see all four worlds at the same time."
 
-**展示产品三原则**（口播）：
-1. 一份真相，四种投影——算法全在 MoonBit 内核
-2. 诚实投影——放不下的约束，告诉你为什么
-3. 演示优先——改一处，四栏同步
-
----
-
-## 高潮 1：打开 User 样例，改 longest（40 秒）
-
-1. 打开页面 → User 样例自动加载，四栏立刻有输出
-2. 找到 `name` 字段的约束面板
-3. 把 `longest` 从 **64** 改成 **32**
-4. **指向四栏**：
-   - JSON Schema：`"maxLength": 32`
-   - OpenAPI：同上
-   - SQL：`CHECK (length(name) <= 32)`
-   - GraphQL：**不变**（丢弃报告亮起：「GraphQL SDL 不承载长度约束」）
-
-> 「改一处，四栏同步。GraphQL 装不下？诚实告诉你。」
+**Show the three product principles** (speak them):
+1. One source of truth, four projections — all algorithms in the MoonBit kernel
+2. Honest projection — what doesn't fit is shown as "dropped + reason"
+3. Demo first — edit once, all four panels update together
 
 ---
 
-## 高潮 2：打开 id.unique（30 秒）
+## Climax 1: Open User preset, change longest (40s)
 
-1. 找到 `id` 字段
-2. 勾选 `unique`
-3. **指向结果**：
-   - SQL：出现 `UNIQUE` ✓
-   - JSON Schema / OpenAPI / GraphQL：丢弃报告亮起
-     - 「JSON Schema 只能表达 uniqueItems，无法表达记录级 unique」
-     - 「GraphQL SDL 不承载记录级唯一约束」
+1. Open the page -> User preset loads automatically, four panels have output
+2. Find the `name` field's constraint panel
+3. Change `longest` from **64** to **32**
+4. **Point at the four panels**:
+   - JSON Schema: `"maxLength": 32`
+   - OpenAPI: same
+   - SQL: `CHECK (length(name) <= 32)`
+   - GraphQL: **unchanged** (drop report lights up: "GraphQL cannot carry length constraints")
 
-> 「SQL 装得下，其他三个装不下——原因各不相同，全部诚实展示。」
-
----
-
-## 高潮 3：拨动 required / nullable（30 秒）
-
-1. 选 `avatar` 字段（当前：required=false, nullable=true）
-2. 先勾选 `required`，再取消 `nullable`
-3. **指向四栏差异**：
-   - JSON Schema：`"required"` 数组出现 `avatar`；type 不再含 `"null"`
-   - OpenAPI：`"nullable": false`
-   - SQL：出现 `NOT NULL`
-   - GraphQL：类型后出现 `!`
-
-> 「required 和 nullable 是两个独立开关，四个目标的语义各不相同——这就是为什么要一次定义、四张图。」
+> "Edit one place, four panels update together. GraphQL can't carry it? It honestly tells you."
 
 ---
 
-## 高潮 4：跑 moon test（30 秒）
+## Climax 2: Enable id.unique (30s)
 
-1. 切到终端
+1. Find the `id` field
+2. Check `unique`
+3. **Point at results**:
+   - SQL: `UNIQUE` appears
+   - JSON Schema / OpenAPI / GraphQL: drop reports light up with different reasons
+
+> "SQL carries it. The other three honestly say they can't — with different reasons."
+
+---
+
+## Climax 3: Toggle required / nullable (30s)
+
+1. Select `avatar` field (currently: required=false, nullable=true)
+2. Check `required`, then uncheck `nullable`
+3. **Point at four-panel differences**:
+   - JSON Schema: `"required"` array gains `avatar`; type no longer `["string","null"]`
+   - OpenAPI: `"nullable": false`
+   - SQL: `NOT NULL` appears
+   - GraphQL: `!` appears
+
+> "required and nullable are two independent switches — each target has different semantics. That's why one definition, four projections."
+
+---
+
+## Climax 4: Run moon test (30s)
+
+1. Switch to terminal
 2. `cd moonbit && moon test`
-3. 展示 **21 个测试全绿**
-4. （可选）`moon build --target wasm-gc --release`
+3. Show **78 tests all green**
+4. (Optional) `moon build --target wasm-gc --release`
 
-> 「投影算法在 MoonBit 内核，契约测试锁住语义，仓库可复现。」
+> "Projection algorithms live in MoonBit, contract tests lock semantics, the repo is reproducible."
 
 ---
 
-## 收尾（20 秒）
+## Wrap-up (20s)
 
-> 「ProjDesk：元数据/契约层的一次描述、多种投影。不是 ORM，不是迁移器，不是 GraphQL 服务端——就是帮你在四个世界里把话说清楚。」
+> "ProjDesk: metadata/contract layer, one description, multiple projections. Not an ORM, not a migrator, not a GraphQL server — just helps you say it clearly in four worlds."
 
-**可选加分**：展示 Trait `Projector` 扩展点、`DropReason` 类型化结果、wasm ABI 注释。
+**Optional bonus**: Show the Projector trait extension point, DropReason types, wasm ABI comments.
