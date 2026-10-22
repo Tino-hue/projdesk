@@ -171,16 +171,24 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col dark:bg-slate-900">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
-        <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">ProjDesk <span className="text-xs font-normal text-slate-400">One Definition, Four Projections</span></h1>
-        <div className="flex items-center gap-1.5">
-          <select className="px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-xs bg-white dark:bg-slate-700 dark:text-slate-200" value={openapiDialect} onChange={(e) => setOpenapiDialect(e.target.value as OpenApiDialect)}>
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-700/60 px-5 py-2.5 flex items-center justify-between gap-3 shrink-0 sticky top-0 z-20">
+        <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm shadow-blue-500/20">
+              <span className="text-white text-xs font-bold">P</span>
+            </div>
+            <div>
+              <h1 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100 leading-none">ProjDesk</h1>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">One Definition, Four Projections</p>
+            </div>
+          </div>
+        <div className="flex items-center gap-1">
+          <select className="px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-xs bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/40 transition-colors" value={openapiDialect} onChange={(e) => setOpenapiDialect(e.target.value as OpenApiDialect)}>
             <option value="OpenApi30">OpenAPI 3.0</option><option value="OpenApi31">OpenAPI 3.1</option><option value="Swagger20">Swagger 2.0</option>
           </select>
-          <select className="px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-xs bg-white dark:bg-slate-700 dark:text-slate-200" value={sqlDialect} onChange={(e) => setSqlDialect(e.target.value as SqlDialect)}>
+          <select className="px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-xs bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/40 transition-colors" value={sqlDialect} onChange={(e) => setSqlDialect(e.target.value as SqlDialect)}>
             <option value="Postgres">Postgres</option><option value="Sqlite">SQLite</option><option value="Mysql">MySQL</option>
           </select>
-          <select className="px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-xs bg-white dark:bg-slate-700 dark:text-slate-200" value="" onChange={(e) => { const p = presets.find((x) => x.name === e.target.value); if (p) { const entry = { id: genId(), model: { name: p.name, doc: p.doc, fields: p.fields } }; setModels((prev) => [...prev, entry]); setActiveId(entry.id); } }}>
+          <select className="px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-xs bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/40 transition-colors" value="" onChange={(e) => { const p = presets.find((x) => x.name === e.target.value); if (p) { const entry = { id: genId(), model: { name: p.name, doc: p.doc, fields: p.fields } }; setModels((prev) => [...prev, entry]); setActiveId(entry.id); } }}>
             <option value="">+ Preset...</option>
             {presets.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
           </select>

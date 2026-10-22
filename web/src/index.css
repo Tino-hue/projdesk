@@ -1,54 +1,73 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Design Tokens ===== */
+:root {
+  --accent: 217 91% 60%; /* blue-500 */
+  --accent-soft: 217 91% 96%; /* blue-50 */
+  --surface: 0 0% 100%;
+  --surface-muted: 220 14% 96%;
+  --border: 220 13% 91%;
+  --text: 224 71% 4%;
+  --text-secondary: 220 9% 46%;
+  --text-tertiary: 220 9% 70%;
+}
+
+/* ===== Base ===== */
 body {
-  @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100;
-  font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  @apply text-slate-800 antialiased;
+  font-family: 'Inter', -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
+.dark body {
+  @apply text-slate-100;
+}
+
+/* ===== Code blocks ===== */
 .code-block {
-  @apply font-mono text-xs leading-relaxed whitespace-pre overflow-auto bg-slate-900 text-slate-100 rounded-lg p-4;
+  @apply font-mono text-[11px] leading-[1.7] overflow-auto;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  tab-size: 2;
 }
 
-.dark .code-block {
-  @apply bg-slate-950;
-}
-
+/* ===== Drop badges ===== */
 .drop-badge {
-  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium leading-none;
 }
 
-/* Change highlight animation */
+/* ===== Change highlight animation ===== */
 @keyframes line-flash {
-  0% { background-color: rgba(251, 191, 36, 0.4); }
-  50% { background-color: rgba(251, 191, 36, 0.2); }
-  100% { background-color: rgba(251, 191, 36, 0.1); }
+  0% { background-color: rgba(251, 191, 36, 0.35); }
+  40% { background-color: rgba(251, 191, 36, 0.15); }
+  100% { background-color: rgba(251, 191, 36, 0.08); }
 }
 
 .line-changed {
-  animation: line-flash 1.5s ease-out;
+  animation: line-flash 2s ease-out;
   border-left: 2px solid #f59e0b;
-  padding-left: 4px;
-  margin-left: -6px;
+  padding-left: 6px;
+  margin-left: -8px;
 }
 
-/* Panel update animation */
+/* ===== Panel update pulse ===== */
 @keyframes panel-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
-  70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.15); }
+  70% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0); }
   100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
 
 .panel-updated {
-  animation: panel-pulse 1s ease-out;
+  animation: panel-pulse 0.8s ease-out;
 }
 
-/* Onboarding overlay */
+/* ===== Onboarding overlay ===== */
 .onboarding-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -57,13 +76,28 @@ body {
 
 .onboarding-card {
   background: white;
-  border-radius: 12px;
-  padding: 32px;
-  max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 36px;
+  max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .dark .onboarding-card {
   background: #1e293b;
   color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== Scrollbar polish ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+
+.dark ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.6); }
+
+/* ===== Selection ===== */
+::selection {
+  background-color: rgba(59, 130, 246, 0.2);
 }
