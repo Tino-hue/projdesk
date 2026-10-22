@@ -1,4 +1,4 @@
-// localStorage persistence for models and settings
+﻿// localStorage persistence for models and settings
 
 const STORAGE_KEY = 'projdesk_state';
 
@@ -23,6 +23,7 @@ export function loadState(): SavedState | null {
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!Array.isArray(data.models) || data.models.length === 0) return null;
+    if (data.models.length > 50) return null;
     return data as SavedState;
   } catch {
     return null;
@@ -36,3 +37,4 @@ export function clearState(): void {
     // ignore
   }
 }
+

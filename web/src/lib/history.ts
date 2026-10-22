@@ -1,4 +1,4 @@
-// Undo/Redo history manager
+﻿// Undo/Redo history manager
 // Stores model states and allows stepping back/forward
 
 interface HistoryEntry {
@@ -55,10 +55,13 @@ export function encodeToHash(data: { models: unknown[]; activeId: string; openap
 }
 
 export function decodeFromHash(hash: string): { models: unknown[]; activeId: string; openapiDialect: string; sqlDialect: string } | null {
+  if (!hash || hash.length > 500000) return null;
   try {
     const json = decodeURIComponent(atob(hash));
+    if (json.length > 1000000) return null;
     return JSON.parse(json);
   } catch {
     return null;
   }
 }
+
