@@ -83,8 +83,18 @@ fn preset_user() -> @moonmodel.Model {
         doc="tag list",
         check=@moonmodel.Check::new(distinct=true, longest=10),
       ),
-      @moonmodel.Field::new("labels", Dict(Text), required=false, doc="custom labels"),
-      @moonmodel.Field::new("home", Ref("Address"), required=false, doc="home address"),
+      @moonmodel.Field::new(
+        "labels",
+        Dict(Text),
+        required=false,
+        doc="custom labels",
+      ),
+      @moonmodel.Field::new(
+        "home",
+        Ref("Address"),
+        required=false,
+        doc="home address",
+      ),
     ],
     doc="user account",
   )

@@ -1,0 +1,15 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Tino-hue/projdesk-kernel/jsonparse"
+
+// Values
+pub fn parse_json(String) -> Json
+
+pub fn stringify_json(Json, indent? : Int) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

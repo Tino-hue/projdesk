@@ -1,7 +1,6 @@
 pkgtype(kind: "foreign_library")
 
 import {
-  "moonbitlang/core/debug",
   "moonbitstack/moonmodel",
   "moonbitstack/moonmodel/json",
   "moonbitstack/moonmodel/open",
@@ -10,12 +9,6 @@ import {
   "Tino-hue/projdesk-kernel/jsonparse",
 }
 
-// wasm-gc + JS string builtins: exported String params/returns map to JS string
-// Browser / Node instantiate needs: { builtins: ["js-string"], importedStringConstants: "_" }
 options(
-  "link": {
-    "wasm-gc": {
-      "use-js-builtin-string": true,
-    },
-  },
+  link: { "wasm-gc": { "use-js-builtin-string": true } },
 )

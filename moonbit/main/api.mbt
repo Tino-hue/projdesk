@@ -1,4 +1,4 @@
-﻿// ProjDesk WASM API
+// ProjDesk WASM API
 //
 // Compile: moon build --target wasm-gc --release
 // JS instantiate: { builtins: ["js-string"], importedStringConstants: "_" }
@@ -11,7 +11,12 @@ pub fn project_from_json(input_json : String) -> String {
   if input.model.name == "" {
     return error_json("input JSON missing model name")
   }
-  let result = project_all(input.model, input.known, openapi_dialect=input.openapi_dialect, sql_dialect=input.sql_dialect)
+  let result = project_all(
+    input.model,
+    input.known,
+    _openapi_dialect=input.openapi_dialect,
+    sql_dialect=input.sql_dialect,
+  )
   result_to_json(result, input.model, input.known)
 }
 
@@ -28,7 +33,11 @@ pub fn get_presets_json() -> String {
 
 ///|
 /// Serialize ProjectionResult to JSON string
-fn result_to_json(result : ProjectionResult, model : @moonmodel.Model, known : Array[@moonmodel.Model]) -> String {
+fn result_to_json(
+  result : ProjectionResult,
+  model : @moonmodel.Model,
+  known : Array[@moonmodel.Model],
+) -> String {
   let out : Map[String, Json] = Map([])
   out["ok"] = Json::boolean(true)
   out["jsonSchema"] = Json::string(result.json_schema)
@@ -174,6 +183,3 @@ fn error_json(msg : String) -> String {
   out["error"] = Json::string(msg)
   Json::object(out).stringify()
 }
-
-
-

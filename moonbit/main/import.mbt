@@ -1,4 +1,4 @@
-﻿// Reverse import: parse JSON Schema into moonmodel.Model
+// Reverse import: parse JSON Schema into moonmodel.Model
 
 ///|
 /// Parse a JSON Schema type string to moonmodel.Type
@@ -21,7 +21,7 @@ fn ref_to_name(ref_str : String) -> String {
   let mut i = ref_str.length() - 1
   while i >= 0 {
     if ref_str[i] == '/' {
-      name = ref_str[i+1:].to_string()
+      name = ref_str[i + 1:].to_owned()
       break
     }
     i = i - 1
@@ -41,7 +41,7 @@ fn parse_js_property(j : Json) -> @moonmodel.Type {
       let mut base_type = "any"
       match map.get("type") {
         Some(String(s)) => base_type = s
-        Some(Array(items)) => {
+        Some(Array(items)) =>
           for item in items {
             if item != Json::string("null") {
               match item {
@@ -53,7 +53,6 @@ fn parse_js_property(j : Json) -> @moonmodel.Type {
               }
             }
           }
-        }
         _ => ()
       }
       match base_type {
@@ -124,10 +123,17 @@ fn parse_js_check(j : Json) -> @moonmodel.Check {
         _ => false
       }
       {
-        least, most, over, under, step,
-        shortest, longest,
-        pattern, format,
-        options, distinct,
+        least,
+        most,
+        over,
+        under,
+        step,
+        shortest,
+        longest,
+        pattern,
+        format,
+        options,
+        distinct,
         unique: false,
       }
     }
@@ -171,7 +177,8 @@ pub fn import_from_json_schema(j : Json) -> @moonmodel.Model {
         let is_nullable = match prop_val {
           Object(pm) =>
             match pm.get("type") {
-              Some(Array(types)) => types.any(fn(t) { t == Json::string("null") })
+              Some(Array(types)) =>
+                types.any(fn(t) { t == Json::string("null") })
               _ => false
             }
           _ => false
@@ -190,7 +197,17 @@ pub fn import_from_json_schema(j : Json) -> @moonmodel.Model {
           Object(pm) => pm.get("default")
           _ => None
         }
-        out.push(@moonmodel.Field::new(prop_name, kind, required=is_required, nullable=is_nullable, doc=prop_doc, default?, check~))
+        out.push(
+          @moonmodel.Field::new(
+            prop_name,
+            kind,
+            required=is_required,
+            nullable=is_nullable,
+            doc=prop_doc,
+            default?,
+            check~,
+          ),
+        )
       }
       out
     }
@@ -207,4 +224,3 @@ pub fn import_from_json_schema_str(text : String) -> String {
   let model = import_from_json_schema(j)
   model_to_json(model).stringify()
 }
-
