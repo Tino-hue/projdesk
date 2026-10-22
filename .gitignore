@@ -29,3 +29,6 @@ Thumbs.db
 # WASM build artifacts
 *.wasm
 
+
+# Wrangler local state
+backend/.wrangler/
