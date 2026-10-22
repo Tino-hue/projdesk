@@ -1,4 +1,4 @@
-name: CI & Deploy
+﻿name: CI & Deploy
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
 
       - name: MoonBit format check
         working-directory: moonbit
-        run: moon fmt --check || echo "WARNING: fmt differences (Int vs Int32 toolchain mismatch, non-blocking)"
+        run: moon fmt --check || echo 'WARNING: fmt differences (Int vs Int32 toolchain mismatch, non-blocking)'
 
       - name: MoonBit info
         working-directory: moonbit
