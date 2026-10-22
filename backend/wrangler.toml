@@ -1,4 +1,4 @@
-name = "projdesk-api"
+﻿name = "projdesk-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "projdesk-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_id = "242961cc-a5d1-440d-a4b9-5b95a20966dd"
 
 [vars]
 CORS_ORIGIN = "https://tino-hue.github.io"
