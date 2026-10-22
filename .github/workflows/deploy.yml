@@ -54,6 +54,7 @@ jobs:
 
       - name: Copy WASM
         run: |
+          mkdir -p web/public cli
           cp moonbit/_build/wasm-gc/release/build/main/main.wasm web/public/projdesk.wasm
           cp moonbit/_build/wasm-gc/release/build/main/main.wasm cli/projdesk.wasm
 
@@ -77,4 +78,5 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
 
