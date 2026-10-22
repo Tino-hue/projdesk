@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+﻿import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -12,8 +12,10 @@ const Ctx = createContext<ThemeCtx>({ theme: 'system', resolved: 'light', setThe
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('projdesk_theme');
-    return (saved as Theme) || 'system';
+    try {
+      const saved = localStorage.getItem('projdesk_theme');
+      return (saved as Theme) || 'system';
+    } catch { return 'system'; }
   });
 
   const [systemDark, setSystemDark] = useState(
@@ -30,7 +32,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const resolved: 'light' | 'dark' = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
 
   useEffect(() => {
-    localStorage.setItem('projdesk_theme', theme);
+    try { localStorage.setItem('projdesk_theme', theme); } catch { /* ignore */ }
     document.documentElement.classList.toggle('dark', resolved === 'dark');
   }, [theme, resolved]);
 
@@ -40,3 +42,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme() {
   return useContext(Ctx);
 }
+
