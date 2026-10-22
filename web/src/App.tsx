@@ -5,6 +5,7 @@ import { importModel, downloadModel } from './lib/modelio';
 import { HistoryManager, encodeToHash, decodeFromHash } from './lib/history';
 import { saveState, loadState, clearState } from './lib/persistence';
 import { useTheme } from './lib/theme';
+import { createBackup, downloadBackup, parseBackup, shouldRemindBackup, markBackupDone } from './lib/backup';
 import { FieldList } from './components/FieldList';
 import { OutputPanels } from './components/OutputPanels';
 import { DiffPanel } from './components/DiffPanel';
@@ -203,7 +204,25 @@ export default function App() {
           <button className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded disabled:opacity-40" disabled={!canRedo} onClick={redo} title="Ctrl+Shift+Z">Redo</button>
           <button className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded" onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')} title="Toggle theme">{resolved === 'dark' ? 'L' : 'D'}</button>
           <button className="px-2 py-1 text-xs bg-emerald-500 text-white rounded hover:bg-emerald-600" onClick={shareUrl}>Share</button>
+          <button className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 rounded" onClick={() => { const b = createBackup(models, activeId, { openapiDialect, sqlDialect, theme: resolved }); downloadBackup(b); markBackupDone(); }} title="Download all models as backup file">Backup</button>
+          <label className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 rounded cursor-pointer" title="Restore from backup file">Restore<input type="file" accept=".json" className="hidden" onChange={(e) => {
+            const f = e.target.files?.[0]; if (!f) return;
+            f.text().then((t) => {
+              const b = parseBackup(t);
+              if (b) {
+                const entries = b.models.map((m) => ({ id: genId(), model: m.model }));
+                setModels(entries);
+                setActiveId(b.activeId || entries[0]?.id || '');
+                if (b.settings.openapiDialect) setOpenapiDialect(b.settings.openapiDialect as OpenApiDialect);
+                if (b.settings.sqlDialect) setSqlDialect(b.settings.sqlDialect as SqlDialect);
+                setError(null);
+              } else {
+                setError('Invalid backup file');
+              }
+            }); e.target.value = '';
+          }} /></label>
           {shareMsg && <span className="text-xs text-emerald-600 dark:text-emerald-400">{shareMsg}</span>}
+          {shouldRemindBackup() && <span className="text-xs text-amber-500 dark:text-amber-400" title="Consider backing up your models">Backup?</span>}
           <button className="px-2 py-1 text-xs text-slate-400 hover:text-red-500 rounded" onClick={() => { clearState(); location.reload(); }}>Reset</button>
         </div>
       </header>
@@ -251,6 +270,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

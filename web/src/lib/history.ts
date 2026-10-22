@@ -11,8 +11,27 @@ export class HistoryManager {
   private pointer = -1;
   private maxDepth = 50;
 
+  constructor() {
+    // Restore from localStorage
+    try {
+      const raw = localStorage.getItem('projdesk_history');
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.stack) && data.stack.length > 0) {
+          this.stack = data.stack.slice(-this.maxDepth);
+          this.pointer = Math.max(0, Math.min(data.pointer ?? this.stack.length - 1, this.stack.length - 1));
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  private persist(): void {
+    try {
+      localStorage.setItem('projdesk_history', JSON.stringify({ stack: this.stack.slice(-30), pointer: this.pointer }));
+    } catch { /* storage full */ }
+  }
+
   push(entry: HistoryEntry): void {
-    // Truncate future states
     this.stack = this.stack.slice(0, this.pointer + 1);
     this.stack.push(entry);
     if (this.stack.length > this.maxDepth) {
@@ -20,17 +39,20 @@ export class HistoryManager {
     } else {
       this.pointer++;
     }
+    this.persist();
   }
 
   undo(): HistoryEntry | null {
     if (this.pointer <= 0) return null;
     this.pointer--;
+    this.persist();
     return this.stack[this.pointer] ?? null;
   }
 
   redo(): HistoryEntry | null {
     if (this.pointer >= this.stack.length - 1) return null;
     this.pointer++;
+    this.persist();
     return this.stack[this.pointer] ?? null;
   }
 
@@ -64,4 +86,5 @@ export function decodeFromHash(hash: string): { models: unknown[]; activeId: str
     return null;
   }
 }
+
 
