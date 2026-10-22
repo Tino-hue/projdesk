@@ -8,8 +8,11 @@ fn safe_ident(name : String) -> String {
   let mut count = 0
   for i = 0; i < name.length() && count < 100; i = i + 1 {
     let code = name[i].to_int()
-    if (code >= 97 && code <= 122) || (code >= 65 && code <= 90) || (code >= 48 && code <= 57) || code == 95 {
-      out.write_char(Char::from_int(code))
+    if (code >= 97 && code <= 122) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 48 && code <= 57) ||
+      code == 95 {
+      out.write_char(code.unsafe_to_char())
     } else {
       out.write_char('_')
     }
@@ -32,7 +35,10 @@ fn ts_type(kind : @moonmodel.Type) -> String {
     List(inner) => "\{ts_type(inner)}[]"
     Dict(inner) => "Record<string, \{ts_type(inner)}>"
     Ref(name) => name
-    Nest(model) => "{ " + model.fields.map(fn(f) { "\{f.name}: \{ts_type(f.kind)}" }).join("; ") + " }"
+    Nest(model) =>
+      "{ " +
+      model.fields.map(fn(f) { "\{f.name}: \{ts_type(f.kind)}" }).join("; ") +
+      " }"
     Raw(_) => "unknown"
   }
 }
@@ -77,7 +83,10 @@ fn zod_type(kind : @moonmodel.Type) -> String {
     List(inner) => "z.array(\{zod_type(inner)})"
     Dict(inner) => "z.record(z.string(), \{zod_type(inner)})"
     Ref(name) => name
-    Nest(model) => "z.object({" + model.fields.map(fn(f) { "\{f.name}: \{zod_type(f.kind)}" }).join(", ") + "})"
+    Nest(model) =>
+      "z.object({" +
+      model.fields.map(fn(f) { "\{f.name}: \{zod_type(f.kind)}" }).join(", ") +
+      "})"
     Raw(_) => "z.unknown()"
   }
 }
@@ -95,12 +104,18 @@ pub fn project_zod(
     for f in k.fields {
       let base = zod_type(f.kind)
       let with_null = if f.nullable { "\{base}.nullable()" } else { base }
-      let wrapped = if f.required { with_null } else { "\{with_null}.optional()" }
+      let wrapped = if f.required {
+        with_null
+      } else {
+        "\{with_null}.optional()"
+      }
       out.write_string("  \{safe_ident(f.name)}: \{wrapped},\n")
     }
     out.write_string("});\n\n")
   }
-  out.write_string("export const \{safe_ident(model.name)}Schema = z.object({\n")
+  out.write_string(
+    "export const \{safe_ident(model.name)}Schema = z.object({\n",
+  )
   for f in model.fields {
     let base = zod_type(f.kind)
     let with_null = if f.nullable { "\{base}.nullable()" } else { base }
@@ -108,7 +123,9 @@ pub fn project_zod(
     out.write_string("  \{safe_ident(f.name)}: \{wrapped},\n")
   }
   out.write_string("});\n\n")
-  out.write_string("export type \{safe_ident(model.name)} = z.infer<typeof \{safe_ident(model.name)}Schema>;\n")
+  out.write_string(
+    "export type \{safe_ident(model.name)} = z.infer<typeof \{safe_ident(model.name)}Schema>;\n",
+  )
   out.to_string()
 }
 

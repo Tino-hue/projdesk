@@ -1,4 +1,4 @@
-﻿// Pluggable Projector trait and typed DropReason
+// Pluggable Projector trait and typed DropReason
 // This is the MoonBit depth showcase: trait + ADT + pattern matching
 
 ///|
@@ -27,12 +27,14 @@ pub fn DropReason::to_text(self : DropReason) -> String {
   match self {
     UniqueNotCarried(f) => "\{f}.unique: record-level unique is not expressible"
     PatternNotCarried(f) => "\{f}.pattern: regex constraint not supported"
-    FormatNotCarried(f) => "\{f}.format: format is documentation semantics, not a constraint"
+    FormatNotCarried(f) =>
+      "\{f}.format: format is documentation semantics, not a constraint"
     StepNotCarried(f) => "\{f}.step: multipleOf predicate not available"
     DistinctNotCarried(f) => "\{f}.distinct: list dedup has different semantics"
     BoundsNotCarried(f, b) => "\{f}.\{b}: numeric bounds not supported"
     LengthNotCarried(f) => "\{f}: length constraints not supported"
-    OptionsNotCarried(f) => "\{f}.options: closed set not auto-generated as enum"
+    OptionsNotCarried(f) =>
+      "\{f}.options: closed set not auto-generated as enum"
     FieldNotCarried(f, k, why) => "\{f} (\{k}): \{why}"
   }
 }
@@ -75,29 +77,29 @@ pub(open) trait Projector {
   /// Target name (e.g. "JSON Schema 2020-12")
   fn target_name(Self) -> String
   /// Project a model into target artifact + list of drop reasons
-  fn project(
-    Self,
-    model : @moonmodel.Model,
-    known : Array[@moonmodel.Model],
-  ) -> (String, Array[DropReason])
+  fn project(Self, model : @moonmodel.Model, known : Array[@moonmodel.Model]) -> (
+    String,
+    Array[DropReason],
+  )
 }
 
 ///|
 /// JSON Schema projector
-pub(all) struct JsonProjector {
-}
+pub(all) struct JsonProjector {}
 
 ///|
-pub impl Projector for JsonProjector with target_name(self) -> String {
+pub impl Projector for JsonProjector with fn target_name(_self) -> String {
   "JSON Schema 2020-12"
 }
 
 ///|
-pub impl Projector for JsonProjector with project(
-  self,
-  model,
-  known,
-) -> (String, Array[DropReason]) {
+pub extend JsonProjector with Projector::{target_name, project}
+
+///|
+pub impl Projector for JsonProjector with fn project(_self, model, known) -> (
+  String,
+  Array[DropReason],
+) {
   let doc = @json.document(model, known~)
   let text = doc.stringify(indent=2)
   let drops = []
@@ -111,20 +113,21 @@ pub impl Projector for JsonProjector with project(
 
 ///|
 /// OpenAPI projector
-pub(all) struct OpenApiProj {
-}
+pub(all) struct OpenApiProj {}
 
 ///|
-pub impl Projector for OpenApiProj with target_name(self) -> String {
+pub impl Projector for OpenApiProj with fn target_name(_self) -> String {
   "OpenAPI Schema Object"
 }
 
 ///|
-pub impl Projector for OpenApiProj with project(
-  self,
-  model,
-  _known,
-) -> (String, Array[DropReason]) {
+pub extend OpenApiProj with Projector::{target_name, project}
+
+///|
+pub impl Projector for OpenApiProj with fn project(_self, model, _known) -> (
+  String,
+  Array[DropReason],
+) {
   let schema = @open.of(model, dialect=OpenApi30)
   let text = schema.stringify(indent=2)
   let drops = []
@@ -143,16 +146,18 @@ pub(all) struct SqlProj {
 }
 
 ///|
-pub impl Projector for SqlProj with target_name(self) -> String {
+pub impl Projector for SqlProj with fn target_name(_self) -> String {
   "SQL DDL"
 }
 
 ///|
-pub impl Projector for SqlProj with project(
-  self,
-  model,
-  _known,
-) -> (String, Array[DropReason]) {
+pub extend SqlProj with Projector::{target_name, project}
+
+///|
+pub impl Projector for SqlProj with fn project(self, model, _known) -> (
+  String,
+  Array[DropReason],
+) {
   let ddl = @sql.table(model, dialect=self.dialect)
   let (_cols, skipped) = @sql.of(model, dialect=self.dialect)
   let drops = []
@@ -181,20 +186,21 @@ pub impl Projector for SqlProj with project(
 
 ///|
 /// GraphQL SDL projector
-pub(all) struct GraphqlProj {
-}
+pub(all) struct GraphqlProj {}
 
 ///|
-pub impl Projector for GraphqlProj with target_name(self) -> String {
+pub impl Projector for GraphqlProj with fn target_name(_self) -> String {
   "GraphQL SDL"
 }
 
 ///|
-pub impl Projector for GraphqlProj with project(
-  self,
-  model,
-  known,
-) -> (String, Array[DropReason]) {
+pub extend GraphqlProj with Projector::{target_name, project}
+
+///|
+pub impl Projector for GraphqlProj with fn project(_self, model, known) -> (
+  String,
+  Array[DropReason],
+) {
   let all : Array[@moonmodel.Model] = [model]
   for k in known {
     all.push(k)
@@ -249,7 +255,3 @@ pub impl Projector for GraphqlProj with project(
   }
   (text, drops)
 }
-
-
-
-

@@ -1,0 +1,108 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Tino-hue/projdesk-kernel/main"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitstack/moonmodel",
+  "moonbitstack/moonmodel/sql",
+}
+
+// Values
+pub fn drops_to_json(Array[DropReason]) -> Json
+
+pub fn get_presets_json() -> String
+
+pub fn import_from_json_schema(Json) -> @moonmodel.Model
+
+pub fn import_from_json_schema_str(String) -> String
+
+pub fn parse_input(String) -> Input
+
+pub fn preset_by_name(String) -> @moonmodel.Model?
+
+pub fn presets() -> Array[@moonmodel.Model]
+
+pub fn project_all(@moonmodel.Model, Array[@moonmodel.Model], _openapi_dialect? : String, sql_dialect? : String) -> ProjectionResult
+
+pub fn project_from_json(String) -> String
+
+pub fn project_prisma(@moonmodel.Model, Array[@moonmodel.Model]) -> String
+
+pub fn project_typescript(@moonmodel.Model, Array[@moonmodel.Model]) -> String
+
+pub fn project_zod(@moonmodel.Model, Array[@moonmodel.Model]) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum DropReason {
+  UniqueNotCarried(String)
+  PatternNotCarried(String)
+  FormatNotCarried(String)
+  StepNotCarried(String)
+  DistinctNotCarried(String)
+  BoundsNotCarried(String, String)
+  LengthNotCarried(String)
+  OptionsNotCarried(String)
+  FieldNotCarried(String, String, String)
+} derive(Eq, @debug.Debug)
+pub fn DropReason::constraint(Self) -> String
+pub fn DropReason::equal(Self, Self) -> Bool
+pub fn DropReason::field(Self) -> String
+pub fn DropReason::not_equal(Self, Self) -> Bool
+pub fn DropReason::to_repr(Self) -> @debug.Repr
+pub fn DropReason::to_text(Self) -> String
+
+pub(all) struct GraphqlProj {
+}
+pub fn GraphqlProj::project(Self, @moonmodel.Model, Array[@moonmodel.Model]) -> (String, Array[DropReason])
+pub fn GraphqlProj::target_name(Self) -> String
+pub impl Projector for GraphqlProj
+
+pub(all) struct Input {
+  model : @moonmodel.Model
+  known : Array[@moonmodel.Model]
+  openapi_dialect : String
+  sql_dialect : String
+}
+
+pub(all) struct JsonProjector {
+}
+pub fn JsonProjector::project(Self, @moonmodel.Model, Array[@moonmodel.Model]) -> (String, Array[DropReason])
+pub fn JsonProjector::target_name(Self) -> String
+pub impl Projector for JsonProjector
+
+pub(all) struct OpenApiProj {
+}
+pub fn OpenApiProj::project(Self, @moonmodel.Model, Array[@moonmodel.Model]) -> (String, Array[DropReason])
+pub fn OpenApiProj::target_name(Self) -> String
+pub impl Projector for OpenApiProj
+
+pub(all) struct ProjectionResult {
+  json_schema : String
+  openapi : String
+  sql : String
+  graphql : String
+  typescript : String
+  zod : String
+  prisma : String
+  drops_json : Array[DropReason]
+  drops_open : Array[DropReason]
+  drops_sql : Array[DropReason]
+  drops_gql : Array[DropReason]
+}
+
+pub(all) struct SqlProj {
+  dialect : @sql.Dialect
+}
+pub fn SqlProj::project(Self, @moonmodel.Model, Array[@moonmodel.Model]) -> (String, Array[DropReason])
+pub fn SqlProj::target_name(Self) -> String
+pub impl Projector for SqlProj
+
+// Type aliases
+
+// Traits
+pub(open) trait Projector {
+  fn target_name(Self) -> String
+  fn project(Self, @moonmodel.Model, Array[@moonmodel.Model]) -> (String, Array[DropReason])
+}

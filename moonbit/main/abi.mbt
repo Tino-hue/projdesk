@@ -203,5 +203,5 @@ pub fn parse_input(text : String) -> Input {
     Some(String(s)) => s
     _ => "Postgres"
   }
-  { model, known, openapi_dialect, sql_dialect }
+  { model, known, openapi_dialect, sql_dialect, }
 }

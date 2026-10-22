@@ -31,14 +31,14 @@ fn parse_sql_dialect(s : String) -> @sql.Dialect {
 pub fn project_all(
   model : @moonmodel.Model,
   known : Array[@moonmodel.Model],
-  openapi_dialect~ : String = "OpenApi30",
-  sql_dialect~ : String = "Postgres",
+  _openapi_dialect? : String = "OpenApi30",
+  sql_dialect? : String = "Postgres",
 ) -> ProjectionResult {
   // Use Projector trait implementations
-  let json_p = JsonProjector::{}
-  let open_p = OpenApiProj::{}
-  let sql_p = SqlProj::{ dialect: parse_sql_dialect(sql_dialect) }
-  let gql_p = GraphqlProj::{}
+  let json_p = JsonProjector::{ }
+  let open_p = OpenApiProj::{ }
+  let sql_p = SqlProj::{ dialect: parse_sql_dialect(sql_dialect), }
+  let gql_p = GraphqlProj::{ }
 
   let (json_text, drops_json) = json_p.project(model, known)
   let (open_text, drops_open) = open_p.project(model, known)
