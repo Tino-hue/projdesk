@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: CI & Deploy
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  test-and-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,10 +26,38 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Build frontend
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      - name: Build MoonBit kernel
+        working-directory: moonbit
+        run: |
+          moon build --target wasm-gc --release
+
+      - name: Apply moonmodel compatibility patch
+        run: |
+          sed -i 's/\bInt32\b/Int/g' moonbit/.mooncakes/moonbitstack/moonmodel/**/*.mbt 2>/dev/null || true
+          sed -i 's/Json::string("Int")/Json::string("int32")/g' moonbit/.mooncakes/moonbitstack/moonmodel/json/json.mbt 2>/dev/null || true
+          # Rebuild after patch
+          cd moonbit && moon build --target wasm-gc --release
+
+      - name: Run kernel tests
+        working-directory: moonbit
+        run: |
+          moon test
+
+      - name: Copy WASM
+        run: |
+          cp moonbit/_build/wasm-gc/release/build/main/main.wasm web/public/projdesk.wasm
+          cp moonbit/_build/wasm-gc/release/build/main/main.wasm cli/projdesk.wasm
+
+      - name: Build & test frontend
         working-directory: web
         run: |
           npm ci
+          npm run test
           npm run build
 
       - uses: actions/upload-pages-artifact@v3
@@ -37,7 +65,7 @@ jobs:
           path: web/dist
 
   deploy:
-    needs: build
+    needs: test-and-build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
