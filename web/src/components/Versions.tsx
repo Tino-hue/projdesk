@@ -25,7 +25,7 @@ export function VersionSnapshots({ model, onRestore }: Props) {
     const entry: Snapshot = { label, data: JSON.stringify(model), timestamp: Date.now() };
     const next = [...snapshots, entry].slice(-20);
     setSnapshots(next);
-    localStorage.setItem('projdesk_snapshots', JSON.stringify(next));
+    try { localStorage.setItem('projdesk_snapshots', JSON.stringify(next)); } catch { /* ignore */ }
     setName('');
   };
 
@@ -38,7 +38,7 @@ export function VersionSnapshots({ model, onRestore }: Props) {
   const remove = (idx: number) => {
     const next = snapshots.filter((_, i) => i !== idx);
     setSnapshots(next);
-    localStorage.setItem('projdesk_snapshots', JSON.stringify(next));
+    try { localStorage.setItem('projdesk_snapshots', JSON.stringify(next)); } catch { /* ignore */ }
   };
 
   return (
@@ -238,4 +238,5 @@ export function TemplateLibrary({ onSelect }: TemplateProps) {
     </details>
   );
 }
+
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 
 const STEPS = [
   {
@@ -23,13 +23,15 @@ export function Onboarding() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const seen = localStorage.getItem('projdesk_onboarded');
-    if (!seen) setVisible(true);
+    try {
+      const seen = localStorage.getItem('projdesk_onboarded');
+      if (!seen) setVisible(true);
+    } catch { setVisible(true); }
   }, []);
 
   const close = () => {
     setVisible(false);
-    localStorage.setItem('projdesk_onboarded', '1');
+    try { localStorage.setItem('projdesk_onboarded', '1'); } catch { /* ignore */ }
   };
 
   if (!visible) return null;
@@ -84,3 +86,4 @@ export function Onboarding() {
     </div>
   );
 }
+

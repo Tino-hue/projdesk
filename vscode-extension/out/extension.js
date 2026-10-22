@@ -46,8 +46,17 @@ function activate(context) {
         const config = vscode.workspace.getConfiguration('projdesk');
         const outDir = config.get('outputDir', 'generated');
         const sqlDialect = config.get('sqlDialect', 'Postgres');
+        // Validate dialect to prevent injection
+        const VALID_DIALECTS = ['Postgres', 'Sqlite', 'Mysql'];
+        const dialect = VALID_DIALECTS.includes(sqlDialect) ? sqlDialect : 'Postgres';
         try {
-            const result = (0, child_process_1.execSync)(`node "${CLI_PATH}" gen "${doc.uri.fsPath}" --out "${outDir}" --sql-dialect ${sqlDialect}`, { encoding: 'utf-8', cwd: path.dirname(doc.uri.fsPath) });
+            // Use execFileSync with array args to prevent shell injection
+            const result = (0, child_process_1.execFileSync)('node', [
+                CLI_PATH,
+                'gen', doc.uri.fsPath,
+                '--out', path.join(path.dirname(doc.uri.fsPath), outDir),
+                '--sql-dialect', dialect,
+            ], { encoding: 'utf-8', cwd: path.dirname(doc.uri.fsPath) });
             vscode.window.showInformationMessage(`ProjDesk: ${result.trim().split('\n').pop()}`);
         }
         catch (e) {
@@ -63,8 +72,18 @@ function activate(context) {
         const config = vscode.workspace.getConfiguration('projdesk');
         const sqlDialect = config.get('sqlDialect', 'Postgres');
         const openapiDialect = config.get('openapiDialect', 'OpenApi30');
+        const VALID_SQL = ['Postgres', 'Sqlite', 'Mysql'];
+        const VALID_OAPI = ['OpenApi30', 'OpenApi31', 'Swagger20'];
+        const dialect = VALID_SQL.includes(sqlDialect) ? sqlDialect : 'Postgres';
+        const oapi = VALID_OAPI.includes(openapiDialect) ? openapiDialect : 'OpenApi30';
         try {
-            const result = (0, child_process_1.execSync)(`node "${CLI_PATH}" gen "${editor.document.uri.fsPath}" --stdout --sql-dialect ${sqlDialect} --openapi-dialect ${openapiDialect}`, { encoding: 'utf-8', cwd: path.dirname(editor.document.uri.fsPath) });
+            const result = (0, child_process_1.execFileSync)('node', [
+                CLI_PATH,
+                'gen', editor.document.uri.fsPath,
+                '--stdout',
+                '--sql-dialect', dialect,
+                '--openapi-dialect', oapi,
+            ], { encoding: 'utf-8', cwd: path.dirname(editor.document.uri.fsPath) });
             const channel = vscode.window.createOutputChannel('ProjDesk');
             channel.clear();
             channel.appendLine(result);
