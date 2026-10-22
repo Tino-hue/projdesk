@@ -1,4 +1,4 @@
-# ProjDesk - One Definition, Four Projections
+﻿# ProjDesk - One Definition, Four Projections
 
 **Live Demo**: https://tino-hue.github.io/projdesk/
 
@@ -53,6 +53,20 @@ A pure-browser "model description to multi-target projection" workbench. Declare
 
 - [MoonBit toolchain](https://www.moonbitlang.cn/)
 - Node.js 18+
+
+### Fresh Clone Setup
+
+`powershell
+# Windows
+.\setup.ps1
+
+# Linux / macOS (manual)
+cd moonbit && moon build --target wasm-gc && moon test
+cp _build/wasm-gc/release/build/main/main.wasm ../web/public/projdesk.wasm
+cd ../web && npm install && npm run build && npm run test
+`
+
+> setup.ps1 automatically applies a moonmodel compatibility patch (Int32 -> Int) needed for the current MoonBit toolchain.
 
 ### One-shot Build
 
@@ -143,3 +157,4 @@ ProjDesk adds on top:
 ## License
 
 MIT
+
