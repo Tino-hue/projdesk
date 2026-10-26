@@ -11,6 +11,11 @@ pub(all) enum RoundTrip {
 ///|
 ///|
 /// Generate a DSL string from a moonmodel.Model
+pub fn model_to_dsl_public(m : @moonmodel.Model) -> String {
+  model_to_dsl(m)
+}
+
+///|
 fn model_to_dsl(m : @moonmodel.Model) -> String {
   let out = StringBuilder()
   out.write_string("model " + m.name + " {\n")
