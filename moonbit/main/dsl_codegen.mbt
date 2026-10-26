@@ -1,4 +1,4 @@
-// DSL Codegen: AST -> moonmodel.Model
+﻿// DSL Codegen: AST -> moonmodel.Model
 // Converts parsed DSL into moonmodel types for projection
 
 ///|
@@ -87,7 +87,7 @@ fn ast_field_to_moon(f : AstField) -> @moonmodel.Field {
     required=f.required,
     nullable=f.nullable,
     doc=f.doc,
-    check=check,
+    check~,
   )
 }
 
@@ -120,8 +120,8 @@ pub fn dsl_to_models(
 /// Returns: (primary model text outputs, errors)
 pub fn dsl_project(
   src : String,
-  openapi_dialect~ : String = "OpenApi30",
-  sql_dialect~ : String = "Postgres",
+  openapi_dialect? : String = "OpenApi30",
+  sql_dialect? : String = "Postgres",
 ) -> (String, Array[String]) {
   let (models, lex_errors, parse_errors) = dsl_parse(src)
   let errors = []
@@ -132,7 +132,11 @@ pub fn dsl_project(
     errors.push(e.to_text())
   }
   if errors.length() > 0 || models.length() == 0 {
-    let err_msg = if errors.length() > 0 { errors[0] } else { "no models found in source" }
+    let err_msg = if errors.length() > 0 {
+      errors[0]
+    } else {
+      "no models found in source"
+    }
     let err_arr : Array[Json] = []
     for e in errors {
       err_arr.push(Json::string(e))
@@ -150,7 +154,7 @@ pub fn dsl_project(
     return (Json::object(out).stringify(), errors)
   }
   let (primary, known) = dsl_to_models(models)
-  let result = project_all(primary, known)
+  let result = project_all(primary, known, openapi_dialect=openapi_dialect, sql_dialect=sql_dialect)
   // Return JSON with all outputs
   let out : Map[String, Json] = Map([])
   out["jsonSchema"] = Json::string(result.json_schema)

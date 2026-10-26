@@ -113,7 +113,9 @@ pub impl Projector for JsonProjector with fn project(_self, model, known) -> (
 
 ///|
 /// OpenAPI projector
-pub(all) struct OpenApiProj {}
+pub(all) struct OpenApiProj {
+  dialect : @open.Dialect
+}
 
 ///|
 pub impl Projector for OpenApiProj with fn target_name(_self) -> String {
@@ -124,11 +126,11 @@ pub impl Projector for OpenApiProj with fn target_name(_self) -> String {
 pub extend OpenApiProj with Projector::{target_name, project}
 
 ///|
-pub impl Projector for OpenApiProj with fn project(_self, model, _known) -> (
+pub impl Projector for OpenApiProj with fn project(proj, model, _known) -> (
   String,
   Array[DropReason],
 ) {
-  let schema = @open.of(model, dialect=OpenApi30)
+  let schema = @open.of(model, dialect=proj.dialect)
   let text = schema.stringify(indent=2)
   let drops = []
   for f in model.fields {

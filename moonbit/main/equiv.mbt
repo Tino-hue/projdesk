@@ -1,4 +1,4 @@
-// Semantic Equivalence: deep model comparison with type subtyping
+﻿// Semantic Equivalence: deep model comparison with type subtyping
 
 ///|
 /// Equivalence result
@@ -8,6 +8,13 @@ pub(all) enum EquivResult {
   SupertypeOf(String)
   Incompatible(String)
 } derive(Eq, Debug)
+
+///|
+pub extend EquivResult with Eq::{equal, not_equal}
+
+///|
+pub extend EquivResult with Debug::{to_repr}
+
 
 ///|
 pub fn EquivResult::to_text(self : EquivResult) -> String {
@@ -161,10 +168,7 @@ fn field_equiv(
 
 ///|
 /// Compare two models
-pub fn model_equiv(
-  a : @moonmodel.Model,
-  b : @moonmodel.Model,
-) -> EquivResult {
+pub fn model_equiv(a : @moonmodel.Model, b : @moonmodel.Model) -> EquivResult {
   if a.name != b.name {
     return Incompatible("name mismatch: " + a.name + " vs " + b.name)
   }
@@ -184,14 +188,13 @@ pub fn model_equiv(
   let mut has_supertype = false
   for f in a.fields {
     match b.field(f.name) {
-      Some(bf) => {
+      Some(bf) =>
         match field_equiv(f.name, f, bf) {
           Equivalent => ()
           SubtypeOf(_) => has_subtype = true
           SupertypeOf(_) => has_supertype = true
           Incompatible(r) => return Incompatible(r)
         }
-      }
       None => return Incompatible("field not found")
     }
   }
@@ -208,16 +211,15 @@ pub fn model_equiv(
 }
 
 ///|
-pub fn check_equivalence(
-  a : @moonmodel.Model,
-  b : @moonmodel.Model,
-) -> String {
+pub fn check_equivalence(a : @moonmodel.Model, b : @moonmodel.Model) -> String {
   let result = model_equiv(a, b)
   let out : Map[String, Json] = Map([])
   out["result"] = Json::string(result.to_text())
-  out["equivalent"] = Json::boolean(match result {
-    Equivalent => true
-    _ => false
-  })
+  out["equivalent"] = Json::boolean(
+    match result {
+      Equivalent => true
+      _ => false
+    },
+  )
   Json::object(out).stringify()
 }

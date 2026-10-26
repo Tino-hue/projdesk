@@ -9,6 +9,14 @@ pub(all) enum RoundTrip {
 } derive(Eq, Debug)
 
 ///|
+pub extend RoundTrip with Eq::{equal, not_equal}
+
+///|
+pub extend RoundTrip with Debug::{to_repr}
+
+
+///|
+
 ///|
 /// Generate a DSL string from a moonmodel.Model
 pub fn model_to_dsl_public(m : @moonmodel.Model) -> String {
@@ -153,9 +161,7 @@ pub fn roundtrip_dsl(dsl : String) -> RoundTrip {
 
 ///|
 /// Run multiple round-trip tests
-pub fn run_roundtrips(
-  models : Array[@moonmodel.Model],
-) -> String {
+pub fn run_roundtrips(models : Array[@moonmodel.Model]) -> String {
   let arr : Array[Json] = []
   let mut pass_count = 0
   for m in models {

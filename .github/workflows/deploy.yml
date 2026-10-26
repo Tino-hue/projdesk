@@ -40,7 +40,7 @@ jobs:
 
       - name: MoonBit format check
         working-directory: moonbit
-        run: moon fmt --check || true
+        run: moon fmt --check
 
       - name: MoonBit info
         working-directory: moonbit
