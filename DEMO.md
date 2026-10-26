@@ -2,69 +2,56 @@
 
 ## Opening (20s)
 
-> "I'm ProjDesk — One Definition, Four Projections. When you need to declare a business object, you shouldn't write four schemas. Say it once here, and see all four worlds at the same time."
-
-**Show the three product principles** (speak them):
-1. One source of truth, four projections — all algorithms in the MoonBit kernel
-2. Honest projection — what doesn't fit is shown as "dropped + reason"
-3. Demo first — edit once, all four panels update together
+> "ProjDesk is a model engineering workbench. Five MoonBit engines manage a data model's full lifecycle: define, analyze, evolve, compare, verify — and project it anywhere."
 
 ---
 
-## Climax 1: Open User preset, change longest (40s)
+## Climax 1: DSL Compiler (40s)
 
-1. Open the page -> User preset loads automatically, four panels have output
-2. Find the `name` field's constraint panel
-3. Change `longest` from **64** to **32**
-4. **Point at the four panels**:
-   - JSON Schema: `"maxLength": 32`
-   - OpenAPI: same
-   - SQL: `CHECK (length(name) <= 32)`
-   - GraphQL: **unchanged** (drop report lights up: "GraphQL cannot carry length constraints")
+1. Switch to **DSL mode**
+2. Type: `model User { id: Big @unique, name: Text [longest=64] }`
+3. Click **Parse** → the model appears instantly
 
-> "Edit one place, four panels update together. GraphQL can't carry it? It honestly tells you."
+> "A hand-written lexer and recursive descent parser in MoonBit turns a modeling language into a model. This is a compiler frontend."
 
 ---
 
-## Climax 2: Enable id.unique (30s)
+## Climax 2: Constraint Solver (30s)
 
-1. Find the `id` field
-2. Check `unique`
-3. **Point at results**:
-   - SQL: `UNIQUE` appears
-   - JSON Schema / OpenAPI / GraphQL: drop reports light up with different reasons
+1. Edit a field: set `least = 10` and `most = 5`
+2. The **constraint diagnosis panel** lights up red: "empty range"
 
-> "SQL carries it. The other three honestly say they can't — with different reasons."
+> "The solver catches unsatisfiable constraints before they reach production — conflict, redundancy, and containment analysis."
 
 ---
 
-## Climax 3: Toggle required / nullable (30s)
+## Climax 3: Migration Engine (40s)
 
-1. Select `avatar` field (currently: required=false, nullable=true)
-2. Check `required`, then uncheck `nullable`
-3. **Point at four-panel differences**:
-   - JSON Schema: `"required"` array gains `avatar`; type no longer `["string","null"]`
-   - OpenAPI: `"nullable": false`
-   - SQL: `NOT NULL` appears
-   - GraphQL: `!` appears
+1. Add a field, remove another, change a type
+2. Open **Migration panel** → auto-generated `ALTER TABLE` SQL
+3. Breaking changes are flagged
 
-> "required and nullable are two independent switches — each target has different semantics. That's why one definition, four projections."
+> "Evolve a model safely. Structured diff + SQL migration + breaking-change detection."
 
 ---
 
-## Climax 4: Run moon test (30s)
+## Climax 4: Equivalence Checker (30s)
 
-1. Switch to terminal
-2. `cd moonbit && moon test`
-3. Show **78 tests all green**
-4. (Optional) `moon build --target wasm-gc --release`
+1. Compare two model versions
+2. Result: `SubtypeOf` / `SupertypeOf` / `Incompatible`
 
-> "Projection algorithms live in MoonBit, contract tests lock semantics, the repo is reproducible."
+> "Type subtyping and constraint containment — the model knows if two versions are compatible."
 
 ---
 
-## Wrap-up (20s)
+## Climax 5: Projection (20s)
 
-> "ProjDesk: metadata/contract layer, one description, multiple projections. Not an ORM, not a migrator, not a GraphQL server — just helps you say it clearly in four worlds."
+> "And after the lifecycle, project to seven targets — JSON Schema, OpenAPI, SQL, GraphQL, TypeScript, Zod, Prisma — delegated to moonmodel, one step of the pipeline."
 
-**Optional bonus**: Show the Projector trait extension point, DropReason types, wasm ABI comments.
+---
+
+## Close (20s)
+
+> "Five independent MoonBit engines, 93 tests, pure browser. That's ProjDesk."
+
+**Run `moon test` live to show 93 green tests.**

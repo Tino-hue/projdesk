@@ -178,7 +178,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100 leading-none">ProjDesk</h1>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">One Definition, Four Projections</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Model Engineering Workbench</p>
             </div>
           </div>
         <div className="flex items-center gap-1">
