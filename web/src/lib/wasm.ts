@@ -1,4 +1,4 @@
-﻿// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
+// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
 
 import type { KernelInput, KernelOutput, PresetModel, ModelInput } from './types';
 
@@ -6,6 +6,10 @@ interface ProjDeskExports {
   project_from_json(input: string): string;
   get_presets_json(): string;
   import_from_json_schema_str(text: string): string;
+  dsl_project(dsl: string): string;
+  solve_constraints(model_json: string): string;
+  generate_migration(old_json: string, new_json: string): string;
+  check_equivalence(a_json: string, b_json: string): string;
 }
 
 let exportsPromise: Promise<ProjDeskExports> | null = null;
@@ -63,3 +67,23 @@ export async function importFromSchema(schemaText: string): Promise<ModelInput> 
 
 
 
+
+export async function dslProject(dsl: string): Promise<string> {
+  const kernel = await getKernel();
+  return kernel.dsl_project(dsl);
+}
+
+export async function solveConstraints(modelJson: string): Promise<string> {
+  const kernel = await getKernel();
+  return kernel.solve_constraints(modelJson);
+}
+
+export async function generateMigration(oldJson: string, newJson: string): Promise<string> {
+  const kernel = await getKernel();
+  return kernel.generate_migration(oldJson, newJson);
+}
+
+export async function checkEquivalence(aJson: string, bJson: string): Promise<string> {
+  const kernel = await getKernel();
+  return kernel.check_equivalence(aJson, bJson);
+}

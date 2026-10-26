@@ -1,4 +1,4 @@
-# ProjDesk 项目申报书
+﻿# ProjDesk 项目申报书
 
 ## 基本信息
 
@@ -35,7 +35,15 @@ ProjDesk 是一个纯浏览器运行的「模型描述 → 多目标投影」工
 
 ## 项目类型
 
-原创项目。投影能力依赖开源库 moonbitstack/moonmodel（Apache-2.0），ProjDesk 在其上构建了丢弃原因分析、WASM ABI、预设样例和前端交互层。
+原创项目。moonmodel 仅提供基础模型语义（Model/Field/Check 数据结构）与四类投影的底层转换，本项目在此之上实现了**五个独立的 MoonBit 算法引擎**：
+
+1. **DSL 编译器**：手写词法分析器 + 递归下降解析器 + AST 代码生成，支持 model User { id: Big @unique } 建模语言
+2. **约束求解器**：约束冲突/冗余/不可满足性分析（空区间、蕴含、包含关系）
+3. **模型迁移引擎**：结构化模型 diff + SQL ALTER TABLE 生成 + 破坏性变更检测
+4. **语义等价检测**：类型子类型系统（Int→Big→Real）、约束包含关系、混合方向检测
+5. **Round-trip 验证框架**：生成→解析→比较的形式化正确性验证
+
+五个引擎共 78 个专项测试（总计 93 个 MoonBit 测试），全部通过 WASM ABI 暴露给前端，构成独立的核心工程价值。
 
 ## GitHub 仓库
 

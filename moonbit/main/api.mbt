@@ -1,4 +1,4 @@
-// ProjDesk WASM API
+﻿// ProjDesk WASM API
 //
 // Compile: moon build --target wasm-gc --release
 // JS instantiate: { builtins: ["js-string"], importedStringConstants: "_" }
@@ -22,6 +22,32 @@ pub fn project_from_json(input_json : String) -> String {
 
 ///|
 /// Get preset models JSON (frontend calls this on startup)
+#export_name("dsl_project")
+pub fn dsl_project_entry(dsl : String) -> String {
+  let (output, _errors) = dsl_project(dsl)
+  output
+}
+
+#export_name("solve_constraints")
+pub fn solve_constraints_entry(model_json : String) -> String {
+  let input = parse_input(model_json)
+  solve_constraints(input.model)
+}
+
+#export_name("generate_migration")
+pub fn generate_migration_entry(old_json : String, new_json : String) -> String {
+  let old_input = parse_input(old_json)
+  let new_input = parse_input(new_json)
+  generate_migration(old_input.model, new_input.model)
+}
+
+#export_name("check_equivalence")
+pub fn check_equivalence_entry(a_json : String, b_json : String) -> String {
+  let a_input = parse_input(a_json)
+  let b_input = parse_input(b_json)
+  check_equivalence(a_input.model, b_input.model)
+}
+
 #export_name("get_presets_json")
 pub fn get_presets_json() -> String {
   let arr : Array[Json] = []

@@ -147,6 +147,20 @@ ProjDesk adds on top:
 
 ---
 
+## MoonBit Engineering Depth (Independent Core)
+
+Beyond the moonmodel projection library, ProjDesk implements five independent MoonBit algorithm engines:
+
+| Engine | Source | What it does |
+|--------|--------|--------------|
+| **DSL Compiler** | `dsl_lexer.mbt`, `dsl_parser.mbt`, `dsl_codegen.mbt` | Hand-written lexer + recursive descent parser + AST codegen for a modeling language: `model User { id: Big @unique }` |
+| **Constraint Solver** | `solver.mbt` | Conflict/redundancy/satisfiability analysis over constraint combinations (empty ranges, subsumption, options-vs-length) |
+| **Migration Engine** | `migration.mbt` | Structured model diff + SQL `ALTER TABLE` generation + breaking-change detection |
+| **Semantic Equivalence** | `equiv.mbt` | Type subtyping chain (Int->Big->Real), constraint containment, mixed-direction detection |
+| **Round-trip Framework** | `roundtrip.mbt` | Formal generate-parse-compare verification of projection correctness |
+
+These are exposed through the WASM ABI (`dsl_project`, `solve_constraints`, `generate_migration`, `check_equivalence`) and covered by 78 dedicated tests.
+
 ## Known Limitations
 
 - GraphQL `options` does not auto-generate enum types
