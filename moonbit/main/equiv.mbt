@@ -34,8 +34,29 @@ fn type_widens(from : @moonmodel.Type, to : @moonmodel.Type) -> Bool {
     (Dict(a2), Dict(b2)) => type_widens(a2, b2)
     (Ref(a2), Ref(b2)) => a2 == b2
     (Any, _) => true
+    // Nested models compare field-by-field
+    (Nest(m1), Nest(m2)) => nested_widens(m1, m2)
     _ => false
   }
+}
+
+///|
+/// Nested model widening: every field of the source must widen to the target
+fn nested_widens(from : @moonmodel.Model, to : @moonmodel.Model) -> Bool {
+  if from.fields.length() != to.fields.length() {
+    return false
+  }
+  for i = 0; i < from.fields.length(); i = i + 1 {
+    let f1 = from.fields[i]
+    let f2 = to.fields[i]
+    if f1.name != f2.name {
+      return false
+    }
+    if !type_widens(f1.kind, f2.kind) {
+      return false
+    }
+  }
+  true
 }
 
 ///|
