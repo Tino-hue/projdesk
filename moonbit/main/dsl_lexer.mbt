@@ -1,4 +1,4 @@
-﻿// DSL Lexer: source text -> Token stream
+// DSL Lexer: source text -> Token stream
 // Hand-written scanner for ProjDesk modeling language
 
 ///|
@@ -27,6 +27,7 @@ pub(all) enum Token {
   Arrow
   // Special
   Newline
+  Comment(String)
   Eof
 } derive(Eq, Debug)
 
@@ -163,6 +164,18 @@ pub fn lex(src : String) -> (Array[Lexeme], Array[LexError]) {
         Some(n) => tokens.push({ token: Number(n), line: lexer.line.val, col: start_col })
         None => errors.push(InvalidNumber(text, lexer.line.val, start_col))
       }
+    } else if c == '/' && lexer.pos.val + 1 < lexer.src.length() && lexer.src[lexer.pos.val + 1].unsafe_to_char() == '/' {
+      // Line comment: skip to end of line, emit as Comment token
+      let start_col = lexer.col.val
+      lexer.pos.val = lexer.pos.val + 2
+      lexer.col.val = lexer.col.val + 2
+      let comment_start = lexer.pos.val
+      while lexer.pos.val < lexer.src.length() && lexer.src[lexer.pos.val].unsafe_to_char() != '\n' {
+        lexer.pos.val = lexer.pos.val + 1
+        lexer.col.val = lexer.col.val + 1
+      }
+      let text = lexer.src[comment_start:lexer.pos.val].to_owned()
+      tokens.push({ token: Comment(text), line: lexer.line.val, col: start_col })
     } else if c == '"' {
       let start_col = lexer.col.val
       lexer.pos.val = lexer.pos.val + 1
@@ -268,6 +281,7 @@ pub fn Token::to_text(self : Token) -> String {
     Eq => "="
     Arrow => "->"
     Newline => "newline"
+    Comment(s) => "// " + s
     Eof => "end of input"
   }
 }
