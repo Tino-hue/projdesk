@@ -1,6 +1,7 @@
 pkgtype(kind: "foreign_library")
 
 import {
+  "moonbitlang/core/bench",
   "moonbitstack/moonmodel",
   "moonbitstack/moonmodel/json",
   "moonbitstack/moonmodel/open",
@@ -10,5 +11,9 @@ import {
 }
 
 options(
-  link: { "wasm-gc": { "use-js-builtin-string": true } },
+  "link": {
+    "wasm-gc": {
+      "use-js-builtin-string": true,
+    },
+  },
 )
