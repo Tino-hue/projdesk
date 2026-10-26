@@ -9,6 +9,7 @@ import { createBackup, downloadBackup, parseBackup, shouldRemindBackup, markBack
 import { FieldList } from './components/FieldList';
 import { OutputPanels } from './components/OutputPanels';
 import { DiffPanel } from './components/DiffPanel';
+import { EnginePanel } from './components/EnginePanel';
 import { VersionSnapshots, TemplateLibrary } from './components/Versions';
 import { importFromSchema } from './lib/wasm';
 
@@ -272,6 +273,7 @@ export default function App() {
           <TemplateLibrary onSelect={(m) => { const entry = { id: genId(), model: m }; setModels((p) => [...p, entry]); setActiveId(entry.id); }} />
           <VersionSnapshots model={activeModel || makeEmptyModel('')} onRestore={(m) => updateModel(m)} />
           <DiffPanel model={activeModel || makeEmptyModel('')} snapshots={snapshots} />
+          <EnginePanel model={activeModel || makeEmptyModel('')} />
           <OutputPanels output={output} openapiDialect={openapiDialect} sqlDialect={sqlDialect} model={activeModel || makeEmptyModel('')} known={known} />
         </div>
       </div>
