@@ -1,4 +1,4 @@
-﻿// DSL Codegen: AST -> moonmodel.Model
+// DSL Codegen: AST -> moonmodel.Model
 // Converts parsed DSL into moonmodel types for projection
 
 ///|
@@ -131,11 +131,23 @@ pub fn dsl_project(
   for e in parse_errors {
     errors.push(e.to_text())
   }
-  if errors.length() > 0 {
-    return ("", errors)
-  }
-  if models.length() == 0 {
-    return ("", ["no models found in source"])
+  if errors.length() > 0 || models.length() == 0 {
+    let err_msg = if errors.length() > 0 { errors[0] } else { "no models found in source" }
+    let err_arr : Array[Json] = []
+    for e in errors {
+      err_arr.push(Json::string(e))
+    }
+    let out : Map[String, Json] = Map([])
+    out["error"] = Json::string(err_msg)
+    out["errors"] = Json::array(err_arr)
+    out["jsonSchema"] = Json::string("")
+    out["openapi"] = Json::string("")
+    out["sql"] = Json::string("")
+    out["graphql"] = Json::string("")
+    out["typescript"] = Json::string("")
+    out["zod"] = Json::string("")
+    out["prisma"] = Json::string("")
+    return (Json::object(out).stringify(), errors)
   }
   let (primary, known) = dsl_to_models(models)
   let result = project_all(primary, known)
