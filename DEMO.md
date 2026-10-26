@@ -52,6 +52,6 @@
 
 ## Close (20s)
 
-> "Five independent MoonBit engines, 93 tests, pure browser. That's ProjDesk."
+> "Five independent MoonBit engines, 150 tests including property-based verification, pure browser. That's ProjDesk."
 
-**Run `moon test` live to show 93 green tests.**
+**Run `moon test` live to show 150 green tests.**

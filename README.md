@@ -24,7 +24,7 @@ A pure-browser workbench for the full lifecycle of a data model: **define → an
 | 4 | **Equivalence Checker** | `equiv.mbt` | ~200 | Type subtyping + constraint containment + classification |
 | 5 | **Round-trip Verifier** | `roundtrip.mbt` | ~175 | Formal generate-parse-compare correctness verification |
 
-**93 MoonBit tests** (78 dedicated to the engines) + **80 frontend tests** (15 load the real WASM kernel end-to-end).
+**150 MoonBit tests** (including 16 property-based tests over 100+ random models and 7 performance benchmarks) + **80 frontend tests** (15 load the real WASM kernel end-to-end).
 
 ---
 
@@ -54,11 +54,15 @@ model Address {
 | `Type` | `Bool` `Int` `Big` `Real` `Text` `Bytes` `Stamp` `Any` |
 | `List(T)` / `Dict(T)` | Collection types |
 | `Ref(Model)` | Reference to another model |
+| `Nest { ... }` | Inline nested model |
 | `@optional` | Field not required |
 | `@nullable` | Field may be null |
 | `@unique` | Record-level unique constraint |
 | `@distinct` | List items must differ |
 | `[constraint=value]` | `least` `most` `over` `under` `step` `shortest` `longest` `pattern` `format` `options=[a,b]` |
+| `// comment` | Line comment (ignored by the parser) |
+
+Parse errors carry a line and column, and the parser recovers to continue with the next model.
 
 ---
 
@@ -157,9 +161,25 @@ npm run dev  # http://127.0.0.1:3000
 
 | Suite | Count | Command |
 |-------|-------|---------|
-| MoonBit kernel | 93 | `cd moonbit && moon test` |
+| MoonBit kernel | 150 | `cd moonbit && moon test` |
 | Frontend unit | 65 | `cd web && npm run test` |
 | Frontend WASM integration | 15 | (same, loads real kernel) |
+
+### Test strategy
+
+Beyond hand-picked examples, the kernel is verified with **property-based testing**: a deterministic xorshift64* PRNG (implemented in MoonBit) generates random models and constraint combinations, and invariants are checked across them.
+
+| Property | Invariant |
+|----------|-----------|
+| Round-trip | `model -> DSL -> parse -> model` preserves every field, flag, and constraint |
+| DSL totality | Generated DSL always parses with zero errors |
+| Solver soundness | `least > most` is always detected; random models never crash the solver |
+| Diff symmetry | `diff(a,b)` and `diff(b,a)` yield the same change count |
+| Non-breaking add | Adding a field never produces a breaking change |
+| Self-equivalence | A model is always equivalent to itself |
+| Subtyping | Relaxing every field yields a subtype, never a supertype |
+
+Performance budgets are asserted with `monotonic_clock` for models of 100-200 fields across projection, solving, parsing, diffing, round-trip, and equivalence.
 
 CI runs `moon check`, `moon fmt --check`, `moon info`, `moon test`, `vitest`, and `vite build` on every push.
 
