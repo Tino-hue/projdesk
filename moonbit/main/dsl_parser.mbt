@@ -1,4 +1,4 @@
-﻿// DSL Parser: Token stream -> AST
+// DSL Parser: Token stream -> AST
 // Recursive descent parser for ProjDesk modeling language
 
 ///|
@@ -113,9 +113,16 @@ fn cur_pos(p : Parser) -> (Int, Int) {
 
 ///|
 /// Skip newlines
+///|
+/// Skip newlines and comments
 fn skip_newlines(p : Parser) -> Unit {
-  while peek(p) == Newline {
-    advance(p) |> ignore
+  let mut keep_going = true
+  while keep_going {
+    match peek(p) {
+      Newline => advance(p) |> ignore
+      Comment(_) => advance(p) |> ignore
+      _ => keep_going = false
+    }
   }
 }
 
@@ -335,6 +342,36 @@ fn dsl_parse_type(p : Parser) -> (AstType, Array[ParseError]) {
         None => ()
       }
       (DictOf(inner), errors)
+    }
+    KwNest => {
+      // Nest { field: Type, ... } — inline nested model
+      match expect(p, LBrace) {
+        Some(e) => errors.push(e)
+        None => ()
+      }
+      let inner_fields : Array[AstField] = []
+      skip_newlines(p)
+      while peek(p) != RBrace && peek(p) != Eof {
+        let (field, field_errors) = dsl_parse_field(p)
+        for e in field_errors {
+          errors.push(e)
+        }
+        match field {
+          Some(f) => inner_fields.push(f)
+          None => ()
+        }
+        skip_newlines(p)
+        if peek(p) == Comma {
+          advance(p) |> ignore
+          skip_newlines(p)
+        }
+      }
+      match expect(p, RBrace) {
+        Some(e) => errors.push(e)
+        None => ()
+      }
+      let nested = { name: "", fields: inner_fields, doc: "" }
+      (Nested(nested), errors)
     }
     Ident(s) => (Named(s), errors)
     _ => {
