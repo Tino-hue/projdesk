@@ -1,7 +1,7 @@
-﻿// Engine panel: exposes DSL compiler, constraint solver, migration, equivalence
+// Engine panel: exposes DSL compiler, constraint solver, migration, equivalence
 import { useState } from 'react';
 import type { ModelInput } from '../lib/types';
-import { dslProject, solveConstraints, generateMigration, checkEquivalence } from '../lib/wasm';
+import { dslProject, solveConstraints, generateMigration, checkEquivalence, verifyRoundtrip } from '../lib/wasm';
 
 const DSL_EXAMPLE = `model User {
   id: Big @unique
@@ -16,12 +16,13 @@ interface Props {
 }
 
 export function EnginePanel({ model }: Props) {
-  const [activeEngine, setActiveEngine] = useState<'dsl' | 'solver' | 'migration' | 'equiv'>('dsl');
+  const [activeEngine, setActiveEngine] = useState<'dsl' | 'solver' | 'migration' | 'equiv' | 'roundtrip'>('dsl');
   const [dslText, setDslText] = useState(DSL_EXAMPLE);
   const [dslOutput, setDslOutput] = useState('');
   const [solverOutput, setSolverOutput] = useState('');
   const [migrationOutput, setMigrationOutput] = useState('');
   const [equivOutput, setEquivOutput] = useState('');
+  const [roundtripOutput, setRoundtripOutput] = useState('');
   const [running, setRunning] = useState(false);
 
   const runDsl = async () => {
@@ -75,11 +76,23 @@ export function EnginePanel({ model }: Props) {
     setRunning(false);
   };
 
+  const runRoundtrip = async () => {
+    setRunning(true);
+    try {
+      const result = await verifyRoundtrip(JSON.stringify(model));
+      setRoundtripOutput(result);
+    } catch (e) {
+      setRoundtripOutput('Error: ' + String(e));
+    }
+    setRunning(false);
+  };
+
   const engines = [
     { key: 'dsl' as const, label: 'DSL Compiler', desc: 'Modeling language -> model' },
     { key: 'solver' as const, label: 'Constraint Solver', desc: 'Conflicts & redundancy' },
     { key: 'migration' as const, label: 'Migration', desc: 'Diff + SQL ALTER' },
     { key: 'equiv' as const, label: 'Equivalence', desc: 'Subtyping & containment' },
+    { key: 'roundtrip' as const, label: 'Round-trip', desc: 'Formal verification' },
   ];
 
   return (
@@ -164,6 +177,22 @@ export function EnginePanel({ model }: Props) {
               Check Equivalence (strict vs relaxed)
             </button>
             {equivOutput && <pre className="p-2 text-[10px] font-mono bg-slate-950 text-slate-200 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">{equivOutput}</pre>}
+          </div>
+        )}
+
+        {/* Round-trip */}
+        {activeEngine === 'roundtrip' && (
+          <div className="space-y-1.5">
+            <button
+              className="px-3 py-1 text-[11px] bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+              onClick={runRoundtrip}
+              disabled={running}
+            >
+              Verify Round-trip (model → DSL → model)
+            </button>
+            {roundtripOutput && (
+              <pre className="p-2 text-[10px] font-mono bg-slate-950 text-slate-200 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">{roundtripOutput}</pre>
+            )}
           </div>
         )}
       </div>

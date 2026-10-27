@@ -52,6 +52,24 @@ pub fn check_equivalence_entry(a_json : String, b_json : String) -> String {
 }
 
 ///|
+#export_name("verify_roundtrip")
+pub fn verify_roundtrip_entry(model_json : String) -> String {
+  let input = parse_input(model_json)
+  let result = roundtrip_model(input.model)
+  let out : Map[String, Json] = Map([])
+  match result {
+    Pass => {
+      out["ok"] = Json::boolean(true)
+      out["message"] = Json::string("round-trip verified: model -> DSL -> model preserves all fields")
+    }
+    Fail(msg) => {
+      out["ok"] = Json::boolean(false)
+      out["message"] = Json::string(msg)
+    }
+  }
+  Json::object(out).stringify()
+}
+
 #export_name("get_presets_json")
 pub fn get_presets_json() -> String {
   let arr : Array[Json] = []
