@@ -1,4 +1,4 @@
-// ProjDesk WASM API
+﻿// ProjDesk WASM API
 //
 // Compile: moon build --target wasm-gc --release
 // JS instantiate: { builtins: ["js-string"], importedStringConstants: "_" }
@@ -73,6 +73,19 @@ pub fn verify_roundtrip_entry(model_json : String) -> String {
 }
 
 ///|
+#export_name("check_semantics")
+pub fn check_semantics_entry(dsl : String) -> String {
+  let (models, lex_errors, parse_errors) = dsl_parse(dsl)
+  if lex_errors.length() > 0 || parse_errors.length() > 0 {
+    let out : Map[String, Json] = Map([])
+    out["issue_count"] = Json::number(0.0)
+    out["issues"] = Json::array([])
+    out["parse_error"] = Json::string(if lex_errors.length() > 0 { lex_errors[0].to_text() } else { parse_errors[0].to_text() })
+    return Json::object(out).stringify()
+  }
+  check_semantics_json(models)
+}
+
 #export_name("get_presets_json")
 pub fn get_presets_json() -> String {
   let arr : Array[Json] = []
