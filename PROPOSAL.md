@@ -1,4 +1,4 @@
-﻿# ProjDesk 项目申报书
+# ProjDesk 项目申报书
 
 ## 基本信息
 

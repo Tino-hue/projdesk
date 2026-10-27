@@ -1,4 +1,4 @@
-﻿// ProjDesk WASM API
+// ProjDesk WASM API
 //
 // Compile: moon build --target wasm-gc --release
 // JS instantiate: { builtins: ["js-string"], importedStringConstants: "_" }
@@ -60,7 +60,9 @@ pub fn verify_roundtrip_entry(model_json : String) -> String {
   match result {
     Pass => {
       out["ok"] = Json::boolean(true)
-      out["message"] = Json::string("round-trip verified: model -> DSL -> model preserves all fields")
+      out["message"] = Json::string(
+        "round-trip verified: model -> DSL -> model preserves all fields",
+      )
     }
     Fail(msg) => {
       out["ok"] = Json::boolean(false)
@@ -70,6 +72,7 @@ pub fn verify_roundtrip_entry(model_json : String) -> String {
   Json::object(out).stringify()
 }
 
+///|
 #export_name("get_presets_json")
 pub fn get_presets_json() -> String {
   let arr : Array[Json] = []

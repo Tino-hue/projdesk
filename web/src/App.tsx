@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { KernelInput, KernelOutput, ModelInput, PresetModel } from './lib/types';
 import { project, getPresets } from './lib/wasm';
 import { importModel, downloadModel } from './lib/modelio';

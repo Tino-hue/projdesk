@@ -1,4 +1,4 @@
-﻿// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
+// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
 
 import type { KernelInput, KernelOutput, PresetModel, ModelInput } from './types';
 

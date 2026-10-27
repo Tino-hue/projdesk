@@ -1,4 +1,4 @@
-﻿// DSL Lexer: source text -> Token stream
+// DSL Lexer: source text -> Token stream
 // Hand-written scanner for ProjDesk modeling language
 
 ///|
@@ -48,7 +48,6 @@ pub extend Token with Eq::{equal, not_equal}
 
 ///|
 pub extend Token with Debug::{to_repr}
-
 
 ///|
 

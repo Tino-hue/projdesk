@@ -1,4 +1,4 @@
-﻿// Migration engine tests
+// Migration engine tests
 
 ///|
 test "migration: field added detected" {
@@ -165,8 +165,12 @@ test "migration: @main.Migration::to_text produces readable output" {
   assert_true(
     @main.Migration::FieldAdded("x", "Text").to_text().contains("+ field x"),
   )
-  assert_true(@main.Migration::FieldRemoved("x").to_text().contains("- field x"))
   assert_true(
-    @main.Migration::TypeChanged("x", "Text", "Big").to_text().contains("Text -> Big"),
+    @main.Migration::FieldRemoved("x").to_text().contains("- field x"),
+  )
+  assert_true(
+    @main.Migration::TypeChanged("x", "Text", "Big")
+    .to_text()
+    .contains("Text -> Big"),
   )
 }

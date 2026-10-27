@@ -1,4 +1,4 @@
-﻿// Model Migration Engine: structured diff + migration code generation
+// Model Migration Engine: structured diff + migration code generation
 // Pure MoonBit algorithmic engine
 
 ///|
@@ -25,7 +25,6 @@ pub extend MigrationReport with Eq::{equal, not_equal}
 
 ///|
 pub extend MigrationReport with Debug::{to_repr}
-
 
 ///|
 

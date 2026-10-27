@@ -1,4 +1,4 @@
-﻿// DSL depth tests: comments, nested models, error positions
+// DSL depth tests: comments, nested models, error positions
 
 // ---- Comment support ----
 

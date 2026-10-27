@@ -1,4 +1,4 @@
-﻿// Semantic equivalence tests
+// Semantic equivalence tests
 
 ///|
 test "equiv: identical models are equivalent" {

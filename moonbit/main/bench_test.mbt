@@ -1,4 +1,4 @@
-﻿// Performance benchmarks for the engine pipeline
+// Performance benchmarks for the engine pipeline
 // Establishes measurable upper bounds on model size
 
 ///|

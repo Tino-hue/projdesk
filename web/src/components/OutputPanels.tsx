@@ -1,4 +1,4 @@
-﻿import { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import type { KernelOutput, DropReason, ModelInput } from '../lib/types';
 import { DropReport } from './DropReport';
 import { CoverageMatrix } from './CoverageMatrix';

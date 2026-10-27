@@ -1,4 +1,4 @@
-﻿// DSL parser tests: lexer, parser, codegen, round-trip
+// DSL parser tests: lexer, parser, codegen, round-trip
 
 // ---- Lexer tests ----
 
@@ -95,7 +95,9 @@ test "parse: field with type List(Text)" {
 
 ///|
 test "parse: field with type Ref(Address)" {
-  let (models, _, errors) = @main.dsl_parse("model T {\n  home: Ref(Address)\n}")
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  home: Ref(Address)\n}",
+  )
   assert_eq(errors.length(), 0)
   match models[0].fields[0].kind {
     RefTo(s) => assert_eq(s, "Address")
@@ -105,14 +107,18 @@ test "parse: field with type Ref(Address)" {
 
 ///|
 test "parse: field with @optional attribute" {
-  let (models, _, errors) = @main.dsl_parse("model T {\n  name: Text @optional\n}")
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  name: Text @optional\n}",
+  )
   assert_eq(errors.length(), 0)
   assert_false(models[0].fields[0].required)
 }
 
 ///|
 test "parse: field with @nullable attribute" {
-  let (models, _, errors) = @main.dsl_parse("model T {\n  name: Text @nullable\n}")
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  name: Text @nullable\n}",
+  )
   assert_eq(errors.length(), 0)
   assert_true(models[0].fields[0].nullable)
 }

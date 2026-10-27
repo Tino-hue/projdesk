@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 // ProjDesk CLI - one model description, seven projections
 // Usage:
 //   projdesk gen <model.json|model.dsl> [options]

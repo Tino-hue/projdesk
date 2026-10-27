@@ -1,4 +1,4 @@
-﻿// Constraint Solver: conflict, redundancy, and satisfiability analysis
+// Constraint Solver: conflict, redundancy, and satisfiability analysis
 // Pure MoonBit algorithmic engine
 
 ///|
@@ -19,7 +19,6 @@ pub extend Diagnosis with Eq::{equal, not_equal}
 
 ///|
 pub extend Diagnosis with Debug::{to_repr}
-
 
 ///|
 

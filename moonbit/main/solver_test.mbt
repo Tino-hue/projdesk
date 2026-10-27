@@ -1,4 +1,4 @@
-﻿// Constraint solver tests
+// Constraint solver tests
 
 // ---- Range conflicts ----
 
@@ -161,11 +161,15 @@ test "solver: solve_constraints returns valid JSON" {
 
 ///|
 test "solver: diagnosis to_text produces readable output" {
-  assert_true(@main.Diagnosis::Conflict("x", "test").to_text().contains("[CONFLICT]"))
+  assert_true(
+    @main.Diagnosis::Conflict("x", "test").to_text().contains("[CONFLICT]"),
+  )
   assert_true(
     @main.Diagnosis::Redundant("x", "test").to_text().contains("[REDUNDANT]"),
   )
-  assert_true(@main.Diagnosis::Warning("x", "test").to_text().contains("[WARNING]"))
+  assert_true(
+    @main.Diagnosis::Warning("x", "test").to_text().contains("[WARNING]"),
+  )
 }
 
 ///|

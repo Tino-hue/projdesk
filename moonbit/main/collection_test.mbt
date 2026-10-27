@@ -1,4 +1,4 @@
-﻿// Collection type equivalence + complex migration + dialect differences
+// Collection type equivalence + complex migration + dialect differences
 
 // ---- Collection type equivalence ----
 

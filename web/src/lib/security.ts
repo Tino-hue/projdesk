@@ -1,4 +1,4 @@
-﻿// Input validation: sanitize all external data (localStorage, URL hash, file import)
+// Input validation: sanitize all external data (localStorage, URL hash, file import)
 
 import type { ModelInput, FieldInput, TypeSpec, CheckInput } from './types';
 

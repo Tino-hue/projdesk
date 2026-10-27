@@ -1,4 +1,4 @@
-﻿// Undo/Redo history manager
+// Undo/Redo history manager
 // Stores model states and allows stepping back/forward
 
 interface HistoryEntry {

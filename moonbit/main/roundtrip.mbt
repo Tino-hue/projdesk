@@ -1,4 +1,4 @@
-﻿// Round-trip test framework: generate -> parse -> compare
+// Round-trip test framework: generate -> parse -> compare
 // Formal verification of projection correctness
 
 ///|
@@ -13,7 +13,6 @@ pub extend RoundTrip with Eq::{equal, not_equal}
 
 ///|
 pub extend RoundTrip with Debug::{to_repr}
-
 
 ///|
 

@@ -1,4 +1,4 @@
-﻿// DSL Codegen: AST -> moonmodel.Model
+// DSL Codegen: AST -> moonmodel.Model
 // Converts parsed DSL into moonmodel types for projection
 
 ///|
@@ -154,7 +154,7 @@ pub fn dsl_project(
     return (Json::object(out).stringify(), errors)
   }
   let (primary, known) = dsl_to_models(models)
-  let result = project_all(primary, known, openapi_dialect=openapi_dialect, sql_dialect=sql_dialect)
+  let result = project_all(primary, known, openapi_dialect~, sql_dialect~)
   // Return JSON with all outputs
   let out : Map[String, Json] = Map([])
   out["jsonSchema"] = Json::string(result.json_schema)

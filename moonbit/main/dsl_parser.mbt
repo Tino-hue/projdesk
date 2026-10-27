@@ -1,4 +1,4 @@
-﻿// DSL Parser: Token stream -> AST
+// DSL Parser: Token stream -> AST
 // Recursive descent parser for ProjDesk modeling language
 
 ///|
@@ -38,7 +38,6 @@ pub extend ParseError with Eq::{equal, not_equal}
 
 ///|
 pub extend ParseError with Debug::{to_repr}
-
 
 ///|
 

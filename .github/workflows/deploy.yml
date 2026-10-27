@@ -1,4 +1,4 @@
-﻿name: CI & Deploy
+name: CI & Deploy
 
 on:
   push:
@@ -27,9 +27,12 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Install MoonBit
+        env:
+          MOONBIT_INSTALL_VERSION: 0.1.20260920
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
+          moon version
 
       - name: Update MoonBit registry
         run: moon update

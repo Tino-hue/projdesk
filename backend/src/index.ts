@@ -1,4 +1,4 @@
-﻿// ProjDesk API — Cloudflare Worker with D1 database
+// ProjDesk API — Cloudflare Worker with D1 database
 // Stores models, versions, and share links
 
 interface Env {

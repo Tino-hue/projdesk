@@ -1,4 +1,4 @@
-﻿// Round-trip tests
+// Round-trip tests
 
 ///|
 test "roundtrip: simple model survives round-trip" {

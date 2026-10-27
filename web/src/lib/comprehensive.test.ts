@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { KernelInput, KernelOutput, ModelInput, FieldInput, TypeSpec, CheckInput, DropReason } from './types';
 
 describe('TypeSpec: every variant round-trips', () => {

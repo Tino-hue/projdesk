@@ -1,4 +1,4 @@
-﻿// localStorage persistence for models and settings
+// localStorage persistence for models and settings
 
 const STORAGE_KEY = 'projdesk_state';
 

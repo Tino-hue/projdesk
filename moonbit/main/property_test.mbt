@@ -1,4 +1,4 @@
-﻿// Property-based tests: verify engine invariants over many random models
+// Property-based tests: verify engine invariants over many random models
 // These prove correctness beyond hand-picked examples
 
 // ---- PRNG determinism ----

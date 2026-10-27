@@ -1,4 +1,4 @@
-﻿// Semantic Equivalence: deep model comparison with type subtyping
+// Semantic Equivalence: deep model comparison with type subtyping
 
 ///|
 /// Equivalence result
@@ -14,7 +14,6 @@ pub extend EquivResult with Eq::{equal, not_equal}
 
 ///|
 pub extend EquivResult with Debug::{to_repr}
-
 
 ///|
 pub fn EquivResult::to_text(self : EquivResult) -> String {

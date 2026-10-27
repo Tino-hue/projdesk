@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import type { ModelInput } from '../lib/types';
 
 interface Snapshot {
