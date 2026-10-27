@@ -4,7 +4,7 @@
 
 - 项目名称：ProjDesk：模型工程工作台（Model Engineering Workbench）
 - 参赛者：Tino-hue
-- 联系方式：（请补充）
+- 联系方式：Micxry060912@hotmil.com
 - GitHub 仓库链接：https://github.com/Tino-hue/projdesk
 - 在线演示：https://tino-hue.github.io/projdesk/
 - 项目方向：模型工程工具链 / 编译器基础设施（DSL 编译、约束求解、版本迁移、类型等价、形式化验证）
