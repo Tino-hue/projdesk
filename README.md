@@ -1,4 +1,4 @@
-# ProjDesk — Model Engineering Workbench
+﻿# ProjDesk — Model Engineering Workbench
 
 **Live Demo**: https://tino-hue.github.io/projdesk/
 
@@ -79,6 +79,20 @@ All five engines are exposed through the WASM ABI and are runnable in the browse
 | `project_from_json(model_json)` | Model JSON | Seven projections + drop reasons |
 
 ---
+
+## Relationship with moonmodel
+
+| Capability | Implemented by |
+|------------|----------------|
+| Model data structures (Model/Field/Check) | moonmodel (like a compiler's AST definition) |
+| Seven projection format conversions | moonmodel (like a compiler's backend) |
+| **DSL lexer + parser + AST codegen** | **this project** |
+| **Constraint conflict / redundancy reasoning** | **this project** |
+| **Structured model diff + migration generation** | **this project** |
+| **Type subtyping + equivalence classification** | **this project** |
+| **Round-trip formal verification** | **this project** |
+
+The five engines cover what a projection library cannot: they reason *about* the model rather than merely reformat it. Together they form a complete workflow — write DSL, solve constraints, evolve with migrations, compare versions, verify correctness, then project.
 
 ## Projection (delegated to moonmodel)
 
