@@ -4,19 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       model_path:
-        description: 'Path to model JSON'
+        description: 'Path to model JSON or .dsl file'
         required: true
-        default: 'models/model.json'
+        default: 'cli/example-model.json'
 
 jobs:
   generate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          # Node 24 is required: the kernel is compiled with wasm-gc, which
+          # Node 20 cannot instantiate ("Unknown type code 0x50").
+          node-version: 24
 
       - name: Generate projections
         run: |
