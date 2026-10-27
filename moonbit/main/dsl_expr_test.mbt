@@ -1,4 +1,4 @@
-// Constraint expression tests: arithmetic, builtins, error handling
+﻿// Constraint expression tests: arithmetic, builtins, error handling
 
 // ---- Lexer: operator tokens ----
 
@@ -53,7 +53,7 @@ test "expr: unterminated block comment consumes to end" {
 
 test "expr: arithmetic evaluates" {
   let vars : Map[String, Double] = Map([])
-  let n = match @main.eval_expr(Num(2.0) |> expr_add(Num(3.0)), vars) {
+  let n = match @main.eval_expr(@main.Num(2.0) |> expr_add(@main.Num(3.0)), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
@@ -61,13 +61,13 @@ test "expr: arithmetic evaluates" {
 }
 
 ///|
-fn expr_add(left : Expr, right : Expr) -> Expr {
-  Binop("+", left, right)
+fn expr_add(left : @main.Expr, right : @main.Expr) -> @main.Expr {
+  @main.Binop("+", left, right)
 }
 
 test "expr: multiplication evaluates" {
   let vars : Map[String, Double] = Map([])
-  let n = match @main.eval_expr(Binop("*", Num(2.0), Num(10.0)), vars) {
+  let n = match @main.eval_expr(@main.Binop("*", @main.Num(2.0), @main.Num(10.0)), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
@@ -76,7 +76,7 @@ test "expr: multiplication evaluates" {
 
 test "expr: division evaluates" {
   let vars : Map[String, Double] = Map([])
-  let n = match @main.eval_expr(Binop("/", Num(10.0), Num(4.0)), vars) {
+  let n = match @main.eval_expr(@main.Binop("/", @main.Num(10.0), @main.Num(4.0)), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
@@ -85,19 +85,19 @@ test "expr: division evaluates" {
 
 test "expr: division by zero is an error" {
   let vars : Map[String, Double] = Map([])
-  match @main.eval_expr(Binop("/", Num(1.0), Num(0.0)), vars) {
+  match @main.eval_expr(@main.Binop("/", @main.Num(1.0), @main.Num(0.0)), vars) {
     Ok(_) => abort("expected division by zero error")
-    Err(e) => assert_eq(e, DivByZero)
+    Err(e) => assert_eq(e, @main.DivByZero)
   }
 }
 
 test "expr: builtins min and max" {
   let vars : Map[String, Double] = Map([])
-  let lo = match @main.eval_expr(Call("min", [Num(3.0), Num(7.0)]), vars) {
+  let lo = match @main.eval_expr(@main.Call("min", [@main.Num(3.0), @main.Num(7.0)]), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
-  let hi = match @main.eval_expr(Call("max", [Num(3.0), Num(7.0)]), vars) {
+  let hi = match @main.eval_expr(@main.Call("max", [@main.Num(3.0), @main.Num(7.0)]), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
@@ -107,15 +107,15 @@ test "expr: builtins min and max" {
 
 test "expr: builtin abs and ceil and floor" {
   let vars : Map[String, Double] = Map([])
-  let a = match @main.eval_expr(Call("abs", [Num(-4.5)]), vars) {
+  let a = match @main.eval_expr(@main.Call("abs", [@main.Num(-4.5)]), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
-  let c = match @main.eval_expr(Call("ceil", [Num(4.2)]), vars) {
+  let c = match @main.eval_expr(@main.Call("ceil", [@main.Num(4.2)]), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
-  let f = match @main.eval_expr(Call("floor", [Num(4.8)]), vars) {
+  let f = match @main.eval_expr(@main.Call("floor", [@main.Num(4.8)]), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
@@ -126,25 +126,25 @@ test "expr: builtin abs and ceil and floor" {
 
 test "expr: unknown function is an error" {
   let vars : Map[String, Double] = Map([])
-  match @main.eval_expr(Call("nope", [Num(1.0)]), vars) {
+  match @main.eval_expr(@main.Call("nope", [@main.Num(1.0)]), vars) {
     Ok(_) => abort("expected unknown function error")
-    Err(e) => assert_eq(e, UnknownFunc("nope"))
+    Err(e) => assert_eq(e, @main.UnknownFunc("nope"))
   }
 }
 
 test "expr: wrong argument count is an error" {
   let vars : Map[String, Double] = Map([])
-  match @main.eval_expr(Call("min", [Num(1.0)]), vars) {
+  match @main.eval_expr(@main.Call("min", [@main.Num(1.0)]), vars) {
     Ok(_) => abort("expected bad args error")
-    Err(e) => assert_eq(e, BadArgs("min"))
+    Err(e) => assert_eq(e, @main.BadArgs("min"))
   }
 }
 
 test "expr: unknown variable is an error" {
   let vars : Map[String, Double] = Map([])
-  match @main.eval_expr(Var("missing"), vars) {
+  match @main.eval_expr(@main.Var("missing"), vars) {
     Ok(_) => abort("expected unknown variable error")
-    Err(e) => assert_eq(e, UnknownVar("missing"))
+    Err(e) => assert_eq(e, @main.UnknownVar("missing"))
   }
 }
 
