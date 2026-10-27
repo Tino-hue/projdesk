@@ -37,7 +37,7 @@ test "JsonProjector implements Projector trait" {
 
 ///|
 test "OpenApiProj implements Projector trait" {
-  let p = @main.OpenApiProj::{ }
+  let p = @main.OpenApiProj::{ dialect: OpenApi30, }
   assert_eq(p.target_name(), "OpenAPI Schema Object")
   let (text, _drops) = p.project(make_test_model(), [])
   assert_true(text.contains("User"))
@@ -65,7 +65,7 @@ test "GraphqlProj implements Projector trait" {
 // ---- DropReason ADT ----
 
 ///|
-test "DropReason::to_text produces human-readable text" {
+test "@main.DropReason::to_text produces human-readable text" {
   assert_true(@main.DropReason::UniqueNotCarried("id").to_text().contains("id"))
   assert_true(
     @main.DropReason::PatternNotCarried("email").to_text().contains("pattern"),
@@ -73,7 +73,7 @@ test "DropReason::to_text produces human-readable text" {
 }
 
 ///|
-test "DropReason::constraint extracts constraint name" {
+test "@main.DropReason::constraint extracts constraint name" {
   assert_eq(@main.DropReason::UniqueNotCarried("x").constraint(), "unique")
   assert_eq(@main.DropReason::PatternNotCarried("x").constraint(), "pattern")
   assert_eq(
@@ -83,7 +83,7 @@ test "DropReason::constraint extracts constraint name" {
 }
 
 ///|
-test "DropReason::field extracts field name" {
+test "@main.DropReason::field extracts field name" {
   assert_eq(@main.DropReason::UniqueNotCarried("id").field(), "id")
 }
 

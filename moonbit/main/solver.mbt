@@ -15,6 +15,14 @@ pub(all) enum Diagnosis {
 } derive(Eq, Debug)
 
 ///|
+pub extend Diagnosis with Eq::{equal, not_equal}
+
+///|
+pub extend Diagnosis with Debug::{to_repr}
+
+
+///|
+
 ///|
 pub fn Diagnosis::to_text(self : Diagnosis) -> String {
   match self {
@@ -59,7 +67,9 @@ pub fn analyze_field(
   match (c.over, c.under) {
     (Some(lo), Some(hi)) =>
       if lo >= hi {
-        diags.push(Conflict(name, "over(\{lo}) >= under(\{hi}): empty open interval"))
+        diags.push(
+          Conflict(name, "over(\{lo}) >= under(\{hi}): empty open interval"),
+        )
       }
     _ => ()
   }
@@ -85,7 +95,9 @@ pub fn analyze_field(
   match (c.shortest, c.longest) {
     (Some(lo), Some(hi)) =>
       if lo > hi {
-        diags.push(Conflict(name, "shortest(\{lo}) > longest(\{hi}): empty length range"))
+        diags.push(
+          Conflict(name, "shortest(\{lo}) > longest(\{hi}): empty length range"),
+        )
       } else if lo == hi {
         diags.push(Warning(name, "shortest == longest == \{lo}: fixed length"))
       }
@@ -113,7 +125,9 @@ pub fn analyze_field(
   match (c.shortest, c.longest) {
     (Some(lo), Some(hi)) =>
       if hi == 0 && lo > 0 {
-        diags.push(Conflict(name, "shortest(\{lo}) with longest(0): impossible"))
+        diags.push(
+          Conflict(name, "shortest(\{lo}) with longest(0): impossible"),
+        )
       }
     _ => ()
   }
@@ -121,7 +135,12 @@ pub fn analyze_field(
   // --- Pattern + format tension ---
   match (c.pattern, c.format) {
     (Some(_), Some(fmt)) =>
-      diags.push(Warning(name, "pattern + format('\{fmt}') may conflict: verify compatibility"))
+      diags.push(
+        Warning(
+          name,
+          "pattern + format('\{fmt}') may conflict: verify compatibility",
+        ),
+      )
     _ => ()
   }
 
@@ -129,7 +148,9 @@ pub fn analyze_field(
   if c.options.length() > 0 {
     match c.pattern {
       Some(_) =>
-        diags.push(Warning(name, "options + pattern: pattern may reject some options"))
+        diags.push(
+          Warning(name, "options + pattern: pattern may reject some options"),
+        )
       None => ()
     }
     match c.longest {
@@ -138,7 +159,9 @@ pub fn analyze_field(
           match opt {
             String(s) =>
               if s.length() > max_len {
-                diags.push(Conflict(name, "option '\{s}' exceeds longest(\{max_len})"))
+                diags.push(
+                  Conflict(name, "option '\{s}' exceeds longest(\{max_len})"),
+                )
               }
             _ => ()
           }
@@ -149,7 +172,11 @@ pub fn analyze_field(
 
   // --- Distinct + unique confusion ---
   if c.distinct && c.unique {
-    diags.push(Warning(name, "both distinct and unique: different semantics (list items vs records)"))
+    diags.push(
+      Warning(
+        name, "both distinct and unique: different semantics (list items vs records)",
+      ),
+    )
   }
 
   // --- Empty check ---
@@ -162,9 +189,7 @@ pub fn analyze_field(
 
 ///|
 /// Analyze all fields of a model
-pub fn analyze_model(
-  model : @moonmodel.Model,
-) -> Array[Diagnosis] {
+pub fn analyze_model(model : @moonmodel.Model) -> Array[Diagnosis] {
   let diags = []
   for field in model.fields {
     let field_diags = analyze_field(field.name, field.check)
@@ -205,9 +230,7 @@ pub fn has_conflicts(diags : Array[Diagnosis]) -> Bool {
 
 ///|
 /// Full analysis pipeline: model -> diagnosis JSON
-pub fn solve_constraints(
-  model : @moonmodel.Model,
-) -> String {
+pub fn solve_constraints(model : @moonmodel.Model) -> String {
   let diags = analyze_model(model)
   let arr : Array[Json] = []
   for d in diags {
@@ -218,7 +241,11 @@ pub fn solve_constraints(
   }
   let out : Map[String, Json] = Map([])
   out["diagnoses"] = Json::array(arr)
-  out["conflict_count"] = Json::number(conflicts_only(diags).length().to_double())
-  out["redundant_count"] = Json::number(redundancies_only(diags).length().to_double())
+  out["conflict_count"] = Json::number(
+    conflicts_only(diags).length().to_double(),
+  )
+  out["redundant_count"] = Json::number(
+    redundancies_only(diags).length().to_double(),
+  )
   Json::object(out).stringify()
 }

@@ -1,4 +1,4 @@
-// Performance benchmarks for the engine pipeline
+﻿// Performance benchmarks for the engine pipeline
 // Establishes measurable upper bounds on model size
 
 ///|
@@ -38,18 +38,27 @@ fn make_fields(n : Int) -> Array[@moonmodel.Field] {
   fields
 }
 
+///|
 test "bench: projection of 100 fields completes within budget" {
   let (elapsed, count) = bench_projection(100)
   assert_eq(count, 100)
-  assert_true(elapsed < 2000.0, msg="100-field projection took " + elapsed.to_string() + "ms")
+  assert_true(
+    elapsed < 2000.0,
+    msg="100-field projection took " + elapsed.to_string() + "ms",
+  )
 }
 
+///|
 test "bench: projection of 200 fields completes within budget" {
   let (elapsed, count) = bench_projection(200)
   assert_eq(count, 200)
-  assert_true(elapsed < 5000.0, msg="200-field projection took " + elapsed.to_string() + "ms")
+  assert_true(
+    elapsed < 5000.0,
+    msg="200-field projection took " + elapsed.to_string() + "ms",
+  )
 }
 
+///|
 test "bench: constraint solving on 100 fields within budget" {
   let fields : Array[@moonmodel.Field] = []
   for i = 0; i < 100; i = i + 1 {
@@ -67,11 +76,15 @@ test "bench: constraint solving on 100 fields within budget" {
   let elapsed = @bench.monotonic_clock_end(start)
   // Valid constraints produce no diagnoses (only conflicts/redundancies/warnings)
   assert_eq(diags.length(), 0)
-  assert_true(elapsed < 1000.0, msg="solving 100 fields took " + elapsed.to_string() + "ms")
+  assert_true(
+    elapsed < 1000.0,
+    msg="solving 100 fields took " + elapsed.to_string() + "ms",
+  )
 }
 
+///|
 test "bench: DSL parsing of 100-field source within budget" {
-  let src : Ref[String] = { val: "model Big {\n" }
+  let src : Ref[String] = { val: "model Big {\n", }
   for i = 0; i < 100; i = i + 1 {
     src.val = src.val + "  field_" + i.to_string() + ": Text [longest=64]\n"
   }
@@ -82,9 +95,13 @@ test "bench: DSL parsing of 100-field source within budget" {
   assert_eq(errors.length(), 0)
   assert_eq(models.length(), 1)
   assert_eq(models[0].fields.length(), 100)
-  assert_true(elapsed < 1000.0, msg="parsing 100-field DSL took " + elapsed.to_string() + "ms")
+  assert_true(
+    elapsed < 1000.0,
+    msg="parsing 100-field DSL took " + elapsed.to_string() + "ms",
+  )
 }
 
+///|
 test "bench: diff on 100-field models within budget" {
   // Build two independent field lists
   let old_fields : Array[@moonmodel.Field] = []
@@ -106,6 +123,7 @@ test "bench: diff on 100-field models within budget" {
   assert_true(elapsed < 1000.0, msg="diff took " + elapsed.to_string() + "ms")
 }
 
+///|
 test "bench: round-trip on 50-field model within budget" {
   let m = @moonmodel.Model::new("RT", make_fields(50))
   let start = @bench.monotonic_clock_start()
@@ -115,9 +133,13 @@ test "bench: round-trip on 50-field model within budget" {
     Pass => ()
     Fail(msg) => abort("round-trip failed: " + msg)
   }
-  assert_true(elapsed < 2000.0, msg="round-trip took " + elapsed.to_string() + "ms")
+  assert_true(
+    elapsed < 2000.0,
+    msg="round-trip took " + elapsed.to_string() + "ms",
+  )
 }
 
+///|
 test "bench: equivalence check on 100-field models within budget" {
   let fields = make_fields(100)
   let a = @moonmodel.Model::new("Big", fields)
@@ -126,5 +148,8 @@ test "bench: equivalence check on 100-field models within budget" {
   let result = @main.model_equiv(a, b)
   let elapsed = @bench.monotonic_clock_end(start)
   assert_eq(result, @main.Equivalent)
-  assert_true(elapsed < 1000.0, msg="equivalence took " + elapsed.to_string() + "ms")
+  assert_true(
+    elapsed < 1000.0,
+    msg="equivalence took " + elapsed.to_string() + "ms",
+  )
 }

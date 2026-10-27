@@ -1,19 +1,21 @@
-// Property-based tests: verify engine invariants over many random models
+﻿// Property-based tests: verify engine invariants over many random models
 // These prove correctness beyond hand-picked examples
 
 // ---- PRNG determinism ----
 
+///|
 test "prng: same seed produces same sequence" {
-  let a = new_rng(42L)
-  let b = new_rng(42L)
+  let a = @main.new_rng(42L)
+  let b = @main.new_rng(42L)
   for i = 0; i < 20; i = i + 1 {
     assert_eq(a.next_int64(), b.next_int64())
   }
 }
 
+///|
 test "prng: different seeds produce different sequences" {
-  let a = new_rng(1L)
-  let b = new_rng(2L)
+  let a = @main.new_rng(1L)
+  let b = @main.new_rng(2L)
   let mut differs = false
   for i = 0; i < 10; i = i + 1 {
     if a.next_int64() != b.next_int64() {
@@ -23,16 +25,18 @@ test "prng: different seeds produce different sequences" {
   assert_true(differs)
 }
 
+///|
 test "prng: next_int stays within bounds" {
-  let rng = new_rng(123L)
+  let rng = @main.new_rng(123L)
   for i = 0; i < 200; i = i + 1 {
     let v = rng.next_int(10)
     assert_true(v >= 0 && v < 10)
   }
 }
 
+///|
 test "prng: next_double in [0,1)" {
-  let rng = new_rng(456L)
+  let rng = @main.new_rng(456L)
   for i = 0; i < 200; i = i + 1 {
     let v = rng.next_double()
     assert_true(v >= 0.0 && v < 1.0)
@@ -41,34 +45,37 @@ test "prng: next_double in [0,1)" {
 
 // ---- Property: round-trip holds for random models ----
 
+///|
 test "property: round-trip holds for 100 random models" {
-  let rng = new_rng(2024L)
-  let models = random_models(rng, 100)
+  let rng = @main.new_rng(2024L)
+  let models = @main.random_models(rng, 100)
   for m in models {
-    match roundtrip_model(m) {
+    match @main.roundtrip_model(m) {
       Pass => ()
       Fail(msg) => abort("round-trip failed for " + m.name + ": " + msg)
     }
   }
 }
 
+///|
 test "property: round-trip holds for random constraint models" {
-  let rng = new_rng(777L)
+  let rng = @main.new_rng(777L)
   for i = 0; i < 50; i = i + 1 {
-    let m = random_constraint_model(rng)
-    match roundtrip_model(m) {
+    let m = @main.random_constraint_model(rng)
+    match @main.roundtrip_model(m) {
       Pass => ()
       Fail(msg) => abort("round-trip failed: " + msg)
     }
   }
 }
 
+///|
 test "property: DSL generation always parses without errors" {
-  let rng = new_rng(31337L)
-  let models = random_models(rng, 40)
+  let rng = @main.new_rng(31337L)
+  let models = @main.random_models(rng, 40)
   for m in models {
-    let dsl = model_to_dsl_public(m)
-    let (_, lex_errors, parse_errors) = dsl_parse(dsl)
+    let dsl = @main.model_to_dsl_public(m)
+    let (_, lex_errors, parse_errors) = @main.dsl_parse(dsl)
     assert_eq(lex_errors.length(), 0)
     assert_eq(parse_errors.length(), 0)
   }
@@ -76,11 +83,12 @@ test "property: DSL generation always parses without errors" {
 
 // ---- Property: solver invariants ----
 
+///|
 test "property: solver never crashes on random models" {
-  let rng = new_rng(999L)
+  let rng = @main.new_rng(999L)
   for i = 0; i < 60; i = i + 1 {
-    let m = random_constraint_model(rng)
-    let diags = analyze_model(m)
+    let m = @main.random_constraint_model(rng)
+    let diags = @main.analyze_model(m)
     // Every diagnosis must have a non-empty text
     for d in diags {
       assert_true(d.to_text().length() > 0)
@@ -88,21 +96,33 @@ test "property: solver never crashes on random models" {
   }
 }
 
+///|
 test "property: solver detects at least one conflict when least > most" {
-  let rng = new_rng(555L)
+  let rng = @main.new_rng(555L)
   for i = 0; i < 30; i = i + 1 {
     let lo = rng.next_int(50).to_double()
-    let hi = (lo - rng.next_int(20).to_double() - 1.0)
+    let hi = lo - rng.next_int(20).to_double() - 1.0
     let m = @moonmodel.Model::new("T", [
-      @moonmodel.Field::new("x", Real, check=@moonmodel.Check::new(least=lo, most=hi)),
+      @moonmodel.Field::new(
+        "x",
+        Real,
+        check=@moonmodel.Check::new(least=lo, most=hi),
+      ),
     ])
-    let diags = analyze_model(m)
-    assert_true(has_conflicts(diags), msg="should detect conflict: least=" + lo.to_string() + " most=" + hi.to_string())
+    let diags = @main.analyze_model(m)
+    assert_true(
+      @main.has_conflicts(diags),
+      msg="should detect conflict: least=" +
+        lo.to_string() +
+        " most=" +
+        hi.to_string(),
+    )
   }
 }
 
+///|
 test "property: model with no constraints yields exactly one diagnosis per field" {
-  let rng = new_rng(1212L)
+  let rng = @main.new_rng(1212L)
   for i = 0; i < 20; i = i + 1 {
     let field_count = rng.next_int(4) + 1
     let fields : Array[@moonmodel.Field] = []
@@ -110,44 +130,47 @@ test "property: model with no constraints yields exactly one diagnosis per field
       fields.push(@moonmodel.Field::new("f" + j.to_string(), Text))
     }
     let m = @moonmodel.Model::new("Plain", fields)
-    let diags = analyze_model(m)
+    let diags = @main.analyze_model(m)
     assert_eq(diags.length(), field_count)
   }
 }
 
 // ---- Property: migration invariants ----
 
+///|
 test "property: identical models produce zero migration changes" {
-  let rng = new_rng(8080L)
+  let rng = @main.new_rng(8080L)
   for i = 0; i < 40; i = i + 1 {
-    let m = random_model(rng, "Same")
-    let report = diff_models(m, m)
+    let m = @main.random_model(rng, "Same")
+    let report = @main.diff_models(m, m)
     assert_eq(report.changes.length(), 0)
     assert_eq(report.breaking_count, 0)
   }
 }
 
+///|
 test "property: diff is symmetric in change count" {
-  let rng = new_rng(4242L)
+  let rng = @main.new_rng(4242L)
   for i = 0; i < 30; i = i + 1 {
-    let a = random_model(rng, "A")
-    let b = random_model(rng, "B")
-    let ab = diff_models(a, b)
-    let ba = diff_models(b, a)
+    let a = @main.random_model(rng, "A")
+    let b = @main.random_model(rng, "B")
+    let ab = @main.diff_models(a, b)
+    let ba = @main.diff_models(b, a)
     assert_eq(ab.changes.length(), ba.changes.length())
   }
 }
 
+///|
 test "property: adding a field is never a breaking change" {
-  let rng = new_rng(3333L)
+  let rng = @main.new_rng(3333L)
   for i = 0; i < 20; i = i + 1 {
-    let m = random_model(rng, "Base")
+    let m = @main.random_model(rng, "Base")
     let extended = @moonmodel.Model::new(
       m.name,
       m.fields + [@moonmodel.Field::new("added_field", Text)],
       doc=m.doc,
     )
-    let report = diff_models(m, extended)
+    let report = @main.diff_models(m, extended)
     // Only the added field should appear, and it is not breaking
     assert_eq(report.changes.length(), 1)
     assert_eq(report.breaking_count, 0)
@@ -156,29 +179,32 @@ test "property: adding a field is never a breaking change" {
 
 // ---- Property: equivalence invariants ----
 
+///|
 test "property: model is always equivalent to itself" {
-  let rng = new_rng(6060L)
+  let rng = @main.new_rng(6060L)
   for i = 0; i < 40; i = i + 1 {
-    let m = random_model(rng, "Self")
-    match model_equiv(m, m) {
+    let m = @main.random_model(rng, "Self")
+    match @main.model_equiv(m, m) {
       Equivalent => ()
       other => abort("self-equivalence broken: " + other.to_text())
     }
   }
 }
 
+///|
 test "property: equivalence is symmetric" {
-  let rng = new_rng(2020L)
+  let rng = @main.new_rng(2020L)
   for i = 0; i < 30; i = i + 1 {
-    let m = random_model(rng, "Sym")
-    let a = model_equiv(m, m)
-    let b = model_equiv(m, m)
+    let m = @main.random_model(rng, "Sym")
+    let a = @main.model_equiv(m, m)
+    let b = @main.model_equiv(m, m)
     assert_eq(a.to_text(), b.to_text())
   }
 }
 
+///|
 test "property: uniformly relaxing all fields makes a strict subtype" {
-  let rng = new_rng(1717L)
+  let rng = @main.new_rng(1717L)
   for i = 0; i < 20; i = i + 1 {
     // Build a uniformly strict model (every field required, non-nullable)
     let field_count = rng.next_int(4) + 1
@@ -211,9 +237,12 @@ test "property: uniformly relaxing all fields makes a strict subtype" {
       doc=m.doc,
     )
     // The strict model is a subtype of the relaxed one (accepts fewer values)
-    match model_equiv(m, relaxed) {
+    match @main.model_equiv(m, relaxed) {
       SubtypeOf(_) => ()
-      other => abort("strict model must be subtype of relaxed, got: " + other.to_text())
+      other =>
+        abort(
+          "strict model must be subtype of relaxed, got: " + other.to_text(),
+        )
     }
   }
 }

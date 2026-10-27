@@ -1,7 +1,6 @@
 pkgtype(kind: "foreign_library")
 
 import {
-  "moonbitlang/core/bench",
   "moonbitstack/moonmodel",
   "moonbitstack/moonmodel/json",
   "moonbitstack/moonmodel/open",
@@ -10,10 +9,10 @@ import {
   "Tino-hue/projdesk-kernel/jsonparse",
 }
 
+import {
+  "moonbitlang/core/bench",
+} for "test"
+
 options(
-  "link": {
-    "wasm-gc": {
-      "use-js-builtin-string": true,
-    },
-  },
+  link: { "wasm-gc": { "use-js-builtin-string": true } },
 )

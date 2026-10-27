@@ -1,4 +1,4 @@
-﻿// Deterministic PRNG + random model generator for property-based testing
+// Deterministic PRNG + random model generator for property-based testing
 // Uses a xorshift64* algorithm implemented from scratch in MoonBit
 
 ///|
@@ -8,12 +8,13 @@ pub(all) struct Rng {
 }
 
 ///|
+
 ///|
 /// Create a new RNG with a given seed
 pub fn new_rng(seed : Int64) -> Rng {
   // Avoid zero state (xorshift degenerates)
   let s = if seed == 0L { 0x9E3779B97F4A7C15L } else { seed }
-  { state: { val: s } }
+  { state: { val: s, }, }
 }
 
 ///|
@@ -64,7 +65,14 @@ pub fn Rng::next_bool(self : Rng) -> Bool {
 /// Random simple type
 fn random_type(rng : Rng) -> @moonmodel.Type {
   let kinds : Array[@moonmodel.Type] = [
-    Bool, Int, Big, Real, Text, Bytes, Stamp, Any,
+    Bool,
+    Int,
+    Big,
+    Real,
+    Text,
+    Bytes,
+    Stamp,
+    Any,
   ]
   kinds[rng.pick([0, 1, 2, 3, 4, 5, 6, 7])]
 }
@@ -72,8 +80,16 @@ fn random_type(rng : Rng) -> @moonmodel.Type {
 ///|
 /// Random check with random constraints
 fn random_check(rng : Rng) -> @moonmodel.Check {
-  let least = if rng.next_bool() { Some(rng.next_int(50).to_double()) } else { None }
-  let most = if rng.next_bool() { Some((least.unwrap_or(0.0) + rng.next_int(100).to_double())) } else { None }
+  let least = if rng.next_bool() {
+    Some(rng.next_int(50).to_double())
+  } else {
+    None
+  }
+  let most = if rng.next_bool() {
+    Some(least.unwrap_or(0.0) + rng.next_int(100).to_double())
+  } else {
+    None
+  }
   let shortest = if rng.next_bool() { Some(rng.next_int(10)) } else { None }
   let longest = if rng.next_bool() {
     Some(shortest.unwrap_or(0) + rng.next_int(100))
@@ -121,10 +137,10 @@ pub fn random_model(rng : Rng, name : String) -> @moonmodel.Model {
       @moonmodel.Field::new(
         "field_" + i.to_string(),
         kind,
-        required=required,
-        nullable=nullable,
-        doc=doc,
-        check=check,
+        required~,
+        nullable~,
+        doc~,
+        check~,
       ),
     )
   }
@@ -148,11 +164,7 @@ pub fn random_constraint_model(rng : Rng) -> @moonmodel.Model {
   let fields : Array[@moonmodel.Field] = []
   for i = 0; i < field_count; i = i + 1 {
     fields.push(
-      @moonmodel.Field::new(
-        "f" + i.to_string(),
-        Real,
-        check=random_check(rng),
-      ),
+      @moonmodel.Field::new("f" + i.to_string(), Real, check=random_check(rng)),
     )
   }
   @moonmodel.Model::new("Stress", fields)

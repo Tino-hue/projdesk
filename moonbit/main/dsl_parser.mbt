@@ -1,4 +1,4 @@
-// DSL Parser: Token stream -> AST
+﻿// DSL Parser: Token stream -> AST
 // Recursive descent parser for ProjDesk modeling language
 
 ///|
@@ -10,7 +10,37 @@ pub(all) struct AstModel {
 } derive(Eq, Debug)
 
 ///|
+pub extend AstCheck with Eq::{equal, not_equal}
 
+///|
+pub extend AstCheck with Debug::{to_repr}
+
+///|
+pub extend AstField with Eq::{equal, not_equal}
+
+///|
+pub extend AstField with Debug::{to_repr}
+
+///|
+pub extend AstModel with Eq::{equal, not_equal}
+
+///|
+pub extend AstModel with Debug::{to_repr}
+
+///|
+pub extend AstType with Eq::{equal, not_equal}
+
+///|
+pub extend AstType with Debug::{to_repr}
+
+///|
+pub extend ParseError with Eq::{equal, not_equal}
+
+///|
+pub extend ParseError with Debug::{to_repr}
+
+
+///|
 
 ///|
 /// AST node for a field definition
@@ -26,7 +56,6 @@ pub(all) struct AstField {
 
 ///|
 
-
 ///|
 /// AST type representation
 pub(all) enum AstType {
@@ -38,7 +67,6 @@ pub(all) enum AstType {
 } derive(Eq, Debug)
 
 ///|
-
 
 ///|
 /// AST constraint representation
@@ -59,7 +87,6 @@ pub(all) enum AstCheck {
 
 ///|
 
-
 ///|
 /// Parse error with position
 pub(all) struct ParseError {
@@ -69,7 +96,6 @@ pub(all) struct ParseError {
 } derive(Eq, Debug)
 
 ///|
-
 
 ///|
 pub fn ParseError::to_text(self : ParseError) -> String {
@@ -113,6 +139,7 @@ fn cur_pos(p : Parser) -> (Int, Int) {
 
 ///|
 /// Skip newlines
+
 ///|
 /// Skip newlines and comments
 fn skip_newlines(p : Parser) -> Unit {
@@ -159,7 +186,7 @@ fn dsl_parse_model(p : Parser) -> (AstModel?, Array[ParseError]) {
     Ident(s) => s
     _ => {
       let (l, c) = cur_pos(p)
-      errors.push({ msg: "expected model name", line: l, col: c })
+      errors.push({ msg: "expected model name", line: l, col: c, })
       return (None, errors)
     }
   }
@@ -194,7 +221,7 @@ fn dsl_parse_model(p : Parser) -> (AstModel?, Array[ParseError]) {
   if errors.length() > 0 {
     (None, errors)
   } else {
-    (Some({ name, fields, doc: "" }), errors)
+    (Some({ name, fields, doc: "", }), errors)
   }
 }
 
@@ -207,7 +234,7 @@ fn dsl_parse_field(p : Parser) -> (AstField?, Array[ParseError]) {
     Ident(s) => s
     _ => {
       let (l, c) = cur_pos(p)
-      errors.push({ msg: "expected field name", line: l, col: c })
+      errors.push({ msg: "expected field name", line: l, col: c, })
       return (None, errors)
     }
   }
@@ -238,7 +265,7 @@ fn dsl_parse_field(p : Parser) -> (AstField?, Array[ParseError]) {
       At => {
         advance(p) |> ignore
         match advance(p) {
-          Ident(s) => {
+          Ident(s) =>
             match s {
               "optional" => required = false
               "nullable" => nullable = true
@@ -246,10 +273,13 @@ fn dsl_parse_field(p : Parser) -> (AstField?, Array[ParseError]) {
               "distinct" => checks.push(Distinct)
               _ => attrs.push(s)
             }
-          }
           _ => {
             let (l, c) = cur_pos(p)
-            errors.push({ msg: "expected attribute name after @", line: l, col: c })
+            errors.push({
+              msg: "expected attribute name after @",
+              line: l,
+              col: c,
+            })
           }
         }
       }
@@ -282,7 +312,7 @@ fn dsl_parse_field(p : Parser) -> (AstField?, Array[ParseError]) {
   if errors.length() > 0 {
     (None, errors)
   } else {
-    (Some({ name, kind, required, nullable, doc: "", checks, attrs }), errors)
+    (Some({ name, kind, required, nullable, doc: "", checks, attrs, }), errors)
   }
 }
 
@@ -301,7 +331,7 @@ fn dsl_parse_type(p : Parser) -> (AstType, Array[ParseError]) {
         Ident(s) => s
         _ => {
           let (l, c) = cur_pos(p)
-          errors.push({ msg: "expected model name in Ref()", line: l, col: c })
+          errors.push({ msg: "expected model name in Ref()", line: l, col: c, })
           ""
         }
       }
@@ -370,13 +400,13 @@ fn dsl_parse_type(p : Parser) -> (AstType, Array[ParseError]) {
         Some(e) => errors.push(e)
         None => ()
       }
-      let nested = { name: "", fields: inner_fields, doc: "" }
+      let nested = { name: "", fields: inner_fields, doc: "", }
       (Nested(nested), errors)
     }
     Ident(s) => (Named(s), errors)
     _ => {
       let (l, c) = cur_pos(p)
-      errors.push({ msg: "expected type name", line: l, col: c })
+      errors.push({ msg: "expected type name", line: l, col: c, })
       (Named("Text"), errors)
     }
   }
@@ -390,7 +420,7 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
     Ident(s) => s
     _ => {
       let (l, c) = cur_pos(p)
-      errors.push({ msg: "expected constraint name", line: l, col: c })
+      errors.push({ msg: "expected constraint name", line: l, col: c, })
       return (None, errors)
     }
   }
@@ -409,7 +439,7 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
     None => ()
   }
   match name {
-    "least" | "most" | "over" | "under" | "step" => {
+    "least" | "most" | "over" | "under" | "step" =>
       match advance(p) {
         Number(n) =>
           match name {
@@ -421,12 +451,11 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
           }
         _ => {
           let (l, c) = cur_pos(p)
-          errors.push({ msg: "expected number", line: l, col: c })
+          errors.push({ msg: "expected number", line: l, col: c, })
           (None, errors)
         }
       }
-    }
-    "shortest" | "longest" => {
+    "shortest" | "longest" =>
       match advance(p) {
         Number(n) => {
           let int_val = n.to_int()
@@ -437,12 +466,11 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
         }
         _ => {
           let (l, c) = cur_pos(p)
-          errors.push({ msg: "expected integer", line: l, col: c })
+          errors.push({ msg: "expected integer", line: l, col: c, })
           (None, errors)
         }
       }
-    }
-    "pattern" | "format" => {
+    "pattern" | "format" =>
       match advance(p) {
         Str(s) =>
           match name {
@@ -456,11 +484,10 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
           }
         _ => {
           let (l, c) = cur_pos(p)
-          errors.push({ msg: "expected string value", line: l, col: c })
+          errors.push({ msg: "expected string value", line: l, col: c, })
           (None, errors)
         }
       }
-    }
     "options" => {
       // options = [a, b, c]
       match expect(p, LBracket) {
@@ -493,7 +520,7 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
     }
     _ => {
       let (l, c) = cur_pos(p)
-      errors.push({ msg: "unknown constraint '\{name}'", line: l, col: c })
+      errors.push({ msg: "unknown constraint '\{name}'", line: l, col: c, })
       (None, errors)
     }
   }
@@ -502,9 +529,11 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
 ///|
 /// Parse a complete DSL source into model AST
 /// grammar: model_def+
-pub fn dsl_parse(src : String) -> (Array[AstModel], Array[LexError], Array[ParseError]) {
+pub fn dsl_parse(
+  src : String,
+) -> (Array[AstModel], Array[LexError], Array[ParseError]) {
   let (lexemes, lex_errors) = lex(src)
-  let p = { tokens: lexemes, pos: { val: 0 } }
+  let p = { tokens: lexemes, pos: { val: 0, }, }
   let models = []
   let parse_errors = []
   skip_newlines(p)
@@ -522,7 +551,7 @@ pub fn dsl_parse(src : String) -> (Array[AstModel], Array[LexError], Array[Parse
       }
       _ => {
         let (l, c) = cur_pos(p)
-        parse_errors.push({ msg: "expected 'model'", line: l, col: c })
+        parse_errors.push({ msg: "expected 'model'", line: l, col: c, })
         // Skip to next line to recover
         while peek(p) != Newline && peek(p) != Eof {
           advance(p) |> ignore

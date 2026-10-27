@@ -15,6 +15,20 @@ pub(all) enum Migration {
 } derive(Eq, Debug)
 
 ///|
+pub extend Migration with Eq::{equal, not_equal}
+
+///|
+pub extend Migration with Debug::{to_repr}
+
+///|
+pub extend MigrationReport with Eq::{equal, not_equal}
+
+///|
+pub extend MigrationReport with Debug::{to_repr}
+
+
+///|
+
 ///|
 pub fn Migration::to_text(self : Migration) -> String {
   match self {
@@ -50,6 +64,7 @@ pub(all) struct MigrationReport {
 } derive(Eq, Debug)
 
 ///|
+
 ///|
 /// Type description string
 fn type_desc(t : @moonmodel.Type) -> String {
@@ -156,15 +171,25 @@ pub fn diff_models(
       Some(new_f) => {
         // Type change
         if type_desc(old_f.kind) != type_desc(new_f.kind) {
-          changes.push(TypeChanged(old_f.name, type_desc(old_f.kind), type_desc(new_f.kind)))
+          changes.push(
+            TypeChanged(
+              old_f.name,
+              type_desc(old_f.kind),
+              type_desc(new_f.kind),
+            ),
+          )
         }
         // Required change
         if old_f.required != new_f.required {
-          changes.push(RequiredChanged(old_f.name, old_f.required, new_f.required))
+          changes.push(
+            RequiredChanged(old_f.name, old_f.required, new_f.required),
+          )
         }
         // Nullable change
         if old_f.nullable != new_f.nullable {
-          changes.push(NullableChanged(old_f.name, old_f.nullable, new_f.nullable))
+          changes.push(
+            NullableChanged(old_f.name, old_f.nullable, new_f.nullable),
+          )
         }
         // Constraint changes
         let old_checks = check_desc(old_f.check)
@@ -192,7 +217,7 @@ pub fn diff_models(
     }
   }
 
-  { changes, breaking_count: breaking }
+  { changes, breaking_count: breaking, }
 }
 
 ///|
@@ -200,89 +225,103 @@ pub fn diff_models(
 pub fn generate_sql_migration(
   old_model : @moonmodel.Model,
   new_model : @moonmodel.Model,
-  dialect~ : String = "Postgres",
+  dialect? : String = "Postgres",
 ) -> String {
   let report = diff_models(old_model, new_model)
   let out = StringBuilder()
   out.write_string("-- Migration: \{old_model.name} -> \{new_model.name}\n")
   if report.breaking_count > 0 {
-    out.write_string("-- WARNING: \{report.breaking_count} breaking change(s)!\n")
+    out.write_string(
+      "-- WARNING: \{report.breaking_count} breaking change(s)!\n",
+    )
   }
   out.write_string("-- Dialect: \{dialect}\n\n")
 
   let table_name = new_model.name
   for change in report.changes {
     match change {
-      FieldAdded(name, _) => {
+      FieldAdded(name, _) =>
         match new_model.field(name) {
           Some(f) => {
             let type_str = match dialect {
-              "Sqlite" => match f.kind {
-                Bool => "INTEGER"
-                Int | Big => "INTEGER"
-                Real => "REAL"
-                Text => "TEXT"
-                Bytes => "BLOB"
-                Stamp => "TEXT"
-                _ => "TEXT"
-              }
-              "Mysql" => match f.kind {
-                Bool => "TINYINT(1)"
-                Int => "INT"
-                Big => "BIGINT"
-                Real => "DOUBLE"
-                Text => "TEXT"
-                Bytes => "BLOB"
-                Stamp => "DATETIME"
-                _ => "TEXT"
-              }
-              _ => match f.kind {
-                Bool => "BOOLEAN"
-                Int => "INTEGER"
-                Big => "BIGINT"
-                Real => "DOUBLE PRECISION"
-                Text => "TEXT"
-                Bytes => "BYTEA"
-                Stamp => "TIMESTAMPTZ"
-                _ => "TEXT"
-              }
+              "Sqlite" =>
+                match f.kind {
+                  Bool => "INTEGER"
+                  Int | Big => "INTEGER"
+                  Real => "REAL"
+                  Text => "TEXT"
+                  Bytes => "BLOB"
+                  Stamp => "TEXT"
+                  _ => "TEXT"
+                }
+              "Mysql" =>
+                match f.kind {
+                  Bool => "TINYINT(1)"
+                  Int => "INT"
+                  Big => "BIGINT"
+                  Real => "DOUBLE"
+                  Text => "TEXT"
+                  Bytes => "BLOB"
+                  Stamp => "DATETIME"
+                  _ => "TEXT"
+                }
+              _ =>
+                match f.kind {
+                  Bool => "BOOLEAN"
+                  Int => "INTEGER"
+                  Big => "BIGINT"
+                  Real => "DOUBLE PRECISION"
+                  Text => "TEXT"
+                  Bytes => "BYTEA"
+                  Stamp => "TIMESTAMPTZ"
+                  _ => "TEXT"
+                }
             }
-            let not_null = if f.required && !f.nullable { " NOT NULL" } else { "" }
-            out.write_string("ALTER TABLE \{table_name} ADD COLUMN \{name} \{type_str}\{not_null};\n")
+            let not_null = if f.required && !f.nullable {
+              " NOT NULL"
+            } else {
+              ""
+            }
+            out.write_string(
+              "ALTER TABLE \{table_name} ADD COLUMN \{name} \{type_str}\{not_null};\n",
+            )
           }
           None => ()
         }
-      }
-      FieldRemoved(name) => {
+      FieldRemoved(name) =>
         out.write_string("ALTER TABLE \{table_name} DROP COLUMN \{name};\n")
-      }
-      TypeChanged(name, _old, _new) => {
-        out.write_string("-- TODO: ALTER TABLE \{table_name} ALTER COLUMN \{name} TYPE ... (manual)\n")
-      }
-      ConstraintAdded(field, c) => {
+      TypeChanged(name, _old, _new) =>
+        out.write_string(
+          "-- TODO: ALTER TABLE \{table_name} ALTER COLUMN \{name} TYPE ... (manual)\n",
+        )
+      ConstraintAdded(field, c) =>
         if c == "unique" {
-          out.write_string("ALTER TABLE \{table_name} ADD CONSTRAINT \{table_name}_\{field}_unique UNIQUE (\{field});\n")
+          out.write_string(
+            "ALTER TABLE \{table_name} ADD CONSTRAINT \{table_name}_\{field}_unique UNIQUE (\{field});\n",
+          )
         }
-      }
-      ConstraintRemoved(field, c) => {
+      ConstraintRemoved(field, c) =>
         if c == "unique" {
-          out.write_string("ALTER TABLE \{table_name} DROP CONSTRAINT \{table_name}_\{field}_unique;\n")
+          out.write_string(
+            "ALTER TABLE \{table_name} DROP CONSTRAINT \{table_name}_\{field}_unique;\n",
+          )
         }
-      }
-      RequiredChanged(name, false, true) => {
-        out.write_string("ALTER TABLE \{table_name} ALTER COLUMN \{name} SET NOT NULL;\n")
-      }
-      RequiredChanged(name, true, false) => {
-        out.write_string("ALTER TABLE \{table_name} ALTER COLUMN \{name} DROP NOT NULL;\n")
-      }
+      RequiredChanged(name, false, true) =>
+        out.write_string(
+          "ALTER TABLE \{table_name} ALTER COLUMN \{name} SET NOT NULL;\n",
+        )
+      RequiredChanged(name, true, false) =>
+        out.write_string(
+          "ALTER TABLE \{table_name} ALTER COLUMN \{name} DROP NOT NULL;\n",
+        )
       RequiredChanged(_, _, _) => ()
-      NullableChanged(_, _, _) => {
+      NullableChanged(_, _, _) =>
         // Handled by RequiredChanged in SQL context
         ()
-      }
-      Renamed(old_n, new_n) => {
-        out.write_string("ALTER TABLE \{table_name} RENAME COLUMN \{old_n} TO \{new_n};\n")
-      }
+      Renamed(old_n, new_n) =>
+        out.write_string(
+          "ALTER TABLE \{table_name} RENAME COLUMN \{old_n} TO \{new_n};\n",
+        )
     }
   }
   out.to_string()

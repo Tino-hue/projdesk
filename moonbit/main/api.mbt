@@ -14,7 +14,7 @@ pub fn project_from_json(input_json : String) -> String {
   let result = project_all(
     input.model,
     input.known,
-    _openapi_dialect=input.openapi_dialect,
+    openapi_dialect=input.openapi_dialect,
     sql_dialect=input.sql_dialect,
   )
   result_to_json(result, input.model, input.known)
@@ -28,12 +28,14 @@ pub fn dsl_project_entry(dsl : String) -> String {
   output
 }
 
+///|
 #export_name("solve_constraints")
 pub fn solve_constraints_entry(model_json : String) -> String {
   let input = parse_input(model_json)
   solve_constraints(input.model)
 }
 
+///|
 #export_name("generate_migration")
 pub fn generate_migration_entry(old_json : String, new_json : String) -> String {
   let old_input = parse_input(old_json)
@@ -41,11 +43,31 @@ pub fn generate_migration_entry(old_json : String, new_json : String) -> String 
   generate_migration(old_input.model, new_input.model)
 }
 
+///|
 #export_name("check_equivalence")
 pub fn check_equivalence_entry(a_json : String, b_json : String) -> String {
   let a_input = parse_input(a_json)
   let b_input = parse_input(b_json)
   check_equivalence(a_input.model, b_input.model)
+}
+
+///|
+#export_name("verify_roundtrip")
+pub fn verify_roundtrip_entry(model_json : String) -> String {
+  let input = parse_input(model_json)
+  let result = roundtrip_model(input.model)
+  let out : Map[String, Json] = Map([])
+  match result {
+    Pass => {
+      out["ok"] = Json::boolean(true)
+      out["message"] = Json::string("round-trip verified: model -> DSL -> model preserves all fields")
+    }
+    Fail(msg) => {
+      out["ok"] = Json::boolean(false)
+      out["message"] = Json::string(msg)
+    }
+  }
+  Json::object(out).stringify()
 }
 
 #export_name("get_presets_json")

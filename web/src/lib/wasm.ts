@@ -1,4 +1,4 @@
-// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
+﻿// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
 
 import type { KernelInput, KernelOutput, PresetModel, ModelInput } from './types';
 
@@ -10,6 +10,7 @@ interface ProjDeskExports {
   solve_constraints(model_json: string): string;
   generate_migration(old_json: string, new_json: string): string;
   check_equivalence(a_json: string, b_json: string): string;
+  verify_roundtrip(model_json: string): string;
 }
 
 let exportsPromise: Promise<ProjDeskExports> | null = null;
@@ -86,4 +87,9 @@ export async function generateMigration(oldJson: string, newJson: string): Promi
 export async function checkEquivalence(aJson: string, bJson: string): Promise<string> {
   const kernel = await getKernel();
   return kernel.check_equivalence(aJson, bJson);
+}
+
+export async function verifyRoundtrip(modelJson: string): Promise<string> {
+  const kernel = await getKernel();
+  return kernel.verify_roundtrip(modelJson);
 }

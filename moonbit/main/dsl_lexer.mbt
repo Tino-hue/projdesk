@@ -1,4 +1,4 @@
-// DSL Lexer: source text -> Token stream
+﻿// DSL Lexer: source text -> Token stream
 // Hand-written scanner for ProjDesk modeling language
 
 ///|
@@ -32,7 +32,25 @@ pub(all) enum Token {
 } derive(Eq, Debug)
 
 ///|
+pub extend Lexeme with Eq::{equal, not_equal}
 
+///|
+pub extend Lexeme with Debug::{to_repr}
+
+///|
+pub extend LexError with Eq::{equal, not_equal}
+
+///|
+pub extend LexError with Debug::{to_repr}
+
+///|
+pub extend Token with Eq::{equal, not_equal}
+
+///|
+pub extend Token with Debug::{to_repr}
+
+
+///|
 
 ///|
 /// A positioned token for error reporting
@@ -43,7 +61,6 @@ pub(all) struct Lexeme {
 } derive(Eq, Debug)
 
 ///|
-
 
 ///|
 /// Lexer state
@@ -64,16 +81,12 @@ pub(all) enum LexError {
 
 ///|
 
-
 ///|
 pub fn LexError::to_text(self : LexError) -> String {
   match self {
-    UnexpectedChar(c, l, col) =>
-      "line \{l}:\{col}: unexpected character '\{c}'"
-    UnterminatedString(l, col) =>
-      "line \{l}:\{col}: unterminated string"
-    InvalidNumber(s, l, col) =>
-      "line \{l}:\{col}: invalid number '\{s}'"
+    UnexpectedChar(c, l, col) => "line \{l}:\{col}: unexpected character '\{c}'"
+    UnterminatedString(l, col) => "line \{l}:\{col}: unterminated string"
+    InvalidNumber(s, l, col) => "line \{l}:\{col}: invalid number '\{s}'"
   }
 }
 
@@ -88,7 +101,10 @@ fn is_ident_start(c : Char) -> Bool {
 /// Check if character is a letter, digit, or underscore
 fn is_ident_cont(c : Char) -> Bool {
   let code = c.to_int()
-  (code >= 97 && code <= 122) || (code >= 65 && code <= 90) || (code >= 48 && code <= 57) || code == 95
+  (code >= 97 && code <= 122) ||
+  (code >= 65 && code <= 90) ||
+  (code >= 48 && code <= 57) ||
+  code == 95
 }
 
 ///|
@@ -120,14 +136,14 @@ fn keyword_of(s : String) -> Token {
 ///|
 /// Tokenize source string into Lexeme array
 pub fn lex(src : String) -> (Array[Lexeme], Array[LexError]) {
-  let lexer = { src, pos: { val: 0 }, line: { val: 1 }, col: { val: 1 } }
+  let lexer = { src, pos: { val: 0, }, line: { val: 1, }, col: { val: 1, }, }
   let tokens : Array[Lexeme] = []
   let errors : Array[LexError] = []
 
   while lexer.pos.val < lexer.src.length() {
     let c = lexer.src[lexer.pos.val].unsafe_to_char()
     if c == '\n' {
-      tokens.push({ token: Newline, line: lexer.line.val, col: lexer.col.val })
+      tokens.push({ token: Newline, line: lexer.line.val, col: lexer.col.val, })
       lexer.line.val = lexer.line.val + 1
       lexer.col.val = 1
       lexer.pos.val = lexer.pos.val + 1
@@ -137,45 +153,66 @@ pub fn lex(src : String) -> (Array[Lexeme], Array[LexError]) {
     } else if is_ident_start(c) {
       let start = lexer.pos.val
       let start_col = lexer.col.val
-      while lexer.pos.val < lexer.src.length() && is_ident_cont(lexer.src[lexer.pos.val].unsafe_to_char()) {
+      while lexer.pos.val < lexer.src.length() &&
+            is_ident_cont(lexer.src[lexer.pos.val].unsafe_to_char()) {
         lexer.pos.val = lexer.pos.val + 1
         lexer.col.val = lexer.col.val + 1
       }
-      let text = lexer.src[start:lexer.pos.val].to_string()
-      tokens.push({ token: keyword_of(text), line: lexer.line.val, col: start_col })
+      let text = lexer.src[start:lexer.pos.val].to_owned()
+      tokens.push({
+        token: keyword_of(text),
+        line: lexer.line.val,
+        col: start_col,
+      })
     } else if is_digit(c) {
       let start = lexer.pos.val
       let start_col = lexer.col.val
-      while lexer.pos.val < lexer.src.length() && is_digit(lexer.src[lexer.pos.val].unsafe_to_char()) {
+      while lexer.pos.val < lexer.src.length() &&
+            is_digit(lexer.src[lexer.pos.val].unsafe_to_char()) {
         lexer.pos.val = lexer.pos.val + 1
         lexer.col.val = lexer.col.val + 1
       }
       // Handle decimal point
-      if lexer.pos.val + 1 < lexer.src.length() && lexer.src[lexer.pos.val].unsafe_to_char() == '.' && is_digit(lexer.src[lexer.pos.val + 1].unsafe_to_char()) {
+      if lexer.pos.val + 1 < lexer.src.length() &&
+        lexer.src[lexer.pos.val].unsafe_to_char() == '.' &&
+        is_digit(lexer.src[lexer.pos.val + 1].unsafe_to_char()) {
         lexer.pos.val = lexer.pos.val + 1
         lexer.col.val = lexer.col.val + 1
-        while lexer.pos.val < lexer.src.length() && is_digit(lexer.src[lexer.pos.val].unsafe_to_char()) {
+        while lexer.pos.val < lexer.src.length() &&
+              is_digit(lexer.src[lexer.pos.val].unsafe_to_char()) {
           lexer.pos.val = lexer.pos.val + 1
           lexer.col.val = lexer.col.val + 1
         }
       }
-      let text = lexer.src[start:lexer.pos.val].to_string()
+      let text = lexer.src[start:lexer.pos.val].to_owned()
       match parse_number(text) {
-        Some(n) => tokens.push({ token: Number(n), line: lexer.line.val, col: start_col })
+        Some(n) =>
+          tokens.push({
+            token: Number(n),
+            line: lexer.line.val,
+            col: start_col,
+          })
         None => errors.push(InvalidNumber(text, lexer.line.val, start_col))
       }
-    } else if c == '/' && lexer.pos.val + 1 < lexer.src.length() && lexer.src[lexer.pos.val + 1].unsafe_to_char() == '/' {
+    } else if c == '/' &&
+      lexer.pos.val + 1 < lexer.src.length() &&
+      lexer.src[lexer.pos.val + 1].unsafe_to_char() == '/' {
       // Line comment: skip to end of line, emit as Comment token
       let start_col = lexer.col.val
       lexer.pos.val = lexer.pos.val + 2
       lexer.col.val = lexer.col.val + 2
       let comment_start = lexer.pos.val
-      while lexer.pos.val < lexer.src.length() && lexer.src[lexer.pos.val].unsafe_to_char() != '\n' {
+      while lexer.pos.val < lexer.src.length() &&
+            lexer.src[lexer.pos.val].unsafe_to_char() != '\n' {
         lexer.pos.val = lexer.pos.val + 1
         lexer.col.val = lexer.col.val + 1
       }
       let text = lexer.src[comment_start:lexer.pos.val].to_owned()
-      tokens.push({ token: Comment(text), line: lexer.line.val, col: start_col })
+      tokens.push({
+        token: Comment(text),
+        line: lexer.line.val,
+        col: start_col,
+      })
     } else if c == '"' {
       let start_col = lexer.col.val
       lexer.pos.val = lexer.pos.val + 1
@@ -195,8 +232,8 @@ pub fn lex(src : String) -> (Array[Lexeme], Array[LexError]) {
         lexer.col.val = lexer.col.val + 1
       }
       if terminated {
-        let text = lexer.src[str_start:lexer.pos.val].to_string()
-        tokens.push({ token: Str(text), line: lexer.line.val, col: start_col })
+        let text = lexer.src[str_start:lexer.pos.val].to_owned()
+        tokens.push({ token: Str(text), line: lexer.line.val, col: start_col, })
         lexer.pos.val = lexer.pos.val + 1
         lexer.col.val = lexer.col.val + 1
       } else {
@@ -220,13 +257,13 @@ pub fn lex(src : String) -> (Array[Lexeme], Array[LexError]) {
         }
       }
       if tok != Eof {
-        tokens.push({ token: tok, line: lexer.line.val, col: lexer.col.val })
+        tokens.push({ token: tok, line: lexer.line.val, col: lexer.col.val, })
       }
       lexer.pos.val = lexer.pos.val + 1
       lexer.col.val = lexer.col.val + 1
     }
   }
-  tokens.push({ token: Eof, line: lexer.line.val, col: lexer.col.val })
+  tokens.push({ token: Eof, line: lexer.line.val, col: lexer.col.val, })
   (tokens, errors)
 }
 

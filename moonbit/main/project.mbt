@@ -17,6 +17,16 @@ pub(all) struct ProjectionResult {
 }
 
 ///|
+/// Parse OpenAPI dialect
+fn parse_open_dialect(s : String) -> @open.Dialect {
+  match s {
+    "Swagger20" => Swagger20
+    "OpenApi31" => OpenApi31
+    _ => OpenApi30
+  }
+}
+
+///|
 /// Parse SQL dialect
 fn parse_sql_dialect(s : String) -> @sql.Dialect {
   match s {
@@ -31,12 +41,12 @@ fn parse_sql_dialect(s : String) -> @sql.Dialect {
 pub fn project_all(
   model : @moonmodel.Model,
   known : Array[@moonmodel.Model],
-  _openapi_dialect? : String = "OpenApi30",
+  openapi_dialect? : String = "OpenApi30",
   sql_dialect? : String = "Postgres",
 ) -> ProjectionResult {
   // Use Projector trait implementations
   let json_p = JsonProjector::{ }
-  let open_p = OpenApiProj::{ }
+  let open_p = OpenApiProj::{ dialect: parse_open_dialect(openapi_dialect), }
   let sql_p = SqlProj::{ dialect: parse_sql_dialect(sql_dialect), }
   let gql_p = GraphqlProj::{ }
 

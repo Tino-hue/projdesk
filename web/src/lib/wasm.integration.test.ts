@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -19,10 +19,16 @@ let kernel: Kernel;
 beforeAll(async () => {
   const wasmPath = resolve(__dirname, '../../public/projdesk.wasm');
   const bytes = readFileSync(wasmPath);
-  const { instance } = await WebAssembly.instantiate(bytes, {}, {
+  const { instance } = await (WebAssembly as unknown as {
+    instantiate(
+      bytes: BufferSource,
+      imports: WebAssembly.Imports,
+      options: { builtins: string[]; importedStringConstants: string },
+    ): Promise<WebAssembly.WebAssemblyInstantiatedSource>;
+  }).instantiate(bytes, {} as WebAssembly.Imports, {
     builtins: ['js-string'],
     importedStringConstants: '_',
-  } as unknown as WebAssembly.Imports);
+  });
   kernel = instance.exports as unknown as Kernel;
 });
 
