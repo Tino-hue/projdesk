@@ -11,6 +11,8 @@ interface ProjDeskExports {
   generate_migration(old_json: string, new_json: string): string;
   check_equivalence(a_json: string, b_json: string): string;
   verify_roundtrip(model_json: string): string;
+  check_semantics(dsl: string): string;
+  check_semantics(dsl: string): string;
 }
 
 let exportsPromise: Promise<ProjDeskExports> | null = null;
@@ -92,4 +94,9 @@ export async function checkEquivalence(aJson: string, bJson: string): Promise<st
 export async function verifyRoundtrip(modelJson: string): Promise<string> {
   const kernel = await getKernel();
   return kernel.verify_roundtrip(modelJson);
+}
+
+export async function checkSemantics(dsl: string): Promise<string> {
+  const kernel = await getKernel();
+  return kernel.check_semantics(dsl);
 }

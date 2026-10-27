@@ -25,6 +25,13 @@ pub(all) enum Token {
   At
   Eq
   Arrow
+  Dot
+  // Expression operators (for constraint values)
+  Plus
+  Minus
+  Star
+  Slash
+  Percent
   // Special
   Newline
   Comment(String)
@@ -129,6 +136,47 @@ fn keyword_of(s : String) -> Token {
     "Dict" => KwDict
     "Nest" => KwNest
     _ => Ident(s)
+  }
+}
+
+///|
+/// Skip a block comment `/* ... */`, possibly spanning lines.
+/// Consumes the closing delimiter and emits the content as a Comment token.
+fn skip_block_comment(
+  lexer : Lexer,
+  tokens : Array[Lexeme],
+) -> Unit {
+  let start_line = lexer.line.val
+  let start_col = lexer.col.val
+  // consume "/*"
+  lexer.pos.val = lexer.pos.val + 2
+  lexer.col.val = lexer.col.val + 2
+  let content_start = lexer.pos.val
+  let mut closed = false
+  while lexer.pos.val < lexer.src.length() {
+    let c = lexer.src[lexer.pos.val].unsafe_to_char()
+    if c == '*' &&
+      lexer.pos.val + 1 < lexer.src.length() &&
+      lexer.src[lexer.pos.val + 1].unsafe_to_char() == '/' {
+      let text = lexer.src[content_start:lexer.pos.val].to_owned()
+      tokens.push({ token: Comment(text), line: start_line, col: start_col, })
+      lexer.pos.val = lexer.pos.val + 2
+      lexer.col.val = lexer.col.val + 2
+      closed = true
+      break
+    }
+    if c == '\n' {
+      lexer.line.val = lexer.line.val + 1
+      lexer.col.val = 1
+    } else {
+      lexer.col.val = lexer.col.val + 1
+    }
+    lexer.pos.val = lexer.pos.val + 1
+  }
+  if !closed {
+    // unterminated block comment: consume to end of input
+    let text = lexer.src[content_start:lexer.pos.val].to_owned()
+    tokens.push({ token: Comment(text), line: start_line, col: start_col, })
   }
 }
 
@@ -250,6 +298,21 @@ pub fn lex(src : String) -> (Array[Lexeme], Array[LexError]) {
         ')' => RParen
         '@' => At
         '=' => Eq
+        '.' => Dot
+        '+' => Plus
+        '-' => Minus
+        '*' => Star
+        '%' => Percent
+        '/' =>
+          // '/' is either division or the start of a block comment
+          if lexer.pos.val + 1 < lexer.src.length() &&
+            lexer.src[lexer.pos.val + 1].unsafe_to_char() == '*' {
+            skip_block_comment(lexer, tokens)
+            // the block comment consumed the rest; skip the normal advance
+            continue
+          } else {
+            Slash
+          }
         _ => {
           errors.push(UnexpectedChar(c, lexer.line.val, lexer.col.val))
           Eof // placeholder, will not be pushed
@@ -316,6 +379,12 @@ pub fn Token::to_text(self : Token) -> String {
     At => "@"
     Eq => "="
     Arrow => "->"
+    Dot => "."
+    Plus => "+"
+    Minus => "-"
+    Star => "*"
+    Slash => "/"
+    Percent => "%"
     Newline => "newline"
     Comment(s) => "// " + s
     Eof => "end of input"

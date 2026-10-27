@@ -412,6 +412,151 @@ fn dsl_parse_type(p : Parser) -> (AstType, Array[ParseError]) {
 }
 
 ///|
+/// Parse a primary expression: number, variable, or function call
+fn dsl_parse_expr_primary(p : Parser) -> (Expr?, Array[ParseError]) {
+  let errors = []
+  match advance(p) {
+    Number(n) => (Some(Num(n)), errors)
+    Ident(name) =>
+      // function call?
+      if peek(p) == LParen {
+        match expect(p, LParen) {
+          Some(e) => errors.push(e)
+          None => ()
+        }
+        let args : Array[Expr] = []
+        skip_newlines(p)
+        while peek(p) != RParen && peek(p) != Eof {
+          let (arg, arg_errors) = dsl_parse_expr(p)
+          for e in arg_errors {
+            errors.push(e)
+          }
+          match arg {
+            Some(a) => args.push(a)
+            None => ()
+          }
+          skip_newlines(p)
+          if peek(p) == Comma {
+            advance(p) |> ignore
+            skip_newlines(p)
+          }
+        }
+        match expect(p, RParen) {
+          Some(e) => errors.push(e)
+          None => ()
+        }
+        (Some(Call(name, args)), errors)
+      } else if peek(p) == Dot {
+        // field reference: other_field.constraint
+        advance(p) |> ignore
+        match advance(p) {
+          Ident(constraint) => (Some(FieldRef(name, constraint)), errors)
+          _ => {
+            let (l, c) = cur_pos(p)
+            errors.push({ msg: "expected constraint name after '.'", line: l, col: c, })
+            (None, errors)
+          }
+        }
+      } else {
+        (Some(Var(name)), errors)
+      }
+    Minus => {
+      // unary minus
+      let (operand, operand_errors) = dsl_parse_expr_primary(p)
+      for e in operand_errors {
+        errors.push(e)
+      }
+      match operand {
+        Some(Num(n)) => (Some(Num(-n)), errors)
+        Some(other) => (Some(Binop("-", Num(0.0), other)), errors)
+        None => (None, errors)
+      }
+    }
+    LParen => {
+      let (inner, inner_errors) = dsl_parse_expr(p)
+      for e in inner_errors {
+        errors.push(e)
+      }
+      match expect(p, RParen) {
+        Some(e) => errors.push(e)
+        None => ()
+      }
+      (inner, errors)
+    }
+    _ => {
+      let (l, c) = cur_pos(p)
+      errors.push({ msg: "expected expression", line: l, col: c, })
+      (None, errors)
+    }
+  }
+}
+
+///|
+/// Parse a term: primary followed by * / %
+fn dsl_parse_expr_term(p : Parser) -> (Expr?, Array[ParseError]) {
+  let errors = []
+  let (left0, left_errors) = dsl_parse_expr_primary(p)
+  for e in left_errors {
+    errors.push(e)
+  }
+  let mut left = left0
+  let mut keep_going = true
+  while keep_going {
+    match peek(p) {
+      Star | Slash | Percent => {
+        let op = match advance(p) {
+          Star => "*"
+          Slash => "/"
+          _ => "%"
+        }
+        let (right, right_errors) = dsl_parse_expr_primary(p)
+        for e in right_errors {
+          errors.push(e)
+        }
+        match (left, right) {
+          (Some(l), Some(r)) => left = Some(Binop(op, l, r))
+          _ => left = None
+        }
+      }
+      _ => keep_going = false
+    }
+  }
+  (left, errors)
+}
+
+///|
+/// Parse a full expression: term followed by + -
+fn dsl_parse_expr(p : Parser) -> (Expr?, Array[ParseError]) {
+  let errors = []
+  let (left0, left_errors) = dsl_parse_expr_term(p)
+  for e in left_errors {
+    errors.push(e)
+  }
+  let mut left = left0
+  let mut keep_going = true
+  while keep_going {
+    match peek(p) {
+      Plus | Minus => {
+        let op = match advance(p) {
+          Plus => "+"
+          _ => "-"
+        }
+        let (right, right_errors) = dsl_parse_expr_term(p)
+        for e in right_errors {
+          errors.push(e)
+        }
+        match (left, right) {
+          (Some(l), Some(r)) => left = Some(Binop(op, l, r))
+          _ => left = None
+        }
+      }
+      _ => keep_going = false
+    }
+  }
+  (left, errors)
+}
+
+///|
 /// Parse a check/constraint inside brackets
 fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
   let errors = []
@@ -438,37 +583,60 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
     None => ()
   }
   match name {
-    "least" | "most" | "over" | "under" | "step" =>
-      match advance(p) {
-        Number(n) =>
-          match name {
-            "least" => (Some(Least(n)), errors)
-            "most" => (Some(Most(n)), errors)
-            "over" => (Some(Over(n)), errors)
-            "under" => (Some(Under(n)), errors)
-            _ => (Some(Step(n)), errors)
-          }
-        _ => {
-          let (l, c) = cur_pos(p)
-          errors.push({ msg: "expected number", line: l, col: c, })
-          (None, errors)
-        }
+    "least" | "most" | "over" | "under" | "step" => {
+      // value may be an expression: 2 * 10, min(1, 5), -1
+      let (expr, expr_errors) = dsl_parse_expr(p)
+      for e in expr_errors {
+        errors.push(e)
       }
-    "shortest" | "longest" =>
-      match advance(p) {
-        Number(n) => {
-          let int_val = n.to_int()
-          match name {
-            "shortest" => (Some(Shortest(int_val)), errors)
-            _ => (Some(Longest(int_val)), errors)
+      match expr {
+        Some(e) => {
+          let vars : Map[String, Double] = Map([])
+          match eval_expr(e, vars) {
+            Ok(n) =>
+              match name {
+                "least" => (Some(Least(n)), errors)
+                "most" => (Some(Most(n)), errors)
+                "over" => (Some(Over(n)), errors)
+                "under" => (Some(Under(n)), errors)
+                _ => (Some(Step(n)), errors)
+              }
+            Err(err) => {
+              let (l, c) = cur_pos(p)
+              errors.push({ msg: err.to_text(), line: l, col: c, })
+              (None, errors)
+            }
           }
         }
-        _ => {
-          let (l, c) = cur_pos(p)
-          errors.push({ msg: "expected integer", line: l, col: c, })
-          (None, errors)
-        }
+        None => (None, errors)
       }
+    }
+    "shortest" | "longest" => {
+      let (expr, expr_errors) = dsl_parse_expr(p)
+      for e in expr_errors {
+        errors.push(e)
+      }
+      match expr {
+        Some(e) => {
+          let vars : Map[String, Double] = Map([])
+          match eval_expr(e, vars) {
+            Ok(n) => {
+              let int_val = n.to_int()
+              match name {
+                "shortest" => (Some(Shortest(int_val)), errors)
+                _ => (Some(Longest(int_val)), errors)
+              }
+            }
+            Err(err) => {
+              let (l, c) = cur_pos(p)
+              errors.push({ msg: err.to_text(), line: l, col: c, })
+              (None, errors)
+            }
+          }
+        }
+        None => (None, errors)
+      }
+    }
     "pattern" | "format" =>
       match advance(p) {
         Str(s) =>

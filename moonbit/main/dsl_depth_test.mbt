@@ -48,9 +48,10 @@ test "comment: empty comment" {
 }
 
 ///|
-test "comment: single slash is an error (not a comment)" {
+test "comment: single slash is now the division operator" {
+  // '/' became a valid expression operator with expression support
   let (_, errors) = @main.lex("a / b")
-  assert_eq(errors.length() > 0, true)
+  assert_eq(errors.length(), 0)
 }
 
 // ---- Nested model support ----

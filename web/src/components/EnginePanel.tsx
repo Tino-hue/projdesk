@@ -1,7 +1,7 @@
-// Engine panel: exposes DSL compiler, constraint solver, migration, equivalence
+﻿// Engine panel: exposes DSL compiler, constraint solver, migration, equivalence
 import { useState } from 'react';
 import type { ModelInput } from '../lib/types';
-import { dslProject, solveConstraints, generateMigration, checkEquivalence, verifyRoundtrip } from '../lib/wasm';
+import { dslProject, solveConstraints, generateMigration, checkEquivalence, verifyRoundtrip, checkSemantics } from '../lib/wasm';
 
 const DSL_EXAMPLE = `model User {
   id: Big @unique
@@ -16,13 +16,14 @@ interface Props {
 }
 
 export function EnginePanel({ model }: Props) {
-  const [activeEngine, setActiveEngine] = useState<'dsl' | 'solver' | 'migration' | 'equiv' | 'roundtrip'>('dsl');
+  const [activeEngine, setActiveEngine] = useState<'dsl' | 'solver' | 'migration' | 'equiv' | 'roundtrip' | 'semantic'>('dsl');
   const [dslText, setDslText] = useState(DSL_EXAMPLE);
   const [dslOutput, setDslOutput] = useState('');
   const [solverOutput, setSolverOutput] = useState('');
   const [migrationOutput, setMigrationOutput] = useState('');
   const [equivOutput, setEquivOutput] = useState('');
   const [roundtripOutput, setRoundtripOutput] = useState('');
+  const [semanticOutput, setSemanticOutput] = useState('');
   const [running, setRunning] = useState(false);
 
   const runDsl = async () => {
@@ -87,12 +88,24 @@ export function EnginePanel({ model }: Props) {
     setRunning(false);
   };
 
+  const runSemantic = async () => {
+    setRunning(true);
+    try {
+      const result = await checkSemantics(dslText);
+      setSemanticOutput(result);
+    } catch (e) {
+      setSemanticOutput('Error: ' + String(e));
+    }
+    setRunning(false);
+  };
+
   const engines = [
     { key: 'dsl' as const, label: 'DSL Compiler', desc: 'Modeling language -> model' },
     { key: 'solver' as const, label: 'Constraint Solver', desc: 'Conflicts & redundancy' },
     { key: 'migration' as const, label: 'Migration', desc: 'Diff + SQL ALTER' },
     { key: 'equiv' as const, label: 'Equivalence', desc: 'Subtyping & containment' },
     { key: 'roundtrip' as const, label: 'Round-trip', desc: 'Formal verification' },
+    { key: 'semantic' as const, label: 'Semantic Check', desc: 'Refs & cycles' },
   ];
 
   return (
@@ -177,6 +190,22 @@ export function EnginePanel({ model }: Props) {
               Check Equivalence (strict vs relaxed)
             </button>
             {equivOutput && <pre className="p-2 text-[10px] font-mono bg-slate-950 text-slate-200 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">{equivOutput}</pre>}
+          </div>
+        )}
+
+        {/* Semantic check */}
+        {activeEngine === 'semantic' && (
+          <div className="space-y-1.5">
+            <button
+              className="px-3 py-1 text-[11px] bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+              onClick={runSemantic}
+              disabled={running}
+            >
+              Check References (uses DSL above)
+            </button>
+            {semanticOutput && (
+              <pre className="p-2 text-[10px] font-mono bg-slate-950 text-slate-200 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">{semanticOutput}</pre>
+            )}
           </div>
         )}
 
