@@ -6,6 +6,8 @@
 pub(all) enum Expr {
   Num(Double)
   Var(String)
+  /// Field reference: other_field.constraint_name (e.g. `a.least`)
+  FieldRef(String, String)
   Binop(String, Expr, Expr)
   Call(String, Array[Expr])
 } derive(Eq, Debug)
@@ -49,18 +51,18 @@ pub fn ExprError::to_text(self : ExprError) -> String {
 fn call_builtin(
   name : String,
   args : Array[Expr],
-  vars : Map[String, Double],
+  env : Env,
 ) -> Result[Double, ExprError] {
   match name {
     "min" => {
       if args.length() != 2 {
         return Err(BadArgs(name))
       }
-      let a = match eval_expr(args[0], vars) {
+      let a = match eval_expr_in(args[0], env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
-      let b = match eval_expr(args[1], vars) {
+      let b = match eval_expr_in(args[1], env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
@@ -70,11 +72,11 @@ fn call_builtin(
       if args.length() != 2 {
         return Err(BadArgs(name))
       }
-      let a = match eval_expr(args[0], vars) {
+      let a = match eval_expr_in(args[0], env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
-      let b = match eval_expr(args[1], vars) {
+      let b = match eval_expr_in(args[1], env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
@@ -84,7 +86,7 @@ fn call_builtin(
       if args.length() != 1 {
         return Err(BadArgs(name))
       }
-      let a = match eval_expr(args[0], vars) {
+      let a = match eval_expr_in(args[0], env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
@@ -94,7 +96,7 @@ fn call_builtin(
       if args.length() != 1 {
         return Err(BadArgs(name))
       }
-      let a = match eval_expr(args[0], vars) {
+      let a = match eval_expr_in(args[0], env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
@@ -104,7 +106,7 @@ fn call_builtin(
       if args.length() != 1 {
         return Err(BadArgs(name))
       }
-      let a = match eval_expr(args[0], vars) {
+      let a = match eval_expr_in(args[0], env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
@@ -115,24 +117,52 @@ fn call_builtin(
 }
 
 ///|
-/// Evaluate an expression with a variable environment
-pub fn eval_expr(
+/// Evaluation environment: plain variables plus field constraint references
+pub(all) struct Env {
+  vars : Map[String, Double]
+  /// field name -> (constraint name -> value)
+  fields : Map[String, Map[String, Double]]
+} derive(Eq, Debug)
+
+///|
+pub extend Env with Eq::{equal, not_equal}
+
+///|
+pub extend Env with Debug::{to_repr}
+
+///|
+/// Look up a field's constraint value
+fn env_field(env : Env, field : String, constraint : String) -> Result[Double, ExprError] {
+  match env.fields.get(field) {
+    Some(constraints) =>
+      match constraints.get(constraint) {
+        Some(v) => Ok(v)
+        None => Err(UnknownVar(field + "." + constraint))
+      }
+    None => Err(UnknownVar(field))
+  }
+}
+
+///|
+/// Evaluate an expression in an environment
+pub fn eval_expr_in(
   expr : Expr,
-  vars : Map[String, Double],
+  env : Env,
 ) -> Result[Double, ExprError] {
   match expr {
     Num(n) => Ok(n)
     Var(name) =>
-      match vars.get(name) {
+      match env.vars.get(name) {
         Some(v) => Ok(v)
         None => Err(UnknownVar(name))
       }
+    FieldRef(field, constraint) => env_field(env, field, constraint)
     Binop(op, left, right) => {
-      let a = match eval_expr(left, vars) {
+      let a = match eval_expr_in(left, env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
-      let b = match eval_expr(right, vars) {
+      let b = match eval_expr_in(right, env) {
         Ok(v) => v
         Err(e) => return Err(e)
       }
@@ -155,8 +185,17 @@ pub fn eval_expr(
         _ => Ok(a)
       }
     }
-    Call(name, args) => call_builtin(name, args, vars)
+    Call(name, args) => call_builtin(name, args, env)
   }
+}
+
+///|
+/// Evaluate an expression with a variable environment (no field references)
+pub fn eval_expr(
+  expr : Expr,
+  vars : Map[String, Double],
+) -> Result[Double, ExprError] {
+  eval_expr_in(expr, { vars, fields: Map([]) })
 }
 
 ///|
@@ -165,6 +204,7 @@ pub fn Expr::to_source(self : Expr) -> String {
   match self {
     Num(n) => n.to_string()
     Var(name) => name
+    FieldRef(field, constraint) => field + "" + constraint
     Binop(op, left, right) =>
       "(" + left.to_source() + " " + op + " " + right.to_source() + ")"
     Call(name, args) => {

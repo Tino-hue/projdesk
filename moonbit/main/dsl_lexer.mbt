@@ -25,6 +25,7 @@ pub(all) enum Token {
   At
   Eq
   Arrow
+  Dot
   // Expression operators (for constraint values)
   Plus
   Minus
@@ -297,6 +298,7 @@ pub fn lex(src : String) -> (Array[Lexeme], Array[LexError]) {
         ')' => RParen
         '@' => At
         '=' => Eq
+        '.' => Dot
         '+' => Plus
         '-' => Minus
         '*' => Star
@@ -377,6 +379,7 @@ pub fn Token::to_text(self : Token) -> String {
     At => "@"
     Eq => "="
     Arrow => "->"
+    Dot => "."
     Plus => "+"
     Minus => "-"
     Star => "*"

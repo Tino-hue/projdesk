@@ -446,6 +446,17 @@ fn dsl_parse_expr_primary(p : Parser) -> (Expr?, Array[ParseError]) {
           None => ()
         }
         (Some(Call(name, args)), errors)
+      } else if peek(p) == Dot {
+        // field reference: other_field.constraint
+        advance(p) |> ignore
+        match advance(p) {
+          Ident(constraint) => (Some(FieldRef(name, constraint)), errors)
+          _ => {
+            let (l, c) = cur_pos(p)
+            errors.push({ msg: "expected constraint name after '.'", line: l, col: c, })
+            (None, errors)
+          }
+        }
       } else {
         (Some(Var(name)), errors)
       }
