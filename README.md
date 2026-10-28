@@ -18,16 +18,16 @@ A pure-browser workbench for the full lifecycle of a data model: **define → an
 
 | # | Engine | Source | Lines | What it does |
 |---|--------|--------|-------|--------------|
-| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` | 1783 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks |
-| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 536 | Conflict / redundancy / containment analysis + fixed-point interval propagation |
+| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` `dsl_resolve.mbt` | 2114 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks |
+| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 568 | Conflict / redundancy / containment analysis, cross-field bound resolution, fixed-point interval propagation, reference-cycle detection |
 | 3 | **Migration Engine** | `migration.mbt` | 349 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
 | 4 | **Equivalence Checker** | `equiv.mbt` | 224 | Type subtyping + constraint containment + classification |
-| 5 | **Round-trip Verifier** | `roundtrip.mbt` | 347 | Source-level generate-parse-compare, comparing every field, type and constraint |
-| | **Five engines** | | **3239** | |
+| 5 | **Round-trip Verifier** | `roundtrip.mbt` | 353 | Source-level generate-parse-compare, comparing every field, type and constraint |
+| | **Five engines** | | **3608** | |
 
-On top of the engines the kernel carries **1886 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **5125 lines** of MoonBit implementation, plus **2738 lines** of test code.
+On top of the engines the kernel carries **1886 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **5494 lines** of MoonBit implementation, plus **2920 lines** of test code.
 
-**220 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **94 frontend tests** (25 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
+**237 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **94 frontend tests** (25 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
 
 ---
 
@@ -66,7 +66,7 @@ model Address {
 | `@distinct` | List items must differ |
 | `[constraint=value]` | `least` `most` `over` `under` `step` `shortest` `longest` `pattern` `format` `options=[a,b]` |
 | `value` as an expression | Arithmetic `+ - * / %`, parentheses, `min` `max` `abs` `ceil` `floor` — resolved at compile time |
-| `other_field.constraint` | Cross-field reference to an earlier field, e.g. `b: Int [over=a.least]` |
+| `other_field.constraint` | Cross-field reference to another field's bound, e.g. `b: Int [over=a.least]` — may point forward or backward, and is resolved after the whole model is parsed |
 | `// comment` | Line comment (ignored by the parser) |
 | `/* comment */` | Block comment (ignored by the parser) |
 
@@ -100,7 +100,7 @@ All five engines — plus the semantic checker — are exposed through the WASM 
 | Model data structures (Model/Field/Check) | moonmodel (like a compiler's AST definition) |
 | Seven projection format conversions | moonmodel (like a compiler's backend) |
 | **DSL lexer + parser + AST codegen** | **this project** |
-| **Constraint conflict / redundancy reasoning** | **this project** |
+| **Constraint conflict / redundancy / cross-field reasoning** | **this project** |
 | **Structured model diff + migration generation** | **this project** |
 | **Type subtyping + equivalence classification** | **this project** |
 | **Round-trip formal verification** | **this project** |
@@ -142,7 +142,7 @@ moonbit/                 MoonBit kernel (wasm-gc)
     abi.mbt              JSON <-> moonmodel.Model conversion
     api.mbt              WASM ABI exports (10)
     jsonparse/           Minimal JSON wrapper (name-collision workaround)
-    *_test.mbt           Engine test suites (13 files, 220 tests)
+    *_test.mbt           Engine test suites (14 files, 237 tests)
 web/                    React + TypeScript frontend (31 files)
   src/components/
     EnginePanel.tsx      Engine playground (6 interactive engine tabs)
@@ -240,9 +240,10 @@ npm run dev  # http://127.0.0.1:3000
 | Engine | Source | Algorithm |
 |--------|--------|-----------|
 | DSL Compiler | `dsl_lexer.mbt`, `dsl_parser.mbt`, `dsl_expr.mbt` | Character scanner → recursive descent (primary → term → expr) |
+| Cross-field resolution | `dsl_resolve.mbt` | Symbolic bounds, fixed-point resolution, unknown-reference and cycle detection |
 | AST printer | `dsl_printer.mbt` | AST → DSL source (inverse of the parser) |
-| Semantic check | `dsl_semantic.mbt` | Reference resolution, self-reference, cycle detection |
-| Constraint solver | `solver.mbt`, `solver_propagate.mbt` | Interval arithmetic, dependency graph, fixed-point propagation |
+| Semantic check | `dsl_semantic.mbt` | Reference resolution, self-reference, cycle detection, constraint-system validation |
+| Constraint solver | `solver.mbt`, `solver_propagate.mbt` | Interval arithmetic, dependency graph, fixed-point propagation over cross-field bounds |
 | Migration engine | `migration.mbt` | Structured semantic diff, SQL generation, breaking-change classification |
 | Equivalence | `equiv.mbt` | Type widening chain, constraint containment, collection recursion |
 | Round-trip | `roundtrip.mbt` | Source → AST → source → AST, comparing every field, type and constraint |
@@ -254,7 +255,7 @@ npm run dev  # http://127.0.0.1:3000
 
 | Suite | Count | Command |
 |-------|-------|---------|
-| MoonBit kernel | 220 | `cd moonbit && moon test` |
+| MoonBit kernel | 237 | `cd moonbit && moon test` |
 | &nbsp;&nbsp;— property-based | 16 | (12 invariants over 100+ random models, 4 PRNG properties) |
 | &nbsp;&nbsp;— performance benchmarks | 7 | (100–200 field models, `monotonic_clock` budgets) |
 | Frontend unit | 69 | `cd web && npm run test` |
@@ -278,14 +279,14 @@ Performance budgets are asserted with `monotonic_clock` for models of 100-200 fi
 
 **How CI verifies the kernel.** The kernel is compiled to `wasm-gc`, and the artifact (`web/public/projdesk.wasm`) is committed to the repository. CI deliberately does not install the MoonBit toolchain: the compiler renamed its 32-bit integer type between releases (`Int` ↔ `Int32`), so a runner with a different toolchain would fail to compile the same source. CI therefore exercises the **compiled kernel** through 25 real-WASM integration tests, and the `ProjDesk Generate` action additionally runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
 
-The kernel's own suite — `moon check` (zero warnings) and `moon test` (220 tests) — runs locally via `setup.ps1`, `build.ps1`, or `make kernel-test`.
+The kernel's own suite — `moon check` (zero warnings) and `moon test` (237 tests) — runs locally via `setup.ps1`, `build.ps1`, or `make kernel-test`.
 
 ---
 
 ## Known Limitations
 
 - The DSL has no module or import mechanism — each model file is self-contained.
-- The solver reasons per field: interval propagation narrows bounds but does not yet derive cross-field implications.
+- Cross-field constraint reasoning runs on DSL sources. A model JSON carries only the resolved values, so `solve_constraints` on a model reasons per field; the cross-field resolution and cycle detection live in the DSL path.
 - Migration SQL covers common `ALTER TABLE` cases; exotic dialects need manual review.
 - The TypeScript and Prisma emitters carry no runtime constraint, so every constraint on their fields is reported as dropped; use the Zod target for runtime validation.
 - The DSL grammar has no documentation construct, so a model's doc comments are not part of what the round-trip verifies.

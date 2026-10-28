@@ -69,9 +69,10 @@ pub fn Interval::is_point(self : Interval) -> Bool {
 
 ///|
 /// A resolved bound value together with where it came from
-/// `from_field` is empty for a literal, otherwise the referenced field name
+/// `from_field` is empty for a literal, otherwise the referenced field name.
+/// The value is absent while the reference is still unresolved.
 pub(all) struct Bound {
-  value : Double
+  value : Double?
   from_field : String
 } derive(Eq, Debug)
 
@@ -176,7 +177,11 @@ pub fn propagate(bounds : Array[FieldBounds]) -> PropagationResult {
       }
     }
     if cyclic {
-      return CyclicDependency([start])
+      let chain = [start]
+      for d in deps[i] {
+        chain.push(d)
+      }
+      return CyclicDependency(chain)
     }
   }
   // Fixed-point propagation
@@ -184,19 +189,35 @@ pub fn propagate(bounds : Array[FieldBounds]) -> PropagationResult {
   for i = 0; i < n; i = i + 1 {
     let mut iv = unbounded()
     match bounds[i].least {
-      Some(b) => iv = iv.intersect({ lower: Some(b.value), upper: None, })
+      Some(b) =>
+        match b.value {
+          Some(v) => iv = iv.intersect({ lower: Some(v), upper: None, })
+          None => ()
+        }
       None => ()
     }
     match bounds[i].most {
-      Some(b) => iv = iv.intersect({ lower: None, upper: Some(b.value), })
+      Some(b) =>
+        match b.value {
+          Some(v) => iv = iv.intersect({ lower: None, upper: Some(v), })
+          None => ()
+        }
       None => ()
     }
     match bounds[i].over {
-      Some(b) => iv = iv.intersect({ lower: Some(b.value), upper: None, })
+      Some(b) =>
+        match b.value {
+          Some(v) => iv = iv.intersect({ lower: Some(v), upper: None, })
+          None => ()
+        }
       None => ()
     }
     match bounds[i].under {
-      Some(b) => iv = iv.intersect({ lower: None, upper: Some(b.value), })
+      Some(b) =>
+        match b.value {
+          Some(v) => iv = iv.intersect({ lower: None, upper: Some(v), })
+          None => ()
+        }
       None => ()
     }
     intervals.push(iv)
@@ -209,28 +230,18 @@ pub fn propagate(bounds : Array[FieldBounds]) -> PropagationResult {
     rounds = rounds + 1
     for i = 0; i < n; i = i + 1 {
       let mut new_iv = intervals[i]
-      for
-        b in [bounds[i].least, bounds[i].most, bounds[i].over, bounds[i].under] {
+      // A bound that takes its value from another field ties this field to
+      // that one on the same side of the range: a shared lower bound tightens
+      // our lower bound, a shared upper bound tightens our upper bound.
+      for b in [bounds[i].least, bounds[i].over] {
         match b {
           Some(bound) =>
             if bound.from_field != "" && bound.from_field != bounds[i].name {
               match index.get(bound.from_field) {
-                Some(j) => {
-                  let other = intervals[j]
-                  // A referenced lower bound tightens our upper, and vice versa
-                  match other.lower {
+                Some(j) =>
+                  match intervals[j].lower {
                     Some(v) =>
-                      if bound.value == v {
-                        new_iv = new_iv.intersect({
-                          lower: None,
-                          upper: Some(v),
-                        })
-                      }
-                    None => ()
-                  }
-                  match other.upper {
-                    Some(v) =>
-                      if bound.value == v {
+                      if bound.value == Some(v) {
                         new_iv = new_iv.intersect({
                           lower: Some(v),
                           upper: None,
@@ -238,7 +249,28 @@ pub fn propagate(bounds : Array[FieldBounds]) -> PropagationResult {
                       }
                     None => ()
                   }
-                }
+                None => ()
+              }
+            }
+          None => ()
+        }
+      }
+      for b in [bounds[i].most, bounds[i].under] {
+        match b {
+          Some(bound) =>
+            if bound.from_field != "" && bound.from_field != bounds[i].name {
+              match index.get(bound.from_field) {
+                Some(j) =>
+                  match intervals[j].upper {
+                    Some(v) =>
+                      if bound.value == Some(v) {
+                        new_iv = new_iv.intersect({
+                          lower: None,
+                          upper: Some(v),
+                        })
+                      }
+                    None => ()
+                  }
                 None => ()
               }
             }
@@ -281,6 +313,6 @@ pub fn PropagationResult::to_text(self : PropagationResult) -> String {
     }
     CyclicDependency(fields) => "cyclic dependency: " + fields.join(" -> ")
     EmptyInterval(name, _) =>
-      "empty interval for " + name + " after propagation"
+      "empty constraint range for " + name + ": the bounds cannot be satisfied"
   }
 }

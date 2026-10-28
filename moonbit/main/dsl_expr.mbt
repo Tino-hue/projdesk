@@ -25,6 +25,10 @@ pub(all) enum ExprError {
   UnknownFunc(String)
   BadArgs(String)
   DivByZero
+  /// The expression refers to another field's bound, which is not resolved
+  /// yet. The reference is kept so it can be resolved once that field is
+  /// known; it is not an error on its own.
+  UnresolvedRef(String, String)
 } derive(Eq, Debug)
 
 ///|
@@ -40,6 +44,12 @@ pub fn ExprError::to_text(self : ExprError) -> String {
     UnknownFunc(name) => "unknown function '" + name + "'"
     BadArgs(name) => "wrong number of arguments to '" + name + "'"
     DivByZero => "division by zero"
+    UnresolvedRef(field, constraint) =>
+      "constraint reference '" +
+      field +
+      "." +
+      constraint +
+      "' is not resolved yet"
   }
 }
 
@@ -141,9 +151,11 @@ fn env_field(
     Some(constraints) =>
       match constraints.get(constraint) {
         Some(v) => Ok(v)
-        None => Err(UnknownVar(field + "." + constraint))
+        // the field exists but does not carry this constraint: the resolver
+        // decides whether that is a mistake or a reference to a later field
+        None => Err(UnresolvedRef(field, constraint))
       }
-    None => Err(UnknownVar(field))
+    None => Err(UnresolvedRef(field, constraint))
   }
 }
 
@@ -190,12 +202,35 @@ pub fn eval_expr(
 }
 
 ///|
+/// The field reference this expression depends on, if any
+pub fn Expr::dependency(self : Expr) -> (String, String)? {
+  match self {
+    FieldRef(field, constraint) => Some((field, constraint))
+    Binop(_, left, right) =>
+      match left.dependency() {
+        Some(d) => Some(d)
+        None => right.dependency()
+      }
+    Call(_, args) => {
+      for a in args {
+        match a.dependency() {
+          Some(d) => return Some(d)
+          None => ()
+        }
+      }
+      None
+    }
+    _ => None
+  }
+}
+
+///|
 /// Render an expression back to source text (for pretty-printing)
 pub fn Expr::to_source(self : Expr) -> String {
   match self {
     Num(n) => n.to_string()
     Var(name) => name
-    FieldRef(field, constraint) => field + "" + constraint
+    FieldRef(field, constraint) => field + "." + constraint
     Binop(op, left, right) =>
       "(" + left.to_source() + " " + op + " " + right.to_source() + ")"
     Call(name, args) => {

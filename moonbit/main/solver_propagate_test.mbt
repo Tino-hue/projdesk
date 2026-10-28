@@ -38,14 +38,14 @@ test "propagate: two-field cycle is detected" {
   let bounds : Array[@main.FieldBounds] = [
     {
       name: "a",
-      least: Some({ value: 0.0, from_field: "b", }),
+      least: Some({ value: Some(0.0), from_field: "b", }),
       most: None,
       over: None,
       under: None,
     },
     {
       name: "b",
-      least: Some({ value: 0.0, from_field: "a", }),
+      least: Some({ value: Some(0.0), from_field: "a", }),
       most: None,
       over: None,
       under: None,
@@ -62,7 +62,7 @@ test "propagate: self-dependency is a cycle" {
   let bounds : Array[@main.FieldBounds] = [
     {
       name: "a",
-      least: Some({ value: 0.0, from_field: "a", }),
+      least: Some({ value: Some(0.0), from_field: "a", }),
       most: None,
       over: None,
       under: None,
@@ -79,21 +79,21 @@ test "propagate: three-field cycle is detected" {
   let bounds : Array[@main.FieldBounds] = [
     {
       name: "a",
-      least: Some({ value: 0.0, from_field: "c", }),
+      least: Some({ value: Some(0.0), from_field: "c", }),
       most: None,
       over: None,
       under: None,
     },
     {
       name: "b",
-      least: Some({ value: 0.0, from_field: "a", }),
+      least: Some({ value: Some(0.0), from_field: "a", }),
       most: None,
       over: None,
       under: None,
     },
     {
       name: "c",
-      least: Some({ value: 0.0, from_field: "b", }),
+      least: Some({ value: Some(0.0), from_field: "b", }),
       most: None,
       over: None,
       under: None,
@@ -110,14 +110,14 @@ test "propagate: acyclic references resolve consistently" {
   let bounds : Array[@main.FieldBounds] = [
     {
       name: "a",
-      least: Some({ value: 0.0, from_field: "", }),
-      most: Some({ value: 100.0, from_field: "", }),
+      least: Some({ value: Some(0.0), from_field: "", }),
+      most: Some({ value: Some(100.0), from_field: "", }),
       over: None,
       under: None,
     },
     {
       name: "b",
-      least: Some({ value: 0.0, from_field: "a", }),
+      least: Some({ value: Some(0.0), from_field: "a", }),
       most: None,
       over: None,
       under: None,

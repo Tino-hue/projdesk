@@ -63,13 +63,13 @@ fn print_field(f : AstField) -> String {
 /// Print a check back to DSL syntax
 fn print_check(c : AstCheck) -> String {
   match c {
-    Least(n) => "least=" + n.to_string()
-    Most(n) => "most=" + n.to_string()
-    Over(n) => "over=" + n.to_string()
-    Under(n) => "under=" + n.to_string()
-    Step(n) => "step=" + n.to_string()
-    Shortest(n) => "shortest=" + n.to_string()
-    Longest(n) => "longest=" + n.to_string()
+    Least(b) => "least=" + b.expr.to_source()
+    Most(b) => "most=" + b.expr.to_source()
+    Over(b) => "over=" + b.expr.to_source()
+    Under(b) => "under=" + b.expr.to_source()
+    Step(b) => "step=" + b.expr.to_source()
+    Shortest(b) => "shortest=" + b.expr.to_source()
+    Longest(b) => "longest=" + b.expr.to_source()
     Pattern(s) => "pattern=\"" + s + "\""
     Format(s) => "format=" + s
     Options(vals) => "options=[" + vals.join(", ") + "]"

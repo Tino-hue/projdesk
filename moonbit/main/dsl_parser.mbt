@@ -68,15 +68,30 @@ pub(all) enum AstType {
 ///|
 
 ///|
+/// A numeric constraint bound. The expression is kept so the printer can
+/// reproduce the source, and the value is filled in once the expression has
+/// been evaluated — a reference to another field may only resolve later.
+pub(all) struct AstBound {
+  value : Double?
+  expr : Expr
+} derive(Eq, Debug)
+
+///|
+pub extend AstBound with Eq::{equal, not_equal}
+
+///|
+pub extend AstBound with Debug::{to_repr}
+
+///|
 /// AST constraint representation
 pub(all) enum AstCheck {
-  Least(Double)
-  Most(Double)
-  Over(Double)
-  Under(Double)
-  Step(Double)
-  Shortest(Int)
-  Longest(Int)
+  Least(AstBound)
+  Most(AstBound)
+  Over(AstBound)
+  Under(AstBound)
+  Step(AstBound)
+  Shortest(AstBound)
+  Longest(AstBound)
   Pattern(String)
   Format(String)
   Options(Array[String])
@@ -566,6 +581,23 @@ fn dsl_parse_expr(p : Parser) -> (Expr?, Array[ParseError]) {
 }
 
 ///|
+/// Build a constraint bound from its expression. A reference to a field that
+/// has not been seen yet stays unresolved: the resolver settles it once the
+/// whole model is known.
+fn make_bound(p : Parser, expr : Expr, errors : Array[ParseError]) -> AstBound {
+  match eval_expr_in(expr, { vars: Map([]), fields: p.field_env.val, }) {
+    Ok(n) => { value: Some(n), expr, }
+    // not an error yet: the referenced field may appear later
+    Err(UnresolvedRef(_, _)) => { value: None, expr, }
+    Err(err) => {
+      let (l, c) = cur_pos(p)
+      errors.push({ msg: err.to_text(), line: l, col: c, })
+      { value: None, expr, }
+    }
+  }
+}
+
+///|
 /// Record a resolved numeric constraint so later fields can reference it
 fn record_constraint(
   p : Parser,
@@ -611,56 +643,29 @@ fn dsl_parse_check(
     None => ()
   }
   match name {
-    "least" | "most" | "over" | "under" | "step" => {
-      // value may be an expression: 2 * 10, min(1, 5), -1
+    "least" | "most" | "over" | "under" | "step" | "shortest" | "longest" => {
+      // value may be an expression: 2 * 10, min(1, 5), -1, a.least
       let (expr, expr_errors) = dsl_parse_expr(p)
       for e in expr_errors {
         errors.push(e)
       }
       match expr {
-        Some(e) =>
-          match eval_expr_in(e, { vars: Map([]), fields: p.field_env.val, }) {
-            Ok(n) => {
-              record_constraint(p, field, name, n)
-              match name {
-                "least" => (Some(Least(n)), errors)
-                "most" => (Some(Most(n)), errors)
-                "over" => (Some(Over(n)), errors)
-                "under" => (Some(Under(n)), errors)
-                _ => (Some(Step(n)), errors)
-              }
-            }
-            Err(err) => {
-              let (l, c) = cur_pos(p)
-              errors.push({ msg: err.to_text(), line: l, col: c, })
-              (None, errors)
-            }
+        Some(e) => {
+          let bound = make_bound(p, e, errors)
+          match bound.value {
+            Some(n) => record_constraint(p, field, name, n)
+            None => ()
           }
-        None => (None, errors)
-      }
-    }
-    "shortest" | "longest" => {
-      let (expr, expr_errors) = dsl_parse_expr(p)
-      for e in expr_errors {
-        errors.push(e)
-      }
-      match expr {
-        Some(e) =>
-          match eval_expr_in(e, { vars: Map([]), fields: p.field_env.val, }) {
-            Ok(n) => {
-              record_constraint(p, field, name, n)
-              let int_val = n.to_int()
-              match name {
-                "shortest" => (Some(Shortest(int_val)), errors)
-                _ => (Some(Longest(int_val)), errors)
-              }
-            }
-            Err(err) => {
-              let (l, c) = cur_pos(p)
-              errors.push({ msg: err.to_text(), line: l, col: c, })
-              (None, errors)
-            }
+          match name {
+            "least" => (Some(Least(bound)), errors)
+            "most" => (Some(Most(bound)), errors)
+            "over" => (Some(Over(bound)), errors)
+            "under" => (Some(Under(bound)), errors)
+            "step" => (Some(Step(bound)), errors)
+            "shortest" => (Some(Shortest(bound)), errors)
+            _ => (Some(Longest(bound)), errors)
           }
+        }
         None => (None, errors)
       }
     }
@@ -754,5 +759,9 @@ pub fn dsl_parse(
     }
     skip_newlines(p)
   }
+  // Settle constraint references now that every field is known. A reference
+  // that cannot be settled is a semantic problem, reported by the semantic
+  // checker rather than as a syntax error.
+  resolve_all_bounds(models) |> ignore
   (models, lex_errors, parse_errors)
 }

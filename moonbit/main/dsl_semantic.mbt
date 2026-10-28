@@ -13,6 +13,9 @@ pub(all) enum SemanticIssue {
   RefCycle(Array[String])
   /// A field references itself
   SelfReference(String)
+  /// A numeric constraint bound that cannot be settled: it refers to a field
+  /// or a constraint that does not exist, or the references form a cycle
+  UnresolvedConstraint(String)
 } derive(Eq, Debug)
 
 ///|
@@ -28,6 +31,7 @@ pub fn SemanticIssue::to_text(self : SemanticIssue) -> String {
       "field '" + field + "' references undefined model '" + target + "'"
     RefCycle(cycle) => "reference cycle: " + cycle.join(" -> ")
     SelfReference(field) => "field '" + field + "' references its own model"
+    UnresolvedConstraint(msg) => msg
   }
 }
 
@@ -37,6 +41,7 @@ pub fn SemanticIssue::severity(self : SemanticIssue) -> String {
     UndefinedRef(_, _) => "error"
     RefCycle(_) => "error"
     SelfReference(_) => "error"
+    UnresolvedConstraint(_) => "error"
   }
 }
 
@@ -134,6 +139,17 @@ pub fn check_semantics(models : Array[AstModel]) -> Array[SemanticIssue] {
     }
     if found_cycle {
       cycle_found = true
+    }
+  }
+  // 4. Constraint bounds that refer to a field or constraint that does not
+  // exist, plus the state of the constraint system itself
+  for m in models {
+    for p in resolve_model_bounds(m) {
+      issues.push(UnresolvedConstraint(p))
+    }
+    match propagate(model_field_bounds(m)) {
+      Consistent(_) => ()
+      other => issues.push(UnresolvedConstraint(other.to_text()))
     }
   }
   issues
