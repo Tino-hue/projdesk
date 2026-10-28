@@ -9,7 +9,8 @@ Push-Location "$root\moonbit"
 $env:PATH += ";$env:USERPROFILE\.moon\bin"
 moon build --target wasm-gc --release
 Copy-Item "_build\wasm-gc\release\build\main\main.wasm" "$root\web\public\projdesk.wasm" -Force
-Write-Host "WASM copied to web/public/projdesk.wasm" -ForegroundColor Green
+Copy-Item "_build\wasm-gc\release\build\main\main.wasm" "$root\cli\projdesk.wasm" -Force
+Write-Host "WASM copied to web/public/ and cli/" -ForegroundColor Green
 Pop-Location
 
 Write-Host "=== 2. Kernel contract tests ===" -ForegroundColor Cyan

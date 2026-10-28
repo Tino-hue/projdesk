@@ -232,10 +232,7 @@ pub impl Projector for GraphqlProj with fn project(_self, model, known) -> (
       if c.step is Some(_) {
         drops.push(StepNotCarried(f.name))
       }
-      if c.shortest is Some(_) {
-        drops.push(LengthNotCarried(f.name))
-      }
-      if c.longest is Some(_) {
+      if c.shortest is Some(_) || c.longest is Some(_) {
         drops.push(LengthNotCarried(f.name))
       }
       if c.pattern is Some(_) {

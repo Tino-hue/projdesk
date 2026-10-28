@@ -13,13 +13,13 @@ GitHub 仓库链接：https://github.com/Tino-hue/projdesk
 
 ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模型的完整生命周期：定义、分析、演化、对比、验证。
 
-核心是五个从零手写的 MoonBit 算法引擎，共 3064 行独立实现（整个内核 4604 行实现代码 + 2315 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。开发者用一套建模 DSL 声明业务对象，工作台完成约束推理、迁移推演、等价判定与正确性验证，最后投影为 JSON Schema、OpenAPI、SQL、GraphQL、TypeScript、Zod、Prisma 七种契约。
+核心是五个从零手写的 MoonBit 算法引擎，共 3079 行独立实现（整个内核 4961 行实现代码 + 2606 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。开发者用一套建模 DSL 声明业务对象，工作台完成约束推理、迁移推演、等价判定与正确性验证，最后投影为 JSON Schema、OpenAPI、SQL、GraphQL、TypeScript、Zod、Prisma 七种契约。
 
 投影由开源库 moonmodel 承担（相当于编译器后端）；五个引擎均本项目独立实现，与其无功能重叠。
 
 三、核心功能范围
 
-- 建模 DSL：手写词法分析器（Token ADT + 字符级扫描）、递归下降语法分析（AST + 行列号错误恢复）、AST 代码生成、AST 反向打印；支持行注释与块注释、嵌套模型、约束表达式（算术运算、内置函数 min/max/abs/ceil/floor、跨字段引用 a.least）；
+- 建模 DSL：手写词法分析器（Token ADT + 字符级扫描）、递归下降语法分析（AST + 行列号错误恢复）、AST 代码生成、AST 反向打印；支持行注释与块注释、嵌套模型、约束表达式（算术运算、内置函数 min/max/abs/ceil/floor）、跨字段约束引用（b: Int [over=a.least]，编译期求值）；
 - 约束求解器：区间冲突检测、蕴含与冗余分析、包含关系判定、固定点区间传播，输出类型化 Diagnosis 诊断（9 变体）；
 - 迁移引擎：结构化语义 diff（非文本对比），生成含破坏性变更标记的 ALTER TABLE，覆盖 Postgres/SQLite/MySQL；
 - 等价检测：类型加宽链（Int→Big→Real）、约束包含、嵌套模型与集合递归判定，分类为 Equivalent/SubtypeOf/SupertypeOf/Incompatible；
@@ -56,7 +56,7 @@ API 契约跨端一致性：用 DSL 一次声明结构，前端得 TypeScript �
 3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
 4. WASM ABI 9 导出
 5. CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
-6. 测试与 CI：195 个 MoonBit 测试 + 82 个前端测试（含 17 个加载真实 WASM 内核的集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
+6. 测试与 CI：210 个 MoonBit 测试 + 86 个前端测试（含 21 个加载真实 WASM 内核的集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
 
 七、项目类型说明
 
@@ -68,6 +68,6 @@ API 契约跨端一致性：用 DSL 一次声明结构，前端得 TypeScript �
 
 https://github.com/Tino-hue/projdesk
 
-115 个以上有效提交。测试全绿：195 个 MoonBit 测试与 82 个前端测试全部通过，内核 moon check 零警告；CI 通过 17 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+115 个以上有效提交。测试全绿：210 个 MoonBit 测试与 86 个前端测试全部通过，内核 moon check 零警告；CI 通过 21 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 在线演示：https://tino-hue.github.io/projdesk/

@@ -101,6 +101,42 @@ describe.skipIf(!wasmGcSupported)('Engine 1: DSL Compiler (real WASM)', () => {
   });
 });
 
+describe.skipIf(!wasmGcSupported)('Projection honesty (real WASM)', () => {
+  const TARGETS = ['jsonSchema', 'openapi', 'sql', 'graphql', 'typescript', 'zod', 'prisma'];
+
+  it('reports a drop list for every projection target', () => {
+    const result = JSON.parse(kernel.dsl_project('model User {\n  id: Big @unique\n  name: Text [longest=64]\n}'));
+    expect(Object.keys(result.drops).sort()).toEqual([...TARGETS].sort());
+    for (const target of TARGETS) {
+      expect(Array.isArray(result.drops[target])).toBe(true);
+    }
+  });
+
+  it('TypeScript drops every runtime constraint it cannot carry', () => {
+    const result = JSON.parse(kernel.dsl_project('model User {\n  id: Big @unique\n  name: Text [longest=64]\n}'));
+    const tsDrops = result.drops.typescript;
+    expect(tsDrops.some((d: { constraint: string }) => d.constraint === 'unique')).toBe(true);
+    expect(tsDrops.some((d: { constraint: string }) => d.constraint === 'length')).toBe(true);
+  });
+
+  it('Zod carries the constraints it can express', () => {
+    const result = JSON.parse(kernel.dsl_project('model User {\n  id: Big @unique\n  name: Text [shortest=1, longest=64]\n  email: Text [format=email]\n}'));
+    expect(result.zod).toContain('.min(1)');
+    expect(result.zod).toContain('.max(64)');
+    expect(result.zod).toContain('.email()');
+    // only record-level uniqueness is left over
+    const zodDrops = result.drops.zod;
+    expect(zodDrops.length).toBe(1);
+    expect(zodDrops[0].constraint).toBe('unique');
+  });
+
+  it('carries a closed value set as a Zod enum', () => {
+    const result = JSON.parse(kernel.dsl_project('model T {\n  status: Text [options=[open, closed]]\n}'));
+    expect(result.zod).toContain('.enum([');
+    expect(result.drops.zod.length).toBe(0);
+  });
+});
+
 describe.skipIf(!wasmGcSupported)('Engine 2: Constraint Solver (real WASM)', () => {
   const modelWith = (check: object) => JSON.stringify({
     name: 'T', doc: '', fields: [{

@@ -84,6 +84,9 @@ export interface KernelOutput {
     openapi: DropReason[];
     sql: DropReason[];
     graphql: DropReason[];
+    typescript: DropReason[];
+    zod: DropReason[];
+    prisma: DropReason[];
   };
 }
 

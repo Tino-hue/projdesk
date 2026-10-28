@@ -18,16 +18,16 @@ A pure-browser workbench for the full lifecycle of a data model: **define → an
 
 | # | Engine | Source | Lines | What it does |
 |---|--------|--------|-------|--------------|
-| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` | 1770 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks |
-| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 534 | Conflict / redundancy / containment analysis + fixed-point interval propagation |
+| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` | 1783 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks |
+| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 536 | Conflict / redundancy / containment analysis + fixed-point interval propagation |
 | 3 | **Migration Engine** | `migration.mbt` | 349 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
 | 4 | **Equivalence Checker** | `equiv.mbt` | 224 | Type subtyping + constraint containment + classification |
 | 5 | **Round-trip Verifier** | `roundtrip.mbt` | 187 | Formal generate-parse-compare correctness verification |
-| | **Five engines** | | **3064** | |
+| | **Five engines** | | **3079** | |
 
-On top of the engines the kernel carries **1369 lines** of supporting infrastructure (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt`) and **171 lines** of property-test machinery (`property.mbt`) — **4604 lines** of MoonBit implementation, plus **2315 lines** of test code.
+On top of the engines the kernel carries **1882 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **4961 lines** of MoonBit implementation, plus **2606 lines** of test code.
 
-**195 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **82 frontend tests** (17 load the real WASM kernel end-to-end).
+**210 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **86 frontend tests** (21 load the real WASM kernel end-to-end).
 
 ---
 
@@ -66,6 +66,7 @@ model Address {
 | `@distinct` | List items must differ |
 | `[constraint=value]` | `least` `most` `over` `under` `step` `shortest` `longest` `pattern` `format` `options=[a,b]` |
 | `value` as an expression | Arithmetic `+ - * / %`, parentheses, `min` `max` `abs` `ceil` `floor` — resolved at compile time |
+| `other_field.constraint` | Cross-field reference to an earlier field, e.g. `b: Int [over=a.least]` |
 | `// comment` | Line comment (ignored by the parser) |
 | `/* comment */` | Block comment (ignored by the parser) |
 
@@ -111,7 +112,7 @@ After lifecycle management, the model projects to seven targets:
 
 JSON Schema 2020-12 · OpenAPI 3.0/3.1/2.0 · SQL DDL (Postgres/SQLite/MySQL) · GraphQL SDL · TypeScript · Zod · Prisma
 
-Honest projection is preserved: every constraint a target cannot carry is reported as **dropped + reason** rather than silently discarded.
+Honest projection is preserved: every constraint a target cannot carry is reported as **dropped + reason** rather than silently discarded — all seven targets produce a typed drop report, and the Zod emitter carries the constraints Zod can express (length bounds, numeric bounds, patterns, named formats, closed value sets, list distinctness).
 
 ---
 
@@ -140,7 +141,7 @@ moonbit/                 MoonBit kernel (wasm-gc)
     abi.mbt              JSON <-> moonmodel.Model conversion
     api.mbt              WASM ABI exports (9)
     jsonparse/           Minimal JSON wrapper (name-collision workaround)
-    *_test.mbt           Engine test suites (13 files, 195 tests)
+    *_test.mbt           Engine test suites (13 files, 210 tests)
 web/                    React + TypeScript frontend (31 files)
   src/components/
     EnginePanel.tsx      Engine playground (6 interactive engine tabs)
@@ -162,7 +163,7 @@ web/                    React + TypeScript frontend (31 files)
     history.ts           Undo / redo manager
     diff.ts              Model diff
     types.ts             ABI type definitions
-    *.test.ts            Test suites (6 files, 82 tests)
+    *.test.ts            Test suites (6 files, 86 tests)
 backend/                Cloudflare Workers + D1 API (optional)
 cli/                    Command-line tool (gen/check/migrate/verify/init)
 vscode-extension/       VS Code plugin (DSL highlighting + preview)
@@ -252,11 +253,11 @@ npm run dev  # http://127.0.0.1:3000
 
 | Suite | Count | Command |
 |-------|-------|---------|
-| MoonBit kernel | 195 | `cd moonbit && moon test` |
+| MoonBit kernel | 210 | `cd moonbit && moon test` |
 | &nbsp;&nbsp;— property-based | 16 | (12 invariants over 100+ random models, 4 PRNG properties) |
 | &nbsp;&nbsp;— performance benchmarks | 7 | (100–200 field models, `monotonic_clock` budgets) |
 | Frontend unit | 65 | `cd web && npm run test` |
-| Frontend WASM integration | 17 | (same command; loads the real compiled kernel) |
+| Frontend WASM integration | 21 | (same command; loads the real compiled kernel) |
 
 ### Test strategy
 
@@ -274,9 +275,9 @@ Beyond hand-picked examples, the kernel is verified with **property-based testin
 
 Performance budgets are asserted with `monotonic_clock` for models of 100-200 fields across projection, solving, parsing, diffing, round-trip, and equivalence.
 
-**How CI verifies the kernel.** The kernel is compiled to `wasm-gc`, and the artifact (`web/public/projdesk.wasm`) is committed to the repository. CI deliberately does not install the MoonBit toolchain: the compiler renamed its 32-bit integer type between releases (`Int` ↔ `Int32`), so a runner with a different toolchain would fail to compile the same source. CI therefore exercises the **compiled kernel** through 17 real-WASM integration tests, and the `ProjDesk Generate` action additionally runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
+**How CI verifies the kernel.** The kernel is compiled to `wasm-gc`, and the artifact (`web/public/projdesk.wasm`) is committed to the repository. CI deliberately does not install the MoonBit toolchain: the compiler renamed its 32-bit integer type between releases (`Int` ↔ `Int32`), so a runner with a different toolchain would fail to compile the same source. CI therefore exercises the **compiled kernel** through 21 real-WASM integration tests, and the `ProjDesk Generate` action additionally runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
 
-The kernel's own suite — `moon check` (zero warnings) and `moon test` (195 tests) — runs locally via `setup.ps1`, `build.ps1`, or `make kernel-test`.
+The kernel's own suite — `moon check` (zero warnings) and `moon test` (210 tests) — runs locally via `setup.ps1`, `build.ps1`, or `make kernel-test`.
 
 ---
 
@@ -285,7 +286,7 @@ The kernel's own suite — `moon check` (zero warnings) and `moon test` (195 tes
 - The DSL has no module or import mechanism — each model file is self-contained.
 - The solver reasons per field: interval propagation narrows bounds but does not yet derive cross-field implications.
 - Migration SQL covers common `ALTER TABLE` cases; exotic dialects need manual review.
-- The TypeScript / Zod / Prisma projections come from a hand-written emitter and do not yet report dropped constraints — only the four moonmodel-backed projections (JSON Schema, OpenAPI, SQL, GraphQL) emit typed drop reasons.
+- The TypeScript and Prisma emitters carry no runtime constraint, so every constraint on their fields is reported as dropped; use the Zod target for runtime validation.
 
 ## License
 

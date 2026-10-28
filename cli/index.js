@@ -74,6 +74,15 @@ function parseArgs(argv) {
 
 async function loadKernel() {
   const wasmPath = join(__dirname, 'projdesk.wasm');
+  if (!existsSync(wasmPath)) {
+    throw new Error(
+      `Kernel not found at ${wasmPath}\n` +
+      'Build it with the MoonBit toolchain, then copy the artifact:\n' +
+      '  cd moonbit && moon build --target wasm-gc --release\n' +
+      '  copy _build/wasm-gc/release/build/main/main.wasm ../cli/projdesk.wasm\n' +
+      'Or run setup.ps1 / build.ps1 from the repository root.'
+    );
+  }
   const bytes = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(bytes, {}, {
     builtins: ['js-string'],
@@ -313,7 +322,7 @@ model ${name} {
     if (drops) {
       const dropLines = [];
       for (const [target, list] of Object.entries(drops)) {
-        for (const d of list) dropLines.push(`[${target}] ${d.field}.${d.constraint}: ${d.why}`);
+        for (const d of list) dropLines.push(`[${target}] ${d.why}`);
       }
       if (dropLines.length > 0) {
         const dropPath = join(outDir, 'drops.txt');

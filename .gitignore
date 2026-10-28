@@ -29,8 +29,11 @@ Thumbs.db
 # web/public/projdesk.wasm IS tracked: CI deploys it directly so the pipeline does
 # not depend on a specific MoonBit toolchain release (the compiler renamed the
 # 32-bit integer type between releases, so rebuilding in CI is not reproducible).
+# cli/projdesk.wasm is tracked for the same reason: the CLI and the GitHub
+# Action both need the kernel, and a fresh clone must work without a toolchain.
 *.wasm
 !web/public/projdesk.wasm
+!cli/projdesk.wasm
 
 # Wrangler local state
 backend/.wrangler/

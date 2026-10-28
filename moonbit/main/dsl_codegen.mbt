@@ -151,6 +151,7 @@ pub fn dsl_project(
     out["typescript"] = Json::string("")
     out["zod"] = Json::string("")
     out["prisma"] = Json::string("")
+    out["drops"] = Json::object(Map([]))
     return (Json::object(out).stringify(), errors)
   }
   let (primary, known) = dsl_to_models(models)
@@ -164,5 +165,6 @@ pub fn dsl_project(
   out["typescript"] = Json::string(result.typescript)
   out["zod"] = Json::string(result.zod)
   out["prisma"] = Json::string(result.prisma)
+  out["drops"] = drops_map_to_json(result)
   (Json::object(out).stringify(), errors)
 }

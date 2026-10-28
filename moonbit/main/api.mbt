@@ -17,7 +17,7 @@ pub fn project_from_json(input_json : String) -> String {
     openapi_dialect=input.openapi_dialect,
     sql_dialect=input.sql_dialect,
   )
-  result_to_json(result, input.model, input.known)
+  result_to_json(result)
 }
 
 ///|
@@ -104,26 +104,17 @@ pub fn get_presets_json() -> String {
 
 ///|
 /// Serialize ProjectionResult to JSON string
-fn result_to_json(
-  result : ProjectionResult,
-  model : @moonmodel.Model,
-  known : Array[@moonmodel.Model],
-) -> String {
+fn result_to_json(result : ProjectionResult) -> String {
   let out : Map[String, Json] = Map([])
   out["ok"] = Json::boolean(true)
   out["jsonSchema"] = Json::string(result.json_schema)
   out["openapi"] = Json::string(result.openapi)
   out["sql"] = Json::string(result.sql)
   out["graphql"] = Json::string(result.graphql)
-  out["typescript"] = Json::string(project_typescript(model, known))
-  out["zod"] = Json::string(project_zod(model, known))
-  out["prisma"] = Json::string(project_prisma(model, known))
-  let drops : Map[String, Json] = Map([])
-  drops["jsonSchema"] = drops_to_json(result.drops_json)
-  drops["openapi"] = drops_to_json(result.drops_open)
-  drops["sql"] = drops_to_json(result.drops_sql)
-  drops["graphql"] = drops_to_json(result.drops_gql)
-  out["drops"] = Json::object(drops)
+  out["typescript"] = Json::string(result.typescript)
+  out["zod"] = Json::string(result.zod)
+  out["prisma"] = Json::string(result.prisma)
+  out["drops"] = drops_map_to_json(result)
   Json::object(out).stringify()
 }
 

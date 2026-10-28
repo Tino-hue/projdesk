@@ -6,6 +6,9 @@ interface Props {
     openapi: DropReason[];
     sql: DropReason[];
     graphql: DropReason[];
+    typescript: DropReason[];
+    zod: DropReason[];
+    prisma: DropReason[];
   };
 }
 
@@ -20,6 +23,9 @@ const TARGETS = [
   { key: 'openapi', label: 'OpenAPI' },
   { key: 'sql', label: 'SQL' },
   { key: 'graphql', label: 'GraphQL' },
+  { key: 'typescript', label: 'TypeScript' },
+  { key: 'zod', label: 'Zod' },
+  { key: 'prisma', label: 'Prisma' },
 ] as const;
 
 export function CoverageMatrix({ drops }: Props) {
