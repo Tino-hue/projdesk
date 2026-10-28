@@ -137,6 +137,67 @@ test "propagate: empty model is consistent" {
   }
 }
 
+///|
+test "propagate: a field reached from two places is not a cycle" {
+  // value depends on floor, and ceiling depends on floor as well: the graph
+  // has a diamond, not a cycle.
+  let bounds : Array[@main.FieldBounds] = [
+    {
+      name: "value",
+      least: Some({ value: Some(1.0), from_field: "floor", }),
+      most: Some({ value: Some(2.0), from_field: "ceiling", }),
+      over: None,
+      under: None,
+    },
+    {
+      name: "ceiling",
+      least: Some({ value: Some(3.0), from_field: "floor", }),
+      most: None,
+      over: None,
+      under: None,
+    },
+    {
+      name: "floor",
+      least: Some({ value: Some(4.0), from_field: "", }),
+      most: None,
+      over: None,
+      under: None,
+    },
+  ]
+  match @main.propagate(bounds) {
+    Consistent(_) => ()
+    other =>
+      abort("expected a diamond to be consistent, got " + other.to_text())
+  }
+}
+
+///|
+test "propagate: a cycle names the fields involved" {
+  let bounds : Array[@main.FieldBounds] = [
+    {
+      name: "a",
+      least: Some({ value: Some(1.0), from_field: "b", }),
+      most: None,
+      over: None,
+      under: None,
+    },
+    {
+      name: "b",
+      least: Some({ value: Some(1.0), from_field: "a", }),
+      most: None,
+      over: None,
+      under: None,
+    },
+  ]
+  match @main.propagate(bounds) {
+    CyclicDependency(fields) => {
+      assert_true(fields.contains("a"))
+      assert_true(fields.contains("b"))
+    }
+    other => abort("expected cycle, got " + other.to_text())
+  }
+}
+
 // ---- Semantic analysis ----
 
 ///|

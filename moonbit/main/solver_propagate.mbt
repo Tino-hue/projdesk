@@ -116,6 +116,37 @@ pub extend PropagationResult with Eq::{equal, not_equal}
 pub extend PropagationResult with Debug::{to_repr}
 
 ///|
+/// Follow the dependency edges from `current`, looking for a field that is
+/// already on the path. `path` is the chain of fields on this branch, so a
+/// field reached from two places is a diamond rather than a cycle.
+fn walk_for_cycle(
+  current : String,
+  deps : Array[Array[String]],
+  index : Map[String, Int],
+  path : Array[String],
+  depth : Int,
+) -> Array[String] {
+  if depth > 100 {
+    return []
+  }
+  match index.get(current) {
+    None => []
+    Some(j) => {
+      for next in deps[j] {
+        if path.contains(next) {
+          return path + [next]
+        }
+        let found = walk_for_cycle(next, deps, index, path + [next], depth + 1)
+        if found.length() > 0 {
+          return found
+        }
+      }
+      []
+    }
+  }
+}
+
+///|
 /// Diagnose a model whose bounds may reference other fields
 ///
 /// `bounds` gives each field's own bounds, where a bound may be a literal or
@@ -146,42 +177,14 @@ pub fn propagate(bounds : Array[FieldBounds]) -> PropagationResult {
     }
     deps.push(d)
   }
-  // Cycle detection: does following dependencies ever return to the start?
+  // Cycle detection: does following dependencies ever return to a field that
+  // is already on the path? A field may legitimately be reached from two
+  // places - that is a diamond, not a cycle - so the check has to be against
+  // the current branch rather than against every field ever visited.
   for i = 0; i < n; i = i + 1 {
-    let start = bounds[i].name
-    let seen : Array[String] = []
-    let mut stack = deps[i]
-    let mut cyclic = false
-    let mut steps = 0
-    while stack.length() > 0 && !cyclic && steps < 100 {
-      steps = steps + 1
-      let next = stack[0]
-      let rest = stack[1:].to_owned()
-      if next == start {
-        // returning to the start closes a cycle
-        cyclic = true
-      } else if seen.contains(next) {
-        cyclic = true
-      } else {
-        seen.push(next)
-        match index.get(next) {
-          Some(j) => {
-            let more : Array[String] = []
-            for m in deps[j] {
-              more.push(m)
-            }
-            stack = rest + more
-          }
-          None => stack = rest
-        }
-      }
-    }
-    if cyclic {
-      let chain = [start]
-      for d in deps[i] {
-        chain.push(d)
-      }
-      return CyclicDependency(chain)
+    let found = walk_for_cycle(bounds[i].name, deps, index, [bounds[i].name], 0)
+    if found.length() > 0 {
+      return CyclicDependency(found)
     }
   }
   // Fixed-point propagation
