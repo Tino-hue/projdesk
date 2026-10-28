@@ -56,7 +56,7 @@ API 契约跨端一致性：用 DSL 一次声明结构，前端得 TypeScript �
 3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
 4. WASM ABI 10 导出
 5. CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
-6. 测试与 CI：237 个 MoonBit 测试 + 94 个前端测试（含 25 个加载真实 WASM 内核的集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
+6. 测试与 CI：CI 直接安装 MoonBit 工具链，对内核源码跑 moon check（零警告）与 moon test（237 个测试），另有 94 个前端测试（含 25 个加载真实 WASM 内核的集成测试）全部通过，并自动部署演示站点
 
 七、项目类型说明
 
@@ -68,6 +68,6 @@ API 契约跨端一致性：用 DSL 一次声明结构，前端得 TypeScript �
 
 https://github.com/Tino-hue/projdesk
 
-118 个以上有效提交。测试全绿：237 个 MoonBit 测试与 94 个前端测试全部通过，内核 moon check 零警告；CI 通过 25 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+118 个以上有效提交。测试全绿：CI 中 237 个 MoonBit 测试（moon check 零警告）与 94 个前端测试全部通过；另有 25 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 在线演示：https://tino-hue.github.io/projdesk/
