@@ -1,9 +1,10 @@
 name: Kernel tests
 
 # The kernel's own test suite runs here. The frontend CI does not build the
-# MoonBit kernel — the toolchain it needs is pinned, and the dependency it
-# pulls has to be adjusted for it, so the kernel is compiled and tested in
-# this workflow instead.
+# MoonBit kernel: the toolchain it needs is not pinnable (only "latest" and
+# "nightly" are published), and the dependency it pulls may need adjusting for
+# the toolchain in use. So the kernel is compiled and tested in this workflow
+# instead.
 
 on:
   push:
@@ -28,10 +29,6 @@ jobs:
       - name: Install the MoonBit toolchain
         run: |
           set -uo pipefail
-          # The kernel is written against the toolchain that spells the 32-bit
-          # integer `Int`. Later releases renamed that type to `Int32`, so the
-          # version has to be pinned for the source to compile unchanged.
-          MOON_VERSION=0.1.20260920
           INSTALL=/tmp/moon-install.sh
           for host in https://cli.moonbitlang.com https://cli.moonbitlang.cn; do
             if curl -fsSL --max-time 90 "$host/install/unix.sh" -o "$INSTALL"; then
@@ -43,20 +40,25 @@ jobs:
             echo "::error::could not download the MoonBit install script"
             exit 1
           fi
-          echo "----- install script (first 40 lines) -----"
-          head -40 "$INSTALL"
-          echo "----------------------------------------"
-          bash "$INSTALL" -v "$MOON_VERSION" \
-            || bash "$INSTALL" --version "$MOON_VERSION" \
-            || bash "$INSTALL"
+          # The script takes the version as a positional argument. Only the
+          # "latest" and "nightly" archives are published; older releases are
+          # not downloadable.
+          bash "$INSTALL" latest
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
           moon version
 
-      - name: Fetch the moonmodel dependency
-        run: cd moonbit && moon build --target wasm-gc
-
-      - name: Patch moonmodel for this toolchain
-        run: pwsh -File scripts/patch_moonmodel.ps1 moonbit/.mooncakes/moonbitstack/moonmodel
+      - name: Fetch the dependency and build the kernel
+        run: |
+          set -uo pipefail
+          cd moonbit
+          moon build --target wasm-gc > /tmp/build.log 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "::notice::the build failed; the dependency may need the compatibility patch"
+            tail -30 /tmp/build.log
+            pwsh -File ../scripts/patch_moonmodel.ps1 .mooncakes/moonbitstack/moonmodel
+            moon build --target wasm-gc
+          fi
 
       - name: moon check
         run: cd moonbit && moon check
