@@ -66,16 +66,16 @@ model User {
 
 ## Closing (20s)
 
-> "Five independent MoonBit engines, 3608 lines of engine code, 237 tests including property-based verification over 100 random models. That's ProjDesk."
+> "Five independent MoonBit engines, 3611 lines of engine code, 240 tests including property-based verification over 100 random models. That's ProjDesk."
 
-**Run `moon test` live to show 237 green tests.**
+**Run `moon test` live to show 240 green tests.**
 
 ---
 
 ## Backup Q&A
 
 **"Isn't the projection just moonmodel?"**
-> "Projection is one step of seven outputs. The five engines are what moonmodel doesn't cover — a compiler frontend, a constraint reasoner, a migration engine, a type-equivalence checker, and a formal verifier. That's 3608 lines of independent MoonBit code."
+> "Projection is one step of seven outputs. The five engines are what moonmodel doesn't cover — a compiler frontend, a constraint reasoner, a migration engine, a type-equivalence checker, and a formal verifier. That's 3611 lines of independent MoonBit code."
 
 **"Why MoonBit for this?"**
 > "The kernel compiles to wasm-gc and runs entirely in the browser — one binary, no server. The pattern matching and ADT support made the compiler frontend and type-equivalence engine direct rather than ceremony."
@@ -84,4 +84,4 @@ model User {
 > "They generate code from a model. This one reasons about the model: whether its constraints are satisfiable, whether two versions are compatible, what SQL migration a change implies, and whether it survives a round-trip."
 
 **"How do you know it works?"**
-> "237 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 25 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."
+> "240 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 25 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."
