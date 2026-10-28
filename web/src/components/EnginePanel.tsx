@@ -1,4 +1,4 @@
-﻿// Engine panel: exposes DSL compiler, constraint solver, migration, equivalence
+// Engine panel: exposes DSL compiler, constraint solver, migration, equivalence
 import { useState } from 'react';
 import type { ModelInput } from '../lib/types';
 import { dslProject, solveConstraints, generateMigration, checkEquivalence, verifyRoundtrip, checkSemantics } from '../lib/wasm';

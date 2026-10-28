@@ -130,7 +130,7 @@ describe('KernelOutput: drop reason structure', () => {
     expect(d).toHaveProperty('why');
   });
 
-  it('all four drop arrays are present and typed', () => {
+  it('all seven drop arrays are present and typed', () => {
     const output: KernelOutput = {
       ok: true, jsonSchema: '{}', openapi: '{}', sql: 'CREATE TABLE x();', graphql: 'type X {}', typescript: '', zod: '', prisma: '',
       drops: {
@@ -138,12 +138,18 @@ describe('KernelOutput: drop reason structure', () => {
         openapi: [],
         sql: [],
         graphql: [],
+        typescript: [],
+        zod: [],
+        prisma: [],
       },
     };
     expect(output.drops.jsonSchema).toHaveLength(1);
     expect(output.drops.openapi).toHaveLength(0);
     expect(Array.isArray(output.drops.sql)).toBe(true);
     expect(Array.isArray(output.drops.graphql)).toBe(true);
+    expect(Array.isArray(output.drops.typescript)).toBe(true);
+    expect(Array.isArray(output.drops.zod)).toBe(true);
+    expect(Array.isArray(output.drops.prisma)).toBe(true);
   });
 });
 

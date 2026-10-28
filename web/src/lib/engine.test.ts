@@ -1,20 +1,26 @@
 import { describe, it, expect } from 'vitest';
 
 // Engine ABI contract tests — these verify the WASM export surface stays stable
-// The actual engine logic is tested in MoonBit (93 tests); these check the
+// The actual engine logic is tested in MoonBit (195 tests); these check the
 // frontend↔kernel contract that the engine playground depends on.
 
+// Mirrors the ProjDeskExports interface in wasm.ts
+const KERNEL_EXPORTS = [
+  'project_from_json',
+  'get_presets_json',
+  'import_from_json_schema_str',
+  'dsl_project',
+  'solve_constraints',
+  'generate_migration',
+  'check_equivalence',
+  'verify_roundtrip',
+  'check_semantics',
+];
+
 describe('Engine ABI contract', () => {
-  it('all engine exports are declared on the kernel interface', () => {
-    // Mirrors the ProjDeskExports interface in wasm.ts
-    const engineExports = [
-      'dsl_project',
-      'solve_constraints',
-      'generate_migration',
-      'check_equivalence',
-    ];
-    expect(engineExports).toHaveLength(4);
-    for (const name of engineExports) {
+  it('all 9 kernel exports are declared on the frontend interface', () => {
+    expect(KERNEL_EXPORTS).toHaveLength(9);
+    for (const name of KERNEL_EXPORTS) {
       expect(name).toMatch(/^[a-z_]+$/);
     }
   });

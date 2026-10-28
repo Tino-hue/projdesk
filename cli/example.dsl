@@ -1,4 +1,4 @@
-﻿// user account model
+// user account model
 model User {
   // unique identifier
   id: Big @unique

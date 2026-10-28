@@ -95,7 +95,7 @@ describe('Kernel output shape validation', () => {
   it('has all required top-level keys', () => {
     const output: KernelOutput = {
       ok: true, jsonSchema: '', openapi: '', sql: '', graphql: '', typescript: '', zod: '', prisma: '',
-      drops: { jsonSchema: [], openapi: [], sql: [], graphql: [] },
+      drops: { jsonSchema: [], openapi: [], sql: [], graphql: [], typescript: [], zod: [], prisma: [] },
     };
     expect(output).toHaveProperty('ok');
     expect(output).toHaveProperty('jsonSchema');
@@ -105,9 +105,9 @@ describe('Kernel output shape validation', () => {
     expect(output).toHaveProperty('drops');
   });
 
-  it('drops structure has 4 target arrays', () => {
-    const drops = { jsonSchema: [], openapi: [], sql: [], graphql: [] };
-    expect(Object.keys(drops)).toHaveLength(4);
+  it('drops structure has 7 target arrays', () => {
+    const drops = { jsonSchema: [], openapi: [], sql: [], graphql: [], typescript: [], zod: [], prisma: [] };
+    expect(Object.keys(drops)).toHaveLength(7);
   });
 
   it('DropReason shape is correct', () => {

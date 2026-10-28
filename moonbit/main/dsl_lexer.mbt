@@ -142,10 +142,7 @@ fn keyword_of(s : String) -> Token {
 ///|
 /// Skip a block comment `/* ... */`, possibly spanning lines.
 /// Consumes the closing delimiter and emits the content as a Comment token.
-fn skip_block_comment(
-  lexer : Lexer,
-  tokens : Array[Lexeme],
-) -> Unit {
+fn skip_block_comment(lexer : Lexer, tokens : Array[Lexeme]) -> Unit {
   let start_line = lexer.line.val
   let start_col = lexer.col.val
   // consume "/*"

@@ -14,6 +14,9 @@ pub(all) struct ProjectionResult {
   drops_open : Array[DropReason]
   drops_sql : Array[DropReason]
   drops_gql : Array[DropReason]
+  drops_ts : Array[DropReason]
+  drops_zod : Array[DropReason]
+  drops_prisma : Array[DropReason]
 }
 
 ///|
@@ -49,16 +52,17 @@ pub fn project_all(
   let open_p = OpenApiProj::{ dialect: parse_open_dialect(openapi_dialect), }
   let sql_p = SqlProj::{ dialect: parse_sql_dialect(sql_dialect), }
   let gql_p = GraphqlProj::{ }
+  let ts_p = TsProjector::{ }
+  let zod_p = ZodProjector::{ }
+  let prisma_p = PrismaProjector::{ }
 
   let (json_text, drops_json) = json_p.project(model, known)
   let (open_text, drops_open) = open_p.project(model, known)
   let (sql_text, drops_sql) = sql_p.project(model, known)
   let (gql_text, drops_gql) = gql_p.project(model, known)
-
-  // Codegen projections (TypeScript / Zod / Prisma)
-  let ts_text = project_typescript(model, known)
-  let zod_text = project_zod(model, known)
-  let prisma_text = project_prisma(model, known)
+  let (ts_text, drops_ts) = ts_p.project(model, known)
+  let (zod_text, drops_zod) = zod_p.project(model, known)
+  let (prisma_text, drops_prisma) = prisma_p.project(model, known)
 
   {
     json_schema: json_text,
@@ -72,7 +76,24 @@ pub fn project_all(
     drops_open,
     drops_sql,
     drops_gql,
+    drops_ts,
+    drops_zod,
+    drops_prisma,
   }
+}
+
+///|
+/// Build the per-target drop report as JSON
+pub fn drops_map_to_json(result : ProjectionResult) -> Json {
+  let drops : Map[String, Json] = Map([])
+  drops["jsonSchema"] = drops_to_json(result.drops_json)
+  drops["openapi"] = drops_to_json(result.drops_open)
+  drops["sql"] = drops_to_json(result.drops_sql)
+  drops["graphql"] = drops_to_json(result.drops_gql)
+  drops["typescript"] = drops_to_json(result.drops_ts)
+  drops["zod"] = drops_to_json(result.drops_zod)
+  drops["prisma"] = drops_to_json(result.drops_prisma)
+  Json::object(drops)
 }
 
 ///|

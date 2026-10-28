@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -8,13 +8,29 @@ import { resolve } from 'path';
 interface Kernel {
   project_from_json(input: string): string;
   get_presets_json(): string;
+  import_from_json_schema_str(text: string): string;
   dsl_project(dsl: string): string;
   solve_constraints(model_json: string): string;
   generate_migration(old_json: string, new_json: string): string;
   check_equivalence(a_json: string, b_json: string): string;
+  verify_roundtrip(model_json: string): string;
+  check_semantics(dsl: string): string;
 }
 
+const EXPECTED_EXPORTS = [
+  'project_from_json',
+  'get_presets_json',
+  'import_from_json_schema_str',
+  'dsl_project',
+  'solve_constraints',
+  'generate_migration',
+  'check_equivalence',
+  'verify_roundtrip',
+  'check_semantics',
+];
+
 let kernel: Kernel;
+let rawExports: Record<string, unknown> = {};
 let wasmGcSupported = true;
 
 beforeAll(async () => {
@@ -32,12 +48,25 @@ beforeAll(async () => {
       importedStringConstants: '_',
     });
     kernel = instance.exports as unknown as Kernel;
+    rawExports = instance.exports as unknown as Record<string, unknown>;
   } catch (e) {
     // The kernel is compiled with wasm-gc. Older Node runtimes cannot
     // instantiate it; skip rather than fail the whole suite.
     wasmGcSupported = false;
     console.warn('wasm-gc not supported in this runtime, skipping integration tests');
   }
+});
+
+describe.skipIf(!wasmGcSupported)('Kernel ABI surface (real WASM)', () => {
+  it('exposes every export the frontend depends on', () => {
+    for (const name of EXPECTED_EXPORTS) {
+      expect(typeof rawExports[name]).toBe('function');
+    }
+  });
+
+  it('exports exactly the documented set', () => {
+    expect(Object.keys(rawExports).sort()).toEqual([...EXPECTED_EXPORTS].sort());
+  });
 });
 
 describe.skipIf(!wasmGcSupported)('Engine 1: DSL Compiler (real WASM)', () => {
@@ -69,6 +98,42 @@ describe.skipIf(!wasmGcSupported)('Engine 1: DSL Compiler (real WASM)', () => {
     if (!result.jsonSchema) {
       expect(result.jsonSchema).toBe('');
     }
+  });
+});
+
+describe.skipIf(!wasmGcSupported)('Projection honesty (real WASM)', () => {
+  const TARGETS = ['jsonSchema', 'openapi', 'sql', 'graphql', 'typescript', 'zod', 'prisma'];
+
+  it('reports a drop list for every projection target', () => {
+    const result = JSON.parse(kernel.dsl_project('model User {\n  id: Big @unique\n  name: Text [longest=64]\n}'));
+    expect(Object.keys(result.drops).sort()).toEqual([...TARGETS].sort());
+    for (const target of TARGETS) {
+      expect(Array.isArray(result.drops[target])).toBe(true);
+    }
+  });
+
+  it('TypeScript drops every runtime constraint it cannot carry', () => {
+    const result = JSON.parse(kernel.dsl_project('model User {\n  id: Big @unique\n  name: Text [longest=64]\n}'));
+    const tsDrops = result.drops.typescript;
+    expect(tsDrops.some((d: { constraint: string }) => d.constraint === 'unique')).toBe(true);
+    expect(tsDrops.some((d: { constraint: string }) => d.constraint === 'length')).toBe(true);
+  });
+
+  it('Zod carries the constraints it can express', () => {
+    const result = JSON.parse(kernel.dsl_project('model User {\n  id: Big @unique\n  name: Text [shortest=1, longest=64]\n  email: Text [format=email]\n}'));
+    expect(result.zod).toContain('.min(1)');
+    expect(result.zod).toContain('.max(64)');
+    expect(result.zod).toContain('.email()');
+    // only record-level uniqueness is left over
+    const zodDrops = result.drops.zod;
+    expect(zodDrops.length).toBe(1);
+    expect(zodDrops[0].constraint).toBe('unique');
+  });
+
+  it('carries a closed value set as a Zod enum', () => {
+    const result = JSON.parse(kernel.dsl_project('model T {\n  status: Text [options=[open, closed]]\n}'));
+    expect(result.zod).toContain('.enum([');
+    expect(result.drops.zod.length).toBe(0);
   });
 });
 

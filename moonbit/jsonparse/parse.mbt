@@ -1,7 +1,7 @@
-// 鏋佽杽 JSON 瑙ｆ瀽灏佽锛氱粫寮€ moonmodel/json 涓?core/json 鐨?@json 鍚嶅瓧鍐茬獊
+// 精简 JSON 解析封装：绕过 moonmodel/json 与 core/json 的 @json 名字冲突
 
 ///|
-/// 瑙ｆ瀽 JSON 瀛楃涓诧紝澶辫触杩斿洖 Null
+/// 解析 JSON 字符串，失败时返回 Null
 pub fn parse_json(text : String) -> Json {
   @json.parse(text) catch {
     _ => Json::null()
@@ -9,7 +9,7 @@ pub fn parse_json(text : String) -> Json {
 }
 
 ///|
-/// 灏?Json 搴忓垪鍖栦负瀛楃涓?
+/// 将 Json 序列化为字符串
 pub fn stringify_json(j : Json, indent? : Int = 0) -> String {
   if indent > 0 {
     j.stringify(indent~)

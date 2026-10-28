@@ -18,13 +18,16 @@ A pure-browser workbench for the full lifecycle of a data model: **define → an
 
 | # | Engine | Source | Lines | What it does |
 |---|--------|--------|-------|--------------|
-| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_codegen.mbt` | ~640 | Hand-written lexer + recursive descent parser + AST codegen |
-| 2 | **Constraint Solver** | `solver.mbt` | ~220 | Conflict / redundancy / unsatisfiability analysis |
-| 3 | **Migration Engine** | `migration.mbt` | ~310 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
-| 4 | **Equivalence Checker** | `equiv.mbt` | ~200 | Type subtyping + constraint containment + classification |
-| 5 | **Round-trip Verifier** | `roundtrip.mbt` | ~175 | Formal generate-parse-compare correctness verification |
+| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` | 1783 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks |
+| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 536 | Conflict / redundancy / containment analysis + fixed-point interval propagation |
+| 3 | **Migration Engine** | `migration.mbt` | 349 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
+| 4 | **Equivalence Checker** | `equiv.mbt` | 224 | Type subtyping + constraint containment + classification |
+| 5 | **Round-trip Verifier** | `roundtrip.mbt` | 187 | Formal generate-parse-compare correctness verification |
+| | **Five engines** | | **3079** | |
 
-**150 MoonBit tests** (including 16 property-based tests over 100+ random models and 7 performance benchmarks) + **80 frontend tests** (15 load the real WASM kernel end-to-end).
+On top of the engines the kernel carries **1882 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **4961 lines** of MoonBit implementation, plus **2606 lines** of test code.
+
+**210 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **90 frontend tests** (21 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
 
 ---
 
@@ -32,12 +35,14 @@ A pure-browser workbench for the full lifecycle of a data model: **define → an
 
 ```model
 model User {
-  id: Big @unique                    // record-level uniqueness
+  id: Big @unique                     // record-level uniqueness
   name: Text [shortest=1, longest=64] // length bounds
   email: Text [format=email]          // named format
   age: Int @optional [least=0, under=150]
   tags: List(Text) @optional @distinct
   home: Ref(Address)                  // reference to another model
+  score: Int [least=min(5,10), most=10*3] // constraint expressions, evaluated at compile time
+  tier: Text [options=[bronze, silver, gold]]
 }
 
 model Address {
@@ -60,7 +65,10 @@ model Address {
 | `@unique` | Record-level unique constraint |
 | `@distinct` | List items must differ |
 | `[constraint=value]` | `least` `most` `over` `under` `step` `shortest` `longest` `pattern` `format` `options=[a,b]` |
+| `value` as an expression | Arithmetic `+ - * / %`, parentheses, `min` `max` `abs` `ceil` `floor` — resolved at compile time |
+| `other_field.constraint` | Cross-field reference to an earlier field, e.g. `b: Int [over=a.least]` |
 | `// comment` | Line comment (ignored by the parser) |
+| `/* comment */` | Block comment (ignored by the parser) |
 
 Parse errors carry a line and column, and the parser recovers to continue with the next model.
 
@@ -68,7 +76,7 @@ Parse errors carry a line and column, and the parser recovers to continue with t
 
 ## Engine Usage
 
-All five engines are exposed through the WASM ABI and are runnable in the browser via the **Engine Playground** panel:
+All five engines — plus the semantic checker — are exposed through the WASM ABI (**9 exports**) and are runnable in the browser via the **Engine Playground** panel (6 tabs: DSL Compiler, Constraint Solver, Migration, Equivalence, Round-trip, Semantic Check):
 
 | ABI export | Input | Output |
 |------------|-------|--------|
@@ -76,7 +84,11 @@ All five engines are exposed through the WASM ABI and are runnable in the browse
 | `solve_constraints(model_json)` | Model JSON | Diagnosis list (conflict / redundant / warning) |
 | `generate_migration(old_json, new_json)` | Two model JSONs | Change list + SQL migration + breaking count |
 | `check_equivalence(a_json, b_json)` | Two model JSONs | Equivalent / SubtypeOf / SupertypeOf / Incompatible |
+| `verify_roundtrip(model_json)` | Model JSON | Pass / Fail + message |
+| `check_semantics(dsl)` | DSL source | Unresolved references, self-references, cycles |
 | `project_from_json(model_json)` | Model JSON | Seven projections + drop reasons |
+| `import_from_json_schema_str(schema)` | JSON Schema text | Model JSON (reverse import) |
+| `get_presets_json()` | — | Preset models |
 
 ---
 
@@ -100,7 +112,7 @@ After lifecycle management, the model projects to seven targets:
 
 JSON Schema 2020-12 · OpenAPI 3.0/3.1/2.0 · SQL DDL (Postgres/SQLite/MySQL) · GraphQL SDL · TypeScript · Zod · Prisma
 
-Honest projection is preserved: every constraint a target cannot carry is reported as **dropped + reason** rather than silently discarded.
+Honest projection is preserved: every constraint a target cannot carry is reported as **dropped + reason** rather than silently discarded — all seven targets produce a typed drop report, and the Zod emitter carries the constraints Zod can express (length bounds, numeric bounds, patterns, named formats, closed value sets, list distinctness).
 
 ---
 
@@ -111,25 +123,51 @@ moonbit/                 MoonBit kernel (wasm-gc)
   main/
     dsl_lexer.mbt        Lexer: Token ADT, character scanner
     dsl_parser.mbt       Parser: AST + recursive descent
+    dsl_expr.mbt         Constraint expression AST + evaluator
     dsl_codegen.mbt      AST -> moonmodel.Model
+    dsl_printer.mbt      AST -> DSL source (inverse of the parser)
+    dsl_semantic.mbt     Reference resolution, self-reference, cycle detection
     solver.mbt           Constraint analysis engine
+    solver_propagate.mbt Fixed-point interval propagation
     migration.mbt        Diff + SQL migration engine
     equiv.mbt            Semantic equivalence engine
     roundtrip.mbt        Round-trip verification
+    property.mbt         xorshift64* PRNG + random model generator
     projector.mbt        Projector trait + DropReason ADT
-    api.mbt              WASM ABI exports
-    *_test.mbt           Engine test suites
-web/                    React + TypeScript frontend
+    codegen.mbt          TypeScript / Zod / Prisma projections
+    import.mbt           JSON Schema -> Model (reverse import)
+    project.mbt          Projection pipeline
+    presets.mbt          Preset models
+    abi.mbt              JSON <-> moonmodel.Model conversion
+    api.mbt              WASM ABI exports (9)
+    jsonparse/           Minimal JSON wrapper (name-collision workaround)
+    *_test.mbt           Engine test suites (13 files, 210 tests)
+web/                    React + TypeScript frontend (31 files)
   src/components/
-    EnginePanel.tsx      Engine playground (4 interactive engines)
+    EnginePanel.tsx      Engine playground (6 interactive engine tabs)
     OutputPanels.tsx     Seven projection panels
     FieldList.tsx        Field editor with drag reorder
+    FieldEditor.tsx      Per-field constraint editor
+    ModelDiagram.tsx     Canvas model relation graph
+    CoverageMatrix.tsx   Constraint coverage matrix
+    DropReport.tsx       Typed drop-reason report
+    DiffPanel.tsx        Version diff view
+    Versions.tsx         Version snapshots
+    CodeHighlight.tsx    Syntax highlighting + change flash
+    Onboarding.tsx       First-run guide
   src/lib/
     wasm.ts              Kernel loader + typed engine wrappers
-    wasm.integration.test.ts  Real-WASM integration tests
+    security.ts          Input validation / sanitization
+    persistence.ts       localStorage persistence
+    backup.ts            Workspace backup / restore
+    history.ts           Undo / redo manager
+    diff.ts              Model diff
+    types.ts             ABI type definitions
+    *.test.ts            Test suites (7 files, 90 tests)
 backend/                Cloudflare Workers + D1 API (optional)
-cli/                    Command-line generator
-vscode-extension/       VS Code plugin
+cli/                    Command-line tool (gen/check/migrate/verify/init)
+vscode-extension/       VS Code plugin (DSL highlighting + preview)
+models/                 Example models verified by the GitHub Action
 ```
 
 ---
@@ -215,9 +253,11 @@ npm run dev  # http://127.0.0.1:3000
 
 | Suite | Count | Command |
 |-------|-------|---------|
-| MoonBit kernel | 150 | `cd moonbit && moon test` |
-| Frontend unit | 65 | `cd web && npm run test` |
-| Frontend WASM integration | 15 | (same, loads real kernel) |
+| MoonBit kernel | 210 | `cd moonbit && moon test` |
+| &nbsp;&nbsp;— property-based | 16 | (12 invariants over 100+ random models, 4 PRNG properties) |
+| &nbsp;&nbsp;— performance benchmarks | 7 | (100–200 field models, `monotonic_clock` budgets) |
+| Frontend unit | 69 | `cd web && npm run test` |
+| Frontend WASM integration | 21 | (same command; loads the real compiled kernel) |
 
 ### Test strategy
 
@@ -235,16 +275,18 @@ Beyond hand-picked examples, the kernel is verified with **property-based testin
 
 Performance budgets are asserted with `monotonic_clock` for models of 100-200 fields across projection, solving, parsing, diffing, round-trip, and equivalence.
 
-CI runs `moon check`, `moon fmt --check`, `moon info`, `moon test`, `vitest`, and `vite build` on every push.
+**How CI verifies the kernel.** The kernel is compiled to `wasm-gc`, and the artifact (`web/public/projdesk.wasm`) is committed to the repository. CI deliberately does not install the MoonBit toolchain: the compiler renamed its 32-bit integer type between releases (`Int` ↔ `Int32`), so a runner with a different toolchain would fail to compile the same source. CI therefore exercises the **compiled kernel** through 21 real-WASM integration tests, and the `ProjDesk Generate` action additionally runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
+
+The kernel's own suite — `moon check` (zero warnings) and `moon test` (210 tests) — runs locally via `setup.ps1`, `build.ps1`, or `make kernel-test`.
 
 ---
 
 ## Known Limitations
 
-- The DSL covers core modeling constructs only (no expressions or imports)
-- The solver analyzes per-field constraints (no cross-field interval propagation yet)
-- Migration SQL covers common ALTER TABLE cases; exotic dialects need manual review
-- Round-trip verification is exposed via ABI but not yet surfaced as a UI action
+- The DSL has no module or import mechanism — each model file is self-contained.
+- The solver reasons per field: interval propagation narrows bounds but does not yet derive cross-field implications.
+- Migration SQL covers common `ALTER TABLE` cases; exotic dialects need manual review.
+- The TypeScript and Prisma emitters carry no runtime constraint, so every constraint on their fields is reported as dropped; use the Zod target for runtime validation.
 
 ## License
 

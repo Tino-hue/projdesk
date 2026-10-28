@@ -1,4 +1,4 @@
-﻿// Constraint expression AST and evaluator
+// Constraint expression AST and evaluator
 // Supports arithmetic and function calls in constraint values
 
 ///|
@@ -132,7 +132,11 @@ pub extend Env with Debug::{to_repr}
 
 ///|
 /// Look up a field's constraint value
-fn env_field(env : Env, field : String, constraint : String) -> Result[Double, ExprError] {
+fn env_field(
+  env : Env,
+  field : String,
+  constraint : String,
+) -> Result[Double, ExprError] {
   match env.fields.get(field) {
     Some(constraints) =>
       match constraints.get(constraint) {
@@ -145,10 +149,7 @@ fn env_field(env : Env, field : String, constraint : String) -> Result[Double, E
 
 ///|
 /// Evaluate an expression in an environment
-pub fn eval_expr_in(
-  expr : Expr,
-  env : Env,
-) -> Result[Double, ExprError] {
+pub fn eval_expr_in(expr : Expr, env : Env) -> Result[Double, ExprError] {
   match expr {
     Num(n) => Ok(n)
     Var(name) =>
@@ -170,18 +171,8 @@ pub fn eval_expr_in(
         "+" => Ok(a + b)
         "-" => Ok(a - b)
         "*" => Ok(a * b)
-        "/" =>
-          if b == 0.0 {
-            Err(DivByZero)
-          } else {
-            Ok(a / b)
-          }
-        "%" =>
-          if b == 0.0 {
-            Err(DivByZero)
-          } else {
-            Ok(a % b)
-          }
+        "/" => if b == 0.0 { Err(DivByZero) } else { Ok(a / b) }
+        "%" => if b == 0.0 { Err(DivByZero) } else { Ok(a % b) }
         _ => Ok(a)
       }
     }
@@ -195,7 +186,7 @@ pub fn eval_expr(
   expr : Expr,
   vars : Map[String, Double],
 ) -> Result[Double, ExprError] {
-  eval_expr_in(expr, { vars, fields: Map([]) })
+  eval_expr_in(expr, { vars, fields: Map([]), })
 }
 
 ///|

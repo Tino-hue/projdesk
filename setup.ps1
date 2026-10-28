@@ -1,5 +1,5 @@
-﻿#!/usr/bin/env pwsh
-# ProjDesk setup script 鈥?applies moonmodel compatibility patch and builds
+#!/usr/bin/env pwsh
+# ProjDesk setup script — applies moonmodel compatibility patch and builds
 # Run this after cloning: .\setup.ps1
 
 $ErrorActionPreference = "Stop"

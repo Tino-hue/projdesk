@@ -1,4 +1,4 @@
-﻿// Order model — a worked example of the ProjDesk modeling language.
+// Order model — a worked example of the ProjDesk modeling language.
 //
 // Demonstrates: unique constraints, length bounds, format checks,
 // optional and nullable fields, computed expression bounds,

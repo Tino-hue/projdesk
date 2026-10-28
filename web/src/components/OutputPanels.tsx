@@ -73,7 +73,7 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
   }, [output]);
 
   if (!output) {
-    return <div className="flex items-center justify-center h-full text-slate-400 text-sm">Edit model on the left; four panels refresh live.</div>;
+    return <div className="flex items-center justify-center h-full text-slate-400 text-sm">Edit model on the left; seven panels refresh live.</div>;
   }
 
   // Compute changed lines vs previous output
@@ -83,6 +83,9 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
     openapi: prev ? diffLines(prev.openapi, output.openapi) : new Set<number>(),
     sql: prev ? diffLines(prev.sql, output.sql) : new Set<number>(),
     graphql: prev ? diffLines(prev.graphql, output.graphql) : new Set<number>(),
+    typescript: prev ? diffLines(prev.typescript, output.typescript) : new Set<number>(),
+    zod: prev ? diffLines(prev.zod, output.zod) : new Set<number>(),
+    prisma: prev ? diffLines(prev.prisma, output.prisma) : new Set<number>(),
   };
   // If first render, no changes
   const isFirst = !prev;
@@ -91,6 +94,9 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
     openapi: isFirst ? new Set<number>() : changed.openapi,
     sql: isFirst ? new Set<number>() : changed.sql,
     graphql: isFirst ? new Set<number>() : changed.graphql,
+    typescript: isFirst ? new Set<number>() : changed.typescript,
+    zod: isFirst ? new Set<number>() : changed.zod,
+    prisma: isFirst ? new Set<number>() : changed.prisma,
   };
 
   const panels = [
@@ -98,6 +104,9 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
     { key: 'openapi' as const, dropKey: 'openapi' as const, title: `${DIALECT_LABELS[openapiDialect] || 'OpenAPI'} Schema Object`, ext: 'json', lang: 'json' },
     { key: 'sql' as const, dropKey: 'sql' as const, title: `SQL DDL (${DIALECT_LABELS[sqlDialect] || 'Postgres'})`, ext: 'sql', lang: 'sql' },
     { key: 'graphql' as const, dropKey: 'graphql' as const, title: 'GraphQL SDL', ext: 'graphql', lang: 'graphql' },
+    { key: 'typescript' as const, dropKey: 'typescript' as const, title: 'TypeScript', ext: 'ts', lang: 'typescript' },
+    { key: 'zod' as const, dropKey: 'zod' as const, title: 'Zod', ext: 'zod.ts', lang: 'typescript' },
+    { key: 'prisma' as const, dropKey: 'prisma' as const, title: 'Prisma', ext: 'prisma', lang: 'typescript' },
   ];
 
   return (
@@ -105,9 +114,9 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between px-2 sm:px-4 pt-4 pb-2 gap-2">
         <span className="text-xs text-slate-400">
-          Four projections live
+          Seven projections live
           <span className="ml-2 text-amber-500 text-xs">
-            {Object.values(changeSets).some((s) => s.size > 0) ? '鈼? lines highlighted = just changed' : ''}
+            {Object.values(changeSets).some((s) => s.size > 0) ? '✓ lines highlighted = just changed' : ''}
           </span>
         </span>
         <div className="flex gap-2">
@@ -122,7 +131,7 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
       {/* Coverage matrix */}
       <CoverageMatrix drops={output.drops} />
 
-      {/* Four panels */}
+      {/* Seven panels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 px-2 sm:px-4 pb-4">
         {panels.map((panel) => {
           const text = (output[panel.key] as string) || '';
