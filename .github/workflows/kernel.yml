@@ -1,10 +1,14 @@
 name: Kernel tests
 
 # The kernel's own test suite runs here. The frontend CI does not build the
-# MoonBit kernel: the toolchain it needs is not pinnable (only "latest" and
-# "nightly" are published), and the dependency it pulls may need adjusting for
-# the toolchain in use. So the kernel is compiled and tested in this workflow
-# instead.
+# MoonBit kernel, so without this workflow the Actions badge says nothing
+# about the MoonBit code.
+#
+# The toolchain cannot be pinned: the distribution host publishes only the
+# "latest" and "nightly" archives, and older releases are not downloadable.
+# The kernel compiles and passes its tests against both the current release
+# and the older one the repository was developed against, so "latest" is
+# safe to use here.
 
 on:
   push:
@@ -40,25 +44,18 @@ jobs:
             echo "::error::could not download the MoonBit install script"
             exit 1
           fi
-          # The script takes the version as a positional argument. Only the
-          # "latest" and "nightly" archives are published; older releases are
-          # not downloadable.
+          # The script takes the version as a positional argument.
           bash "$INSTALL" latest
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
           moon version
 
+      - name: Refresh the registry index
+        # A fresh toolchain has no registry index yet, and the moonmodel
+        # dependency cannot be resolved without it.
+        run: moon update
+
       - name: Fetch the dependency and build the kernel
-        run: |
-          set -uo pipefail
-          cd moonbit
-          moon build --target wasm-gc > /tmp/build.log 2>&1
-          status=$?
-          if [ $status -ne 0 ]; then
-            echo "::notice::the build failed; the dependency may need the compatibility patch"
-            tail -30 /tmp/build.log
-            pwsh -File ../scripts/patch_moonmodel.ps1 .mooncakes/moonbitstack/moonmodel
-            moon build --target wasm-gc
-          fi
+        run: cd moonbit && moon build --target wasm-gc
 
       - name: moon check
         run: cd moonbit && moon check
