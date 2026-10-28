@@ -27,7 +27,7 @@ A pure-browser workbench for the full lifecycle of a data model: **define → an
 
 On top of the engines the kernel carries **1882 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **4961 lines** of MoonBit implementation, plus **2606 lines** of test code.
 
-**210 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **86 frontend tests** (21 load the real WASM kernel end-to-end).
+**210 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **90 frontend tests** (21 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
 
 ---
 
@@ -163,7 +163,7 @@ web/                    React + TypeScript frontend (31 files)
     history.ts           Undo / redo manager
     diff.ts              Model diff
     types.ts             ABI type definitions
-    *.test.ts            Test suites (6 files, 86 tests)
+    *.test.ts            Test suites (7 files, 90 tests)
 backend/                Cloudflare Workers + D1 API (optional)
 cli/                    Command-line tool (gen/check/migrate/verify/init)
 vscode-extension/       VS Code plugin (DSL highlighting + preview)
@@ -256,7 +256,7 @@ npm run dev  # http://127.0.0.1:3000
 | MoonBit kernel | 210 | `cd moonbit && moon test` |
 | &nbsp;&nbsp;— property-based | 16 | (12 invariants over 100+ random models, 4 PRNG properties) |
 | &nbsp;&nbsp;— performance benchmarks | 7 | (100–200 field models, `monotonic_clock` budgets) |
-| Frontend unit | 65 | `cd web && npm run test` |
+| Frontend unit | 69 | `cd web && npm run test` |
 | Frontend WASM integration | 21 | (same command; loads the real compiled kernel) |
 
 ### Test strategy

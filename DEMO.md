@@ -84,4 +84,4 @@ model User {
 > "They generate code from a model. This one reasons about the model: whether its constraints are satisfiable, whether two versions are compatible, what SQL migration a change implies, and whether it survives a round-trip."
 
 **"How do you know it works?"**
-> "210 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 21 frontend tests that load the real WASM binary."
+> "210 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 21 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."

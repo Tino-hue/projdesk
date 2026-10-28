@@ -56,7 +56,7 @@ ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模�
 3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
 4. WASM ABI 9 导出
 5. CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
-6. 测试与 CI：210 个 MoonBit 测试 + 86 个前端测试（含 21 个真实 WASM 集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
+6. 测试与 CI：210 个 MoonBit 测试 + 90 个前端测试（含 21 个真实 WASM 集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
 
 ## 项目类型说明
 
@@ -68,6 +68,6 @@ ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模�
 
 https://github.com/Tino-hue/projdesk
 
-118 个以上有效提交。测试全绿：210 个 MoonBit 测试与 86 个前端测试全部通过，内核 moon check 零警告；CI 通过 21 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+118 个以上有效提交。测试全绿：210 个 MoonBit 测试与 90 个前端测试全部通过，内核 moon check 零警告；CI 通过 21 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 在线演示：https://tino-hue.github.io/projdesk/
