@@ -106,6 +106,9 @@ pub fn ParseError::to_text(self : ParseError) -> String {
 pub(all) struct Parser {
   tokens : Array[Lexeme]
   pos : Ref[Int]
+  /// Resolved numeric constraints of the current model, keyed by field name.
+  /// Lets a later field reference an earlier one: `b: Int [over=a.least]`.
+  field_env : Ref[Map[String, Map[String, Double]]]
 }
 
 ///|
@@ -174,6 +177,8 @@ fn expect(p : Parser, expected : Token) -> ParseError? {
 /// grammar: model IDENT '{' field* '}'
 fn dsl_parse_model(p : Parser) -> (AstModel?, Array[ParseError]) {
   let errors = []
+  // each model has its own constraint namespace
+  p.field_env.val = Map([])
   // expect 'model'
   match expect(p, KwModel) {
     Some(e) => return (None, [e])
@@ -286,7 +291,7 @@ fn dsl_parse_field(p : Parser) -> (AstField?, Array[ParseError]) {
         advance(p) |> ignore
         skip_newlines(p)
         while peek(p) != RBracket && peek(p) != Eof {
-          let (check, check_errors) = dsl_parse_check(p)
+          let (check, check_errors) = dsl_parse_check(p, name)
           for e in check_errors {
             errors.push(e)
           }
@@ -561,8 +566,27 @@ fn dsl_parse_expr(p : Parser) -> (Expr?, Array[ParseError]) {
 }
 
 ///|
+/// Record a resolved numeric constraint so later fields can reference it
+fn record_constraint(
+  p : Parser,
+  field : String,
+  constraint : String,
+  value : Double,
+) -> Unit {
+  let inner : Map[String, Double] = match p.field_env.val.get(field) {
+    Some(m) => m
+    None => Map([])
+  }
+  inner.set(constraint, value)
+  p.field_env.val.set(field, inner)
+}
+
+///|
 /// Parse a check/constraint inside brackets
-fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
+fn dsl_parse_check(
+  p : Parser,
+  field : String,
+) -> (AstCheck?, Array[ParseError]) {
   let errors = []
   let name = match advance(p) {
     Ident(s) => s
@@ -594,10 +618,10 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
         errors.push(e)
       }
       match expr {
-        Some(e) => {
-          let vars : Map[String, Double] = Map([])
-          match eval_expr(e, vars) {
-            Ok(n) =>
+        Some(e) =>
+          match eval_expr_in(e, { vars: Map([]), fields: p.field_env.val, }) {
+            Ok(n) => {
+              record_constraint(p, field, name, n)
               match name {
                 "least" => (Some(Least(n)), errors)
                 "most" => (Some(Most(n)), errors)
@@ -605,13 +629,13 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
                 "under" => (Some(Under(n)), errors)
                 _ => (Some(Step(n)), errors)
               }
+            }
             Err(err) => {
               let (l, c) = cur_pos(p)
               errors.push({ msg: err.to_text(), line: l, col: c, })
               (None, errors)
             }
           }
-        }
         None => (None, errors)
       }
     }
@@ -621,10 +645,10 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
         errors.push(e)
       }
       match expr {
-        Some(e) => {
-          let vars : Map[String, Double] = Map([])
-          match eval_expr(e, vars) {
+        Some(e) =>
+          match eval_expr_in(e, { vars: Map([]), fields: p.field_env.val, }) {
             Ok(n) => {
+              record_constraint(p, field, name, n)
               let int_val = n.to_int()
               match name {
                 "shortest" => (Some(Shortest(int_val)), errors)
@@ -637,7 +661,6 @@ fn dsl_parse_check(p : Parser) -> (AstCheck?, Array[ParseError]) {
               (None, errors)
             }
           }
-        }
         None => (None, errors)
       }
     }
@@ -704,7 +727,7 @@ pub fn dsl_parse(
   src : String,
 ) -> (Array[AstModel], Array[LexError], Array[ParseError]) {
   let (lexemes, lex_errors) = lex(src)
-  let p = { tokens: lexemes, pos: { val: 0, }, }
+  let p = { tokens: lexemes, pos: { val: 0, }, field_env: { val: Map([]), }, }
   let models = []
   let parse_errors = []
   skip_newlines(p)

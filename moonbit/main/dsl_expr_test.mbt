@@ -230,3 +230,88 @@ test "expr: expression result reaches the projection" {
   assert_true(output.contains("maxLength"))
   assert_true(output.contains("20"))
 }
+
+// ---- Cross-field constraint references ----
+
+///|
+test "expr: a field reference resolves an earlier field's constraint" {
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  a: Int [least=5]\n  b: Int [over=a.least]\n}",
+  )
+  assert_eq(errors.length(), 0)
+  assert_eq(models.length(), 1)
+  match models[0].fields[1].checks[0] {
+    @main.Over(n) => assert_eq(n, 5.0)
+    _ => abort("expected Over")
+  }
+}
+
+///|
+test "expr: a field reference composes with arithmetic" {
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  a: Int [least=5]\n  b: Int [over=a.least * 2]\n}",
+  )
+  assert_eq(errors.length(), 0)
+  match models[0].fields[1].checks[0] {
+    @main.Over(n) => assert_eq(n, 10.0)
+    _ => abort("expected Over")
+  }
+}
+
+///|
+test "expr: a field can reference its own earlier constraint" {
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  x: Text [shortest=1, longest=x.shortest * 10]\n}",
+  )
+  assert_eq(errors.length(), 0)
+  match models[0].fields[0].checks[1] {
+    @main.Longest(n) => assert_eq(n, 10)
+    _ => abort("expected Longest")
+  }
+}
+
+///|
+test "expr: a reference chain resolves through several fields" {
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  a: Int [least=5]\n  b: Int [over=a.least]\n  c: Int [least=b.over * 2]\n}",
+  )
+  assert_eq(errors.length(), 0)
+  match models[0].fields[2].checks[0] {
+    @main.Least(n) => assert_eq(n, 10.0)
+    _ => abort("expected Least")
+  }
+}
+
+///|
+test "expr: referencing an unknown field is an error" {
+  let (_, _, errors) = @main.dsl_parse(
+    "model T {\n  b: Int [over=nope.least]\n}",
+  )
+  assert_true(errors.length() > 0)
+}
+
+///|
+test "expr: referencing an unknown constraint is an error" {
+  let (_, _, errors) = @main.dsl_parse(
+    "model T {\n  a: Int [least=5]\n  b: Int [over=a.nosuch]\n}",
+  )
+  assert_true(errors.length() > 0)
+}
+
+///|
+test "expr: the constraint namespace resets between models" {
+  let (_, _, errors) = @main.dsl_parse(
+    "model A {\n  a: Int [least=5]\n}\nmodel B {\n  b: Int [over=a.least]\n}",
+  )
+  assert_true(errors.length() > 0)
+}
+
+///|
+test "expr: a field reference reaches the projection" {
+  let (output, errors) = @main.dsl_project(
+    "model T {\n  a: Int [least=5]\n  b: Int [over=a.least]\n}",
+  )
+  assert_eq(errors.length(), 0)
+  assert_true(output.contains("exclusiveMinimum"))
+  assert_true(output.contains("5"))
+}
