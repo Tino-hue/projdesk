@@ -48,4 +48,5 @@ backend/.wrangler/
 .ci_*.py
 .verify_*.py
 .scan_*.py
+.watch_*.py
 .patch_tmp.py
