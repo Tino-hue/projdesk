@@ -55,14 +55,29 @@ pub fn check_equivalence_entry(a_json : String, b_json : String) -> String {
 #export_name("verify_roundtrip")
 pub fn verify_roundtrip_entry(model_json : String) -> String {
   let input = parse_input(model_json)
-  let result = roundtrip_model(input.model)
+  let result = roundtrip_model(input.model, input.known)
+  roundtrip_result_to_json(
+    result, "round-trip verified: model -> DSL -> parse preserves every field, type and constraint",
+  )
+}
+
+///|
+#export_name("verify_roundtrip_dsl")
+pub fn verify_roundtrip_dsl_entry(dsl : String) -> String {
+  let result = roundtrip_dsl(dsl)
+  roundtrip_result_to_json(
+    result, "round-trip verified: DSL -> AST -> DSL -> AST preserves every field, type and constraint",
+  )
+}
+
+///|
+/// Render a round-trip result as the ABI's JSON shape
+fn roundtrip_result_to_json(result : RoundTrip, ok_message : String) -> String {
   let out : Map[String, Json] = Map([])
   match result {
     Pass => {
       out["ok"] = Json::boolean(true)
-      out["message"] = Json::string(
-        "round-trip verified: model -> DSL -> model preserves all fields",
-      )
+      out["message"] = Json::string(ok_message)
     }
     Fail(msg) => {
       out["ok"] = Json::boolean(false)

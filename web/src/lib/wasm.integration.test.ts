@@ -14,6 +14,7 @@ interface Kernel {
   generate_migration(old_json: string, new_json: string): string;
   check_equivalence(a_json: string, b_json: string): string;
   verify_roundtrip(model_json: string): string;
+  verify_roundtrip_dsl(dsl: string): string;
   check_semantics(dsl: string): string;
 }
 
@@ -26,6 +27,7 @@ const EXPECTED_EXPORTS = [
   'generate_migration',
   'check_equivalence',
   'verify_roundtrip',
+  'verify_roundtrip_dsl',
   'check_semantics',
 ];
 
@@ -98,6 +100,48 @@ describe.skipIf(!wasmGcSupported)('Engine 1: DSL Compiler (real WASM)', () => {
     if (!result.jsonSchema) {
       expect(result.jsonSchema).toBe('');
     }
+  });
+});
+
+describe.skipIf(!wasmGcSupported)('Round-trip verification (real WASM)', () => {
+  it('verifies a DSL source that survives printing and re-parsing', () => {
+    const dsl = 'model User {\n  id: Big @unique\n  name: Text [shortest=1, longest=64]\n  email: Text [format=email]\n  addr: Nest {\n    city: Text\n  }\n}';
+    const result = JSON.parse(kernel.verify_roundtrip_dsl(dsl));
+    expect(result.ok).toBe(true);
+  });
+
+  it('reports a source whose constraints cannot be reproduced', () => {
+    // the printer writes format=<value> unquoted, so a value with a space
+    // cannot survive — the verifier has to say so
+    const dsl = 'model T {\n  x: Text [format="a b"]\n}';
+    const result = JSON.parse(kernel.verify_roundtrip_dsl(dsl));
+    expect(result.ok).toBe(false);
+    expect(result.message.length).toBeGreaterThan(0);
+  });
+
+  it('verifies a model carrying every constraint kind', () => {
+    const model = JSON.stringify({
+      name: 'T', doc: '', known: [],
+      fields: [{
+        name: 'x', kind: 'Text', required: true, nullable: false, doc: '', default: null,
+        check: { shortest: 1, longest: 64, pattern: '^[a-z]+$', format: 'email' },
+      }],
+    });
+    const result = JSON.parse(kernel.verify_roundtrip(model));
+    expect(result.ok).toBe(true);
+  });
+
+  it('refuses to verify a model the DSL cannot express', () => {
+    const model = JSON.stringify({
+      name: 'T', doc: '', known: [],
+      fields: [{
+        name: 'blob', kind: { raw: { any: 1 } }, required: true, nullable: false,
+        doc: '', default: null, check: {},
+      }],
+    });
+    const result = JSON.parse(kernel.verify_roundtrip(model));
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('raw type');
   });
 });
 

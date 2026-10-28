@@ -220,22 +220,14 @@ model ${name} {
         }
         process.exit(1);
       }
-      // round-trip via the projection pipeline
-      const compiled = JSON.parse(kernel.dsl_project(raw));
-      if (compiled.error) {
-        if (args.json) {
-          console.log(JSON.stringify({ ok: false, parse_error: compiled.error }, null, 2));
-        } else {
-          console.error(`DSL error: ${compiled.error}`);
-        }
-        process.exit(1);
-      }
+      // source round-trip: the DSL is printed back and parsed again
+      const rt = JSON.parse(kernel.verify_roundtrip_dsl(raw));
       if (args.json) {
         console.log(JSON.stringify({
-          ok: (sem.issue_count || 0) === 0,
+          ok: (sem.issue_count || 0) === 0 && rt.ok,
           issues: sem.issues || [],
           issue_count: sem.issue_count || 0,
-          roundtrip: 'ok',
+          roundtrip: rt.ok ? 'ok' : rt.message,
         }, null, 2));
       } else {
         console.log('Semantic analysis:');
@@ -247,9 +239,13 @@ model ${name} {
           }
         }
         console.log('\nRound-trip:');
-        console.log('  model -> DSL -> projections: OK');
+        if (rt.ok) {
+          console.log(`  OK — ${rt.message}`);
+        } else {
+          console.log(`  FAILED — ${rt.message}`);
+        }
       }
-      process.exit((sem.issue_count || 0) > 0 ? 1 : 0);
+      process.exit((sem.issue_count || 0) > 0 || !rt.ok ? 1 : 0);
     }
 
     // JSON model: round-trip through the kernel

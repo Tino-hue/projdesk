@@ -13,7 +13,7 @@ GitHub 仓库链接：https://github.com/Tino-hue/projdesk
 
 ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模型的完整生命周期：定义、分析、演化、对比、验证。
 
-核心是五个从零手写的 MoonBit 算法引擎，共 3079 行独立实现（整个内核 4961 行实现代码 + 2606 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。开发者用一套建模 DSL 声明业务对象，工作台完成约束推理、迁移推演、等价判定与正确性验证，最后投影为 JSON Schema、OpenAPI、SQL、GraphQL、TypeScript、Zod、Prisma 七种契约。
+核心是五个从零手写的 MoonBit 算法引擎，共 3239 行独立实现（整个内核 5125 行实现代码 + 2738 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。开发者用一套建模 DSL 声明业务对象，工作台完成约束推理、迁移推演、等价判定与正确性验证，最后投影为 JSON Schema、OpenAPI、SQL、GraphQL、TypeScript、Zod、Prisma 七种契约。
 
 投影由开源库 moonmodel 承担（相当于编译器后端）；五个引擎均本项目独立实现，与其无功能重叠。
 
@@ -23,11 +23,11 @@ ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模�
 - 约束求解器：区间冲突检测、蕴含与冗余分析、包含关系判定、固定点区间传播，输出类型化 Diagnosis 诊断（9 变体）；
 - 迁移引擎：结构化语义 diff（非文本对比），生成含破坏性变更标记的 ALTER TABLE，覆盖 Postgres/SQLite/MySQL；
 - 等价检测：类型加宽链（Int→Big→Real）、约束包含、嵌套模型与集合递归判定，分类为 Equivalent/SubtypeOf/SupertypeOf/Incompatible；
-- Round-trip 验证：模型 → DSL → 重新解析 → 逐字段比对，验证无字段或约束丢失；
+- Round-trip 验证：DSL → AST → DSL → AST 逐字段逐约束比对（含嵌套模型与全部 12 种约束），任何字段、类型或约束丢失都会被检出；
 - 语义检查：引用解析、自引用与环路检测；
 - 属性测试框架：自实现 xorshift64* PRNG 与随机模型生成器，在 100+ 随机模型上验证 12 条不变式（round-trip 保持性、DSL 完备性、diff 对称性等）；
 - 七种契约投影：对目标无法承载的约束输出类型化丢弃报告，而非静默丢弃；
-- 工具链：WASM ABI（9 导出）、CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Cloudflare Workers 后端。
+- 工具链：WASM ABI（10 导出）、CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Cloudflare Workers 后端。
 
 全部 MoonBit 代码编译为 wasm-gc，浏览器内零服务端依赖运行。
 
@@ -54,9 +54,9 @@ API 契约跨端一致性：用 DSL 一次声明结构，前端得 TypeScript �
 1. 五个 MoonBit 算法引擎 + 属性测试框架（12 条不变式、7 项性能基准）
 2. 七种契约投影 + 类型化丢弃诊断
 3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
-4. WASM ABI 9 导出
+4. WASM ABI 10 导出
 5. CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
-6. 测试与 CI：210 个 MoonBit 测试 + 90 个前端测试（含 21 个加载真实 WASM 内核的集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
+6. 测试与 CI：220 个 MoonBit 测试 + 94 个前端测试（含 25 个加载真实 WASM 内核的集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
 
 七、项目类型说明
 
@@ -68,6 +68,6 @@ API 契约跨端一致性：用 DSL 一次声明结构，前端得 TypeScript �
 
 https://github.com/Tino-hue/projdesk
 
-118 个以上有效提交。测试全绿：210 个 MoonBit 测试与 90 个前端测试全部通过，内核 moon check 零警告；CI 通过 21 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+118 个以上有效提交。测试全绿：220 个 MoonBit 测试与 94 个前端测试全部通过，内核 moon check 零警告；CI 通过 25 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 在线演示：https://tino-hue.github.io/projdesk/

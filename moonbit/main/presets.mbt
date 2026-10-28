@@ -147,14 +147,3 @@ pub fn presets() -> Array[@moonmodel.Model] {
   out.push(preset_address())
   out
 }
-
-///|
-/// Get preset by name
-pub fn preset_by_name(name : String) -> @moonmodel.Model? {
-  for m in presets() {
-    if m.name == name {
-      return Some(m)
-    }
-  }
-  None
-}

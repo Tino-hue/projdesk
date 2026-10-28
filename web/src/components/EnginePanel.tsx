@@ -1,7 +1,7 @@
 // Engine panel: exposes DSL compiler, constraint solver, migration, equivalence
 import { useState } from 'react';
 import type { ModelInput } from '../lib/types';
-import { dslProject, solveConstraints, generateMigration, checkEquivalence, verifyRoundtrip, checkSemantics } from '../lib/wasm';
+import { dslProject, solveConstraints, generateMigration, checkEquivalence, verifyRoundtrip, verifyRoundtripDsl, checkSemantics } from '../lib/wasm';
 
 const DSL_EXAMPLE = `model User {
   id: Big @unique
@@ -19,6 +19,7 @@ export function EnginePanel({ model }: Props) {
   const [activeEngine, setActiveEngine] = useState<'dsl' | 'solver' | 'migration' | 'equiv' | 'roundtrip' | 'semantic'>('dsl');
   const [dslText, setDslText] = useState(DSL_EXAMPLE);
   const [dslOutput, setDslOutput] = useState('');
+  const [dslRoundtrip, setDslRoundtrip] = useState('');
   const [solverOutput, setSolverOutput] = useState('');
   const [migrationOutput, setMigrationOutput] = useState('');
   const [equivOutput, setEquivOutput] = useState('');
@@ -33,6 +34,13 @@ export function EnginePanel({ model }: Props) {
       setDslOutput(result);
     } catch (e) {
       setDslOutput('Error: ' + String(e));
+    }
+    try {
+      // Does the source survive being printed and parsed again?
+      const verdict = JSON.parse(await verifyRoundtripDsl(dslText));
+      setDslRoundtrip(verdict.ok ? 'Source round-trip: OK' : 'Source round-trip: FAILED — ' + verdict.message);
+    } catch (e) {
+      setDslRoundtrip('Source round-trip: ' + String(e));
     }
     setRunning(false);
   };
@@ -147,6 +155,17 @@ export function EnginePanel({ model }: Props) {
             >
               Parse DSL
             </button>
+            {dslRoundtrip && (
+              <div
+                className={`text-[10px] font-mono px-2 py-1 rounded-md ${
+                  dslRoundtrip.startsWith('Source round-trip: OK')
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
+                }`}
+              >
+                {dslRoundtrip}
+              </div>
+            )}
             {dslOutput && <pre className="p-2 text-[10px] font-mono bg-slate-950 text-slate-200 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">{dslOutput}</pre>}
           </div>
         )}
