@@ -8,8 +8,8 @@ engines, seven projection targets.
 
 | Engine | Modules | What it does |
 |--------|---------|--------------|
-| DSL compiler | `dsl_lexer` `dsl_parser` `dsl_expr` `dsl_codegen` `dsl_printer` `dsl_semantic` | Hand-written lexer, recursive descent parser, constraint-expression evaluator, AST codegen, inverse AST printer, semantic checks |
-| Constraint solver | `solver` `solver_propagate` | Conflict / redundancy / containment analysis, fixed-point interval propagation |
+| DSL compiler | `dsl_lexer` `dsl_parser` `dsl_expr` `dsl_codegen` `dsl_printer` `dsl_semantic` `dsl_resolve` | Hand-written lexer, recursive descent parser, constraint-expression evaluator, AST codegen, inverse AST printer, semantic checks, cross-field bound resolution |
+| Constraint solver | `solver` `solver_propagate` | Conflict / redundancy / containment analysis, cross-field bound resolution, fixed-point interval propagation, reference-cycle detection |
 | Migration engine | `migration` | Structured semantic diff, SQL `ALTER TABLE`, breaking-change classification |
 | Equivalence checker | `equiv` | Type subtyping, constraint containment, version compatibility |
 | Round-trip verifier | `roundtrip` | Formal generate-parse-compare correctness verification |

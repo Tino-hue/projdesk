@@ -97,31 +97,37 @@ fn model_field_to_ast(f : @moonmodel.Field) -> AstField {
     checks.push(Distinct)
   }
   match f.check.least {
-    Some(v) => checks.push(Least(v))
+    Some(v) => checks.push(Least({ value: Some(v), expr: Num(v), }))
     None => ()
   }
   match f.check.most {
-    Some(v) => checks.push(Most(v))
+    Some(v) => checks.push(Most({ value: Some(v), expr: Num(v), }))
     None => ()
   }
   match f.check.over {
-    Some(v) => checks.push(Over(v))
+    Some(v) => checks.push(Over({ value: Some(v), expr: Num(v), }))
     None => ()
   }
   match f.check.under {
-    Some(v) => checks.push(Under(v))
+    Some(v) => checks.push(Under({ value: Some(v), expr: Num(v), }))
     None => ()
   }
   match f.check.step {
-    Some(v) => checks.push(Step(v))
+    Some(v) => checks.push(Step({ value: Some(v), expr: Num(v), }))
     None => ()
   }
   match f.check.shortest {
-    Some(v) => checks.push(Shortest(v))
+    Some(v) => {
+      let d = v.to_double()
+      checks.push(Shortest({ value: Some(d), expr: Num(d), }))
+    }
     None => ()
   }
   match f.check.longest {
-    Some(v) => checks.push(Longest(v))
+    Some(v) => {
+      let d = v.to_double()
+      checks.push(Longest({ value: Some(d), expr: Num(d), }))
+    }
     None => ()
   }
   match f.check.pattern {

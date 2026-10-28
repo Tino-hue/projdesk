@@ -241,7 +241,7 @@ test "expr: a field reference resolves an earlier field's constraint" {
   assert_eq(errors.length(), 0)
   assert_eq(models.length(), 1)
   match models[0].fields[1].checks[0] {
-    @main.Over(n) => assert_eq(n, 5.0)
+    @main.Over(b) => assert_eq(b.value, Some(5.0))
     _ => abort("expected Over")
   }
 }
@@ -253,7 +253,7 @@ test "expr: a field reference composes with arithmetic" {
   )
   assert_eq(errors.length(), 0)
   match models[0].fields[1].checks[0] {
-    @main.Over(n) => assert_eq(n, 10.0)
+    @main.Over(b) => assert_eq(b.value, Some(10.0))
     _ => abort("expected Over")
   }
 }
@@ -265,7 +265,7 @@ test "expr: a field can reference its own earlier constraint" {
   )
   assert_eq(errors.length(), 0)
   match models[0].fields[0].checks[1] {
-    @main.Longest(n) => assert_eq(n, 10)
+    @main.Longest(b) => assert_eq(b.value, Some(10.0))
     _ => abort("expected Longest")
   }
 }
@@ -277,33 +277,81 @@ test "expr: a reference chain resolves through several fields" {
   )
   assert_eq(errors.length(), 0)
   match models[0].fields[2].checks[0] {
-    @main.Least(n) => assert_eq(n, 10.0)
+    @main.Least(b) => assert_eq(b.value, Some(10.0))
     _ => abort("expected Least")
   }
 }
 
 ///|
-test "expr: referencing an unknown field is an error" {
-  let (_, _, errors) = @main.dsl_parse(
-    "model T {\n  b: Int [over=nope.least]\n}",
+test "expr: a reference may point at a field declared later" {
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  b: Int [over=a.least]\n  a: Int [least=5]\n}",
   )
-  assert_true(errors.length() > 0)
+  assert_eq(errors.length(), 0)
+  match models[0].fields[0].checks[0] {
+    @main.Over(b) => assert_eq(b.value, Some(5.0))
+    _ => abort("expected Over")
+  }
 }
 
 ///|
-test "expr: referencing an unknown constraint is an error" {
-  let (_, _, errors) = @main.dsl_parse(
+test "expr: a chain of forward and backward references resolves" {
+  let (models, _, errors) = @main.dsl_parse(
+    "model T {\n  c: Int [least=b.least]\n  b: Int [least=a.least]\n  a: Int [least=7]\n}",
+  )
+  assert_eq(errors.length(), 0)
+  match models[0].fields[0].checks[0] {
+    @main.Least(b) => assert_eq(b.value, Some(7.0))
+    _ => abort("expected Least")
+  }
+}
+
+///|
+test "expr: referencing an unknown field is a semantic issue" {
+  let (models, _, _) = @main.dsl_parse(
+    "model T {\n  b: Int [over=nope.least]\n}",
+  )
+  let issues = @main.check_semantics(models)
+  assert_eq(issues.length(), 1)
+  assert_true(issues[0].to_text().contains("unknown field"))
+}
+
+///|
+test "expr: referencing an unknown constraint is a semantic issue" {
+  let (models, _, _) = @main.dsl_parse(
     "model T {\n  a: Int [least=5]\n  b: Int [over=a.nosuch]\n}",
   )
-  assert_true(errors.length() > 0)
+  let issues = @main.check_semantics(models)
+  assert_eq(issues.length(), 1)
+  assert_true(issues[0].to_text().contains("unknown constraint"))
 }
 
 ///|
 test "expr: the constraint namespace resets between models" {
-  let (_, _, errors) = @main.dsl_parse(
+  let (models, _, _) = @main.dsl_parse(
     "model A {\n  a: Int [least=5]\n}\nmodel B {\n  b: Int [over=a.least]\n}",
   )
-  assert_true(errors.length() > 0)
+  let issues = @main.check_semantics(models)
+  assert_eq(issues.length(), 1)
+  assert_true(issues[0].to_text().contains("unknown field"))
+}
+
+///|
+test "expr: a cycle of constraint references is reported" {
+  let (models, _, _) = @main.dsl_parse(
+    "model T {\n  a: Int [least=b.least]\n  b: Int [least=a.least]\n}",
+  )
+  let issues = @main.check_semantics(models)
+  assert_eq(issues.length(), 1)
+  assert_true(issues[0].to_text().contains("cyclic"))
+}
+
+///|
+test "expr: a field referencing its own bound is a cycle" {
+  let (models, _, _) = @main.dsl_parse("model T {\n  a: Int [least=a.least]\n}")
+  let issues = @main.check_semantics(models)
+  assert_eq(issues.length(), 1)
+  assert_true(issues[0].to_text().contains("cyclic"))
 }
 
 ///|

@@ -41,13 +41,13 @@ fn ast_checks_to_moon(checks : Array[AstCheck]) -> @moonmodel.Check {
   let mut unique = false
   for c in checks {
     match c {
-      Least(n) => least = Some(n)
-      Most(n) => most = Some(n)
-      Over(n) => over = Some(n)
-      Under(n) => under = Some(n)
-      Step(n) => step = Some(n)
-      Shortest(n) => shortest = Some(n)
-      Longest(n) => longest = Some(n)
+      Least(b) => least = b.value
+      Most(b) => most = b.value
+      Over(b) => over = b.value
+      Under(b) => under = b.value
+      Step(b) => step = b.value
+      Shortest(b) => shortest = b.value.map(fn(v) { v.to_int() })
+      Longest(b) => longest = b.value.map(fn(v) { v.to_int() })
       Pattern(s) => pattern = Some(s)
       Format(s) => format = Some(s)
       Options(vals) => {
@@ -130,6 +130,16 @@ pub fn dsl_project(
   }
   for e in parse_errors {
     errors.push(e.to_text())
+  }
+  // A constraint bound that cannot be settled has no value to project, so the
+  // source is rejected rather than projected without it.
+  for p in resolve_all_bounds(models) {
+    errors.push(p)
+  }
+  for m in models {
+    for b in unresolved_bounds(m) {
+      errors.push("constraint " + b + " could not be resolved")
+    }
   }
   if errors.length() > 0 || models.length() == 0 {
     let err_msg = if errors.length() > 0 {
