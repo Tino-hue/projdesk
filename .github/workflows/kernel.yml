@@ -63,6 +63,9 @@ jobs:
             || { echo "::error::could not bundle the core library"; exit 1; }
           "$MOON_HOME/bin/moon" -C "$MOON_HOME/lib/core" bundle --warn-list -a --target wasm-gc --quiet \
             || { echo "::error::could not bundle the core library for wasm-gc"; exit 1; }
+          # $GITHUB_PATH only affects later steps, so the current one needs the
+          # toolchain on its PATH as well.
+          export PATH="$MOON_HOME/bin:$PATH"
           echo "$MOON_HOME/bin" >> "$GITHUB_PATH"
           moon version
 
