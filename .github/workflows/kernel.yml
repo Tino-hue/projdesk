@@ -1,0 +1,102 @@
+name: Kernel tests
+
+# The kernel's own test suite runs here. The frontend CI does not build the
+# MoonBit kernel, so without this workflow the Actions badge says nothing
+# about the MoonBit code.
+#
+# The toolchain cannot be pinned: the distribution host publishes only the
+# "latest" and "nightly" archives, and older releases are not downloadable.
+# The kernel compiles and passes its tests against both the current release
+# and the older one the repository was developed against, so "latest" is
+# safe to use here.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'moonbit/**'
+      - 'scripts/**'
+      - '.github/workflows/kernel.yml'
+  pull_request:
+    paths:
+      - 'moonbit/**'
+      - 'scripts/**'
+  workflow_dispatch:
+
+jobs:
+  kernel:
+    name: MoonBit kernel tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the MoonBit toolchain
+        run: |
+          set -uo pipefail
+          # The official install script is not used here: it exits on the first
+          # error, which hides which step broke. The steps are spelled out so
+          # each one can report its own failure.
+          MOON_VERSION=latest
+          MOON_HOST=https://cli.moonbitlang.com
+          MOON_HOME="$HOME/.moon"
+          case "$(uname -ms)" in
+            'Linux x86_64') TARGET=linux-x86_64 ;;
+            'Linux aarch64') TARGET=linux-aarch64 ;;
+            *) echo "::error::unsupported runner platform: $(uname -ms)"; exit 1 ;;
+          esac
+          mkdir -p "$MOON_HOME/bin" "$MOON_HOME/lib"
+          curl -fsSL --retry 3 --retry-delay 5 --max-time 900 \
+            -o /tmp/moonbit.tar.gz \
+            "$MOON_HOST/binaries/$MOON_VERSION/moonbit-$TARGET.tar.gz" \
+            || { echo "::error::could not download the toolchain"; exit 1; }
+          tar xf /tmp/moonbit.tar.gz --directory="$MOON_HOME" \
+            || { echo "::error::could not extract the toolchain"; exit 1; }
+          # The archive does not carry the executable bit, so the binaries have
+          # to be made executable before they can be used.
+          chmod +x "$MOON_HOME/bin"/* || echo "::notice::could not chmod the toolchain binaries"
+          chmod +x "$MOON_HOME/bin/internal/tcc" || echo "::notice::no internal/tcc to chmod"
+          if [ ! -x "$MOON_HOME/bin/moon" ]; then
+            echo "::error::no executable moon binary at $MOON_HOME/bin/moon"
+            ls -l "$MOON_HOME/bin" | head -20 | while IFS= read -r f; do echo "::notice::$f"; done
+            exit 1
+          fi
+          curl -fsSL --retry 3 --retry-delay 5 --max-time 900 \
+            -o /tmp/core.tar.gz \
+            "$MOON_HOST/cores/core-$MOON_VERSION.tar.gz" \
+            || { echo "::error::could not download the core library"; exit 1; }
+          tar xf /tmp/core.tar.gz --directory="$MOON_HOME/lib" \
+            || { echo "::error::could not extract the core library"; exit 1; }
+          "$MOON_HOME/bin/moon" -C "$MOON_HOME/lib/core" bundle --warn-list -a --all \
+            || { echo "::error::could not bundle the core library"; exit 1; }
+          "$MOON_HOME/bin/moon" -C "$MOON_HOME/lib/core" bundle --warn-list -a --target wasm-gc --quiet \
+            || { echo "::error::could not bundle the core library for wasm-gc"; exit 1; }
+          # $GITHUB_PATH only affects later steps, so the current one needs the
+          # toolchain on its PATH as well.
+          export PATH="$MOON_HOME/bin:$PATH"
+          echo "$MOON_HOME/bin" >> "$GITHUB_PATH"
+          moon version || { echo "::error::moon version failed"; exit 1; }
+
+      - name: Refresh the registry index
+        # A fresh toolchain has no registry index yet, and the moonmodel
+        # dependency cannot be resolved without it.
+        run: moon update
+
+      - name: Fetch the dependency and build the kernel
+        run: cd moonbit && moon build --target wasm-gc
+
+      - name: moon check
+        run: cd moonbit && moon check
+
+      - name: moon test
+        run: |
+          set -uo pipefail
+          cd moonbit
+          status=0
+          moon test > /tmp/test.log 2>&1 || status=$?
+          if [ $status -ne 0 ]; then
+            echo "::error::moon test failed (status $status)"
+            grep -iE "fail|error|assert" /tmp/test.log | head -8 | while IFS= read -r line; do echo "::error::$line"; done
+            tail -3 /tmp/test.log | while IFS= read -r line; do echo "::notice::$line"; done
+            exit $status
+          fi
+          tail -2 /tmp/test.log | while IFS= read -r line; do echo "::notice::$line"; done

@@ -41,3 +41,12 @@ backend/.wrangler/
 # Scratch files
 .tmp_*
 *.tmp
+
+# Local scratch scripts (research probes, one-off checks)
+.research*.py
+.probe_*
+.ci_*.py
+.verify_*.py
+.scan_*.py
+.watch_*.py
+.patch_tmp.py

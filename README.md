@@ -277,9 +277,9 @@ Beyond hand-picked examples, the kernel is verified with **property-based testin
 
 Performance budgets are asserted with `monotonic_clock` for models of 100-200 fields across projection, solving, parsing, diffing, round-trip, and equivalence.
 
-**How CI verifies the kernel.** The kernel is compiled to `wasm-gc`, and the artifact (`web/public/projdesk.wasm`) is committed to the repository. CI deliberately does not install the MoonBit toolchain: the compiler renamed its 32-bit integer type between releases (`Int` ↔ `Int32`), so a runner with a different toolchain would fail to compile the same source. CI therefore exercises the **compiled kernel** through 25 real-WASM integration tests, and the `ProjDesk Generate` action additionally runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
+**How CI verifies the kernel.** The `Kernel tests` workflow installs the MoonBit toolchain, fetches the `moonmodel` dependency, and runs `moon check` and `moon test` on the kernel source — all 237 tests, on every push and pull request that touches `moonbit/`. The toolchain cannot be pinned (the distribution host publishes only the `latest` and `nightly` archives), so the job installs `latest`; the kernel compiles and passes against both that release and the older one it was developed against.
 
-The kernel's own suite — `moon check` (zero warnings) and `moon test` (237 tests) — runs locally via `setup.ps1`, `build.ps1`, or `make kernel-test`.
+The compiled kernel is verified separately: the artifact (`web/public/projdesk.wasm`) is committed to the repository and exercised by 25 real-WASM integration tests, and the `ProjDesk Generate` action runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
 
 ---
 
