@@ -68,6 +68,6 @@ ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模�
 
 https://github.com/Tino-hue/projdesk
 
-115 个以上有效提交。测试全绿：210 个 MoonBit 测试与 86 个前端测试全部通过，内核 moon check 零警告；CI 通过 21 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+118 个以上有效提交。测试全绿：210 个 MoonBit 测试与 86 个前端测试全部通过，内核 moon check 零警告；CI 通过 21 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 在线演示：https://tino-hue.github.io/projdesk/
