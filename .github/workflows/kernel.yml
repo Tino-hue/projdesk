@@ -33,28 +33,37 @@ jobs:
       - name: Install the MoonBit toolchain
         run: |
           set -uo pipefail
-          INSTALL=/tmp/moon-install.sh
-          for host in https://cli.moonbitlang.com https://cli.moonbitlang.cn; do
-            if curl -fsSL --max-time 90 "$host/install/unix.sh" -o "$INSTALL"; then
-              echo "install script: $host"
-              break
-            fi
-          done
-          if [ ! -s "$INSTALL" ]; then
-            echo "::error::could not download the MoonBit install script"
-            exit 1
-          fi
-          # The script takes the version as a positional argument. Run it with
-          # tracing so a failure names the command that broke, and report the
-          # tail of its output as annotations.
-          bash -x "$INSTALL" latest > /tmp/install.log 2>&1
-          status=$?
-          if [ $status -ne 0 ]; then
-            echo "::error::the MoonBit install script failed with exit code $status"
-            tail -12 /tmp/install.log | while IFS= read -r line; do echo "::error::$line"; done
-            exit $status
-          fi
-          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          # The official install script is not used here: it exits on the first
+          # error, which hides which step broke. The steps are spelled out so
+          # each one can report its own failure.
+          MOON_VERSION=latest
+          MOON_HOST=https://cli.moonbitlang.com
+          MOON_HOME="$HOME/.moon"
+          case "$(uname -ms)" in
+            'Linux x86_64') TARGET=linux-x86_64 ;;
+            'Linux aarch64') TARGET=linux-aarch64 ;;
+            *) echo "::error::unsupported runner platform: $(uname -ms)"; exit 1 ;;
+          esac
+          mkdir -p "$MOON_HOME/bin" "$MOON_HOME/lib"
+          echo "target: $TARGET"
+          curl -fsSL --retry 3 --retry-delay 5 --max-time 900 \
+            -o /tmp/moonbit.tar.gz \
+            "$MOON_HOST/binaries/$MOON_VERSION/moonbit-$TARGET.tar.gz" \
+            || { echo "::error::could not download the toolchain"; exit 1; }
+          tar xf /tmp/moonbit.tar.gz --directory="$MOON_HOME" \
+            || { echo "::error::could not extract the toolchain"; exit 1; }
+          curl -fsSL --retry 3 --retry-delay 5 --max-time 900 \
+            -o /tmp/core.tar.gz \
+            "$MOON_HOST/cores/core-$MOON_VERSION.tar.gz" \
+            || { echo "::error::could not download the core library"; exit 1; }
+          tar xf /tmp/core.tar.gz --directory="$MOON_HOME/lib" \
+            || { echo "::error::could not extract the core library"; exit 1; }
+          chmod +x "$MOON_HOME/bin"/* || { echo "::error::could not make the toolchain executable"; exit 1; }
+          "$MOON_HOME/bin/moon" -C "$MOON_HOME/lib/core" bundle --warn-list -a --all \
+            || { echo "::error::could not bundle the core library"; exit 1; }
+          "$MOON_HOME/bin/moon" -C "$MOON_HOME/lib/core" bundle --warn-list -a --target wasm-gc --quiet \
+            || { echo "::error::could not bundle the core library for wasm-gc"; exit 1; }
+          echo "$MOON_HOME/bin" >> "$GITHUB_PATH"
           moon version
 
       - name: Refresh the registry index
