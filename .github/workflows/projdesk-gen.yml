@@ -1,15 +1,25 @@
 name: ProjDesk Generate
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - 'models/**'
+      - 'cli/**'
+      - '.github/workflows/projdesk-gen.yml'
+  pull_request:
+    paths:
+      - 'models/**'
   workflow_dispatch:
     inputs:
       model_path:
         description: 'Path to model JSON or .dsl file'
-        required: true
-        default: 'cli/example-model.json'
+        required: false
+        default: ''
 
 jobs:
-  generate:
+  verify:
+    name: Verify models
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -20,9 +30,52 @@ jobs:
           # Node 20 cannot instantiate ("Unknown type code 0x50").
           node-version: 24
 
+      - name: Verify model semantics and round-trip
+        run: |
+          shopt -s nullglob
+          models=(models/*.dsl models/*.json)
+          if [ ${#models[@]} -eq 0 ]; then
+            echo "No models found in models/ — nothing to verify"
+            exit 0
+          fi
+          status=0
+          for m in "${models[@]}"; do
+            echo "::group::Verifying $m"
+            if node cli/index.js verify "$m"; then
+              echo "OK: $m"
+            else
+              echo "::error::$m failed verification"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $status
+
+  generate:
+    name: Generate projections
+    runs-on: ubuntu-24.04
+    needs: verify
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
       - name: Generate projections
         run: |
-          node cli/index.js gen "${{ github.event.inputs.model_path }}" --out ./generated
+          shopt -s nullglob
+          models=(models/*.dsl models/*.json)
+          if [ ${#models[@]} -eq 0 ]; then
+            echo "No models found in models/ — nothing to generate"
+            exit 0
+          fi
+          mkdir -p generated
+          for m in "${models[@]}"; do
+            name=$(basename "$m")
+            name="${name%.*}"
+            node cli/index.js gen "$m" --out "generated/$name"
+          done
 
       - name: Upload generated schemas
         uses: actions/upload-artifact@v4
