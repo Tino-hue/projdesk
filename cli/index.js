@@ -31,6 +31,7 @@ Usage:
   projdesk check <model.json|model.dsl>
   projdesk migrate <old.json> <new.json> [options]
   projdesk verify <model.json|model.dsl>
+  projdesk init <ModelName> [--out <dir>] [--as-json]
 
 Options:
   -o, --out <dir>        Output directory (default: ./projdesk-out)
@@ -48,11 +49,12 @@ Examples:
   projdesk check model.json
   projdesk migrate old.json new.json
   projdesk verify model.dsl
+  projdesk init Order --out ./models
 `);
 }
 
 function parseArgs(argv) {
-  const args = { _: [], out: 'projdesk-out', format: 'all', sqlDialect: 'Postgres', openapiDialect: 'OpenApi30', stdout: false, json: false };
+  const args = { _: [], out: 'projdesk-out', format: 'all', sqlDialect: 'Postgres', openapiDialect: 'OpenApi30', stdout: false, json: false, scaffold: 'dsl' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') { usage(); process.exit(0); }
@@ -62,7 +64,9 @@ function parseArgs(argv) {
     else if (a === '--openapi-dialect') args.openapiDialect = argv[++i];
     else if (a === '--stdout') args.stdout = true;
     else if (a === '--json') args.json = true;
-    else if (['gen', 'check', 'migrate', 'verify'].includes(a)) args.cmd = a;
+    else if (a === '--as-json') args.scaffold = 'json';
+    else if (a === '--dsl') args.scaffold = 'dsl';
+    else if (['gen', 'check', 'migrate', 'verify', 'init'].includes(a)) args.cmd = a;
     else args._.push(a);
   }
   return args;
@@ -144,6 +148,49 @@ async function main() {
       }
     }
     if (result.breaking_count > 0) process.exit(1);
+    return;
+  }
+
+  // ---- init: scaffold a new model ----
+  if (args.cmd === 'init') {
+    const name = args._[0];
+    if (!name) {
+      console.error('Usage: projdesk init <ModelName> [--out <dir>] [--as-json]');
+      process.exit(1);
+    }
+    const outDir = resolve(args.out);
+    if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+
+    if (args.scaffold === 'json') {
+      const model = {
+        name,
+        doc: `${name} model`,
+        fields: [
+          { name: 'id', kind: 'Big', required: true, nullable: false, doc: 'primary key', default: null, check: { unique: true } },
+          { name: 'name', kind: 'Text', required: true, nullable: false, doc: 'display name', default: null, check: { shortest: 1, longest: 64 } },
+          { name: 'createdAt', kind: 'Stamp', required: true, nullable: false, doc: 'creation time', default: null, check: {} },
+        ],
+        known: [],
+      };
+      const file = join(outDir, `${name}.json`);
+      writeFileSync(file, JSON.stringify(model, null, 2) + '\n');
+      console.log(`  ${file}`);
+    } else {
+      const dsl = `// ${name} model
+model ${name} {
+  // primary key
+  id: Big @unique
+  // display name
+  name: Text [shortest=1, longest=64]
+  // creation time
+  createdAt: Stamp
+}
+`;
+      const file = join(outDir, `${name}.dsl`);
+      writeFileSync(file, dsl);
+      console.log(`  ${file}`);
+    }
+    console.log(`\nCreated ${name}. Next: projdesk gen ${name}.${args.scaffold === 'json' ? 'json' : 'dsl'} --out ./generated`);
     return;
   }
 

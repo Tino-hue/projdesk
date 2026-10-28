@@ -1,4 +1,4 @@
-﻿# ProjDesk — Model Engineering Workbench
+# ProjDesk — Model Engineering Workbench
 
 **Live Demo**: https://tino-hue.github.io/projdesk/
 
@@ -155,19 +155,59 @@ npm run dev  # http://127.0.0.1:3000
 ## Architecture
 
 ```
-                    Model Engineering Workbench
- ┌──────────────────────────────────────────────────────┐
- │   DSL Compiler ──> Constraint Solver ──> Migration    │
- │        │               │                   │          │
- │    define           analyze             evolve        │
- │        │               │                   │          │
- │   Equivalence <────── Round-trip <─────────┘          │
- │    compare           verify                            │
- └──────────┬───────────────────────────────────────────┘
-            │ moonmodel.Model
-            ▼
-   Projection (moonmodel): 7 targets
+                        ┌─────────────────────┐
+                        │   Source (.dsl)     │
+                        └──────────┬──────────┘
+                                   │
+              ┌────────────────────▼────────────────────┐
+              │         MoonBit Kernel (wasm-gc)        │
+              │                                         │
+              │  ┌───────────┐   ┌──────────────────┐   │
+              │  │  Lexer    │──▶│  Parser         │   │
+              │  │  comments │   │  expressions    │   │
+              │  │  operators│   │  precedence     │   │
+              │  └───────────┘   └────────┬─────────┘   │
+              │                            │             │
+              │                    ┌───────▼────────┐    │
+              │                    │ Semantic Check │    │
+              │                    │ refs & cycles  │    │
+              │                    └───────┬────────┘    │
+              │                            │             │
+              │              ┌─────────────▼──────────┐  │
+              │              │      AST + Model       │  │
+              │              └─────┬───────────┬──────┘  │
+              │                    │           │         │
+              │         ┌──────────▼───┐  ┌────▼─────┐  │
+              │         │  Constraint  │  │ Migration│  │
+              │         │   Solver     │  │  Engine  │  │
+              │         │ + propagation│  │ + diff   │  │
+              │         └──────────────┘  └──────────┘  │
+              │                                         │
+              │         ┌──────────┐  ┌──────────┐     │
+              │         │Equivalence│  │Round-trip│     │
+              │         └──────────┘  └──────────┘     │
+              └────────────────────┬────────────────────┘
+                                   │ moonmodel.Model
+                                   ▼
+        ┌──────────────────────────────────────────────────┐
+        │  Projection (moonmodel): JSON Schema · OpenAPI   │
+        │  SQL DDL · GraphQL · TypeScript · Zod · Prisma  │
+        │  + typed drop report for every lost constraint  │
+        └──────────────────────────────────────────────────┘
 ```
+
+### The engine sources
+
+| Engine | Source | Algorithm |
+|--------|--------|-----------|
+| DSL Compiler | `dsl_lexer.mbt`, `dsl_parser.mbt`, `dsl_expr.mbt` | Character scanner → recursive descent (primary → term → expr) |
+| AST printer | `dsl_printer.mbt` | AST → DSL source (inverse of the parser) |
+| Semantic check | `dsl_semantic.mbt` | Reference resolution, self-reference, cycle detection |
+| Constraint solver | `solver.mbt`, `solver_propagate.mbt` | Interval arithmetic, dependency graph, fixed-point propagation |
+| Migration engine | `migration.mbt` | Structured semantic diff, SQL generation, breaking-change classification |
+| Equivalence | `equiv.mbt` | Type widening chain, constraint containment, collection recursion |
+| Round-trip | `roundtrip.mbt` | Model → DSL → parse → field-by-field comparison |
+| Property tests | `property.mbt` | xorshift64\* PRNG, random model generator, 7 invariants |
 
 ---
 
