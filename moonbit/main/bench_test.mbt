@@ -127,7 +127,7 @@ test "bench: diff on 100-field models within budget" {
 test "bench: round-trip on 50-field model within budget" {
   let m = @moonmodel.Model::new("RT", make_fields(50))
   let start = @bench.monotonic_clock_start()
-  let result = @main.roundtrip_model(m)
+  let result = @main.roundtrip_model(m, [])
   let elapsed = @bench.monotonic_clock_end(start)
   match result {
     Pass => ()
