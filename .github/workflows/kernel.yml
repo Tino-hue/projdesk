@@ -44,8 +44,16 @@ jobs:
             echo "::error::could not download the MoonBit install script"
             exit 1
           fi
-          # The script takes the version as a positional argument.
-          bash "$INSTALL" latest
+          # The script takes the version as a positional argument. Run it with
+          # tracing so a failure names the command that broke, and report the
+          # tail of its output as annotations.
+          bash -x "$INSTALL" latest > /tmp/install.log 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "::error::the MoonBit install script failed with exit code $status"
+            tail -12 /tmp/install.log | while IFS= read -r line; do echo "::error::$line"; done
+            exit $status
+          fi
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
           moon version
 
