@@ -38,6 +38,7 @@ Options:
   --sql-dialect <d>      Postgres | Sqlite | Mysql (default: Postgres)
   --openapi-dialect <d>  OpenApi30 | OpenApi31 | Swagger20 (default: OpenApi30)
   --stdout               Print to stdout instead of writing files
+  --json                 Emit machine-readable JSON (for CI)
   -h, --help             Show this help
 
 Examples:
@@ -51,7 +52,7 @@ Examples:
 }
 
 function parseArgs(argv) {
-  const args = { _: [], out: 'projdesk-out', format: 'all', sqlDialect: 'Postgres', openapiDialect: 'OpenApi30', stdout: false };
+  const args = { _: [], out: 'projdesk-out', format: 'all', sqlDialect: 'Postgres', openapiDialect: 'OpenApi30', stdout: false, json: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') { usage(); process.exit(0); }
@@ -60,6 +61,7 @@ function parseArgs(argv) {
     else if (a === '--sql-dialect') args.sqlDialect = argv[++i];
     else if (a === '--openapi-dialect') args.openapiDialect = argv[++i];
     else if (a === '--stdout') args.stdout = true;
+    else if (a === '--json') args.json = true;
     else if (['gen', 'check', 'migrate', 'verify'].includes(a)) args.cmd = a;
     else args._.push(a);
   }
@@ -107,7 +109,14 @@ async function main() {
 
     const result = JSON.parse(kernel.solve_constraints(raw));
     const diags = result.diagnoses || [];
-    if (diags.length === 0) {
+    if (args.json) {
+      console.log(JSON.stringify({
+        issues: diags,
+        conflict_count: result.conflict_count,
+        redundant_count: result.redundant_count,
+        ok: result.conflict_count === 0,
+      }, null, 2));
+    } else if (diags.length === 0) {
       console.log('No issues found. All constraints are satisfiable.');
     } else {
       console.log(`${diags.length} issue(s) found:`);
@@ -148,37 +157,58 @@ async function main() {
       // semantic analysis on the DSL source
       const sem = JSON.parse(kernel.check_semantics(raw));
       if (sem.parse_error) {
-        console.error(`Parse error: ${sem.parse_error}`);
-        process.exit(1);
-      }
-      console.log('Semantic analysis:');
-      if (!sem.issues || sem.issues.length === 0) {
-        console.log('  no issues — all references resolve, no cycles');
-      } else {
-        for (const i of sem.issues) {
-          console.log(`  [${i.severity.toUpperCase()}] ${i.text}`);
+        if (args.json) {
+          console.log(JSON.stringify({ ok: false, parse_error: sem.parse_error }, null, 2));
+        } else {
+          console.error(`Parse error: ${sem.parse_error}`);
         }
+        process.exit(1);
       }
       // round-trip via the projection pipeline
       const compiled = JSON.parse(kernel.dsl_project(raw));
       if (compiled.error) {
-        console.error(`DSL error: ${compiled.error}`);
+        if (args.json) {
+          console.log(JSON.stringify({ ok: false, parse_error: compiled.error }, null, 2));
+        } else {
+          console.error(`DSL error: ${compiled.error}`);
+        }
         process.exit(1);
       }
-      console.log('\nRound-trip:');
-      console.log('  model -> DSL -> projections: OK');
-      process.exit(sem.issue_count > 0 ? 1 : 0);
+      if (args.json) {
+        console.log(JSON.stringify({
+          ok: (sem.issue_count || 0) === 0,
+          issues: sem.issues || [],
+          issue_count: sem.issue_count || 0,
+          roundtrip: 'ok',
+        }, null, 2));
+      } else {
+        console.log('Semantic analysis:');
+        if (!sem.issues || sem.issues.length === 0) {
+          console.log('  no issues — all references resolve, no cycles');
+        } else {
+          for (const i of sem.issues) {
+            console.log(`  [${i.severity.toUpperCase()}] ${i.text}`);
+          }
+        }
+        console.log('\nRound-trip:');
+        console.log('  model -> DSL -> projections: OK');
+      }
+      process.exit((sem.issue_count || 0) > 0 ? 1 : 0);
     }
 
     // JSON model: round-trip through the kernel
     const rt = JSON.parse(kernel.verify_roundtrip(raw));
-    console.log('Round-trip verification:');
-    if (rt.ok) {
-      console.log(`  OK — ${rt.message}`);
+    if (args.json) {
+      console.log(JSON.stringify({ ok: rt.ok, message: rt.message }, null, 2));
     } else {
-      console.log(`  FAILED — ${rt.message}`);
-      process.exit(1);
+      console.log('Round-trip verification:');
+      if (rt.ok) {
+        console.log(`  OK — ${rt.message}`);
+      } else {
+        console.log(`  FAILED — ${rt.message}`);
+      }
     }
+    if (!rt.ok) process.exit(1);
     return;
   }
 
