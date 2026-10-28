@@ -13,10 +13,61 @@
   ],
   "activationEvents": [
     "onLanguage:json",
-    "workspaceContains:**/*model*.json"
+    "onLanguage:projdesk",
+    "workspaceContains:**/*model*.json",
+    "workspaceContains:**/*.dsl"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "projdesk",
+        "aliases": [
+          "ProjDesk Model",
+          "projdesk"
+        ],
+        "extensions": [
+          ".dsl",
+          ".projdesk"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "projdesk",
+        "scopeName": "source.projdesk",
+        "patterns": [
+          {
+            "include": "#comments"
+          },
+          {
+            "include": "#keywords"
+          },
+          {
+            "include": "#attributes"
+          },
+          {
+            "include": "#types"
+          },
+          {
+            "include": "#constraints"
+          },
+          {
+            "include": "#strings"
+          },
+          {
+            "include": "#numbers"
+          },
+          {
+            "include": "#operators"
+          },
+          {
+            "include": "#punctuation"
+          }
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "projdesk.generate",
@@ -29,13 +80,22 @@
       {
         "command": "projdesk.preview",
         "title": "ProjDesk: Preview in Browser"
+      },
+      {
+        "command": "projdesk.verify",
+        "title": "ProjDesk: Verify Model (semantics + round-trip)"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "command": "projdesk.generate",
-          "when": "resourceLangId == json",
+          "when": "resourceLangId == json || resourceLangId == projdesk",
+          "group": "projdesk"
+        },
+        {
+          "command": "projdesk.verify",
+          "when": "resourceLangId == projdesk",
           "group": "projdesk"
         }
       ]

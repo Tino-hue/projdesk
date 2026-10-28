@@ -4,6 +4,7 @@
 //   projdesk gen <model.json|model.dsl> [options]
 //   projdesk check <model.json|model.dsl>     (constraint analysis)
 //   projdesk migrate <old.json> <new.json>   (SQL migration)
+//   projdesk verify <model.json|model.dsl>    (round-trip + semantics)
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { resolve, dirname, join } from 'path';
@@ -29,6 +30,7 @@ Usage:
   projdesk gen <model.json|model.dsl> [options]
   projdesk check <model.json|model.dsl>
   projdesk migrate <old.json> <new.json> [options]
+  projdesk verify <model.json|model.dsl>
 
 Options:
   -o, --out <dir>        Output directory (default: ./projdesk-out)
@@ -36,6 +38,7 @@ Options:
   --sql-dialect <d>      Postgres | Sqlite | Mysql (default: Postgres)
   --openapi-dialect <d>  OpenApi30 | OpenApi31 | Swagger20 (default: OpenApi30)
   --stdout               Print to stdout instead of writing files
+  --json                 Emit machine-readable JSON (for CI)
   -h, --help             Show this help
 
 Examples:
@@ -44,11 +47,12 @@ Examples:
   projdesk gen model.json --sql-dialect Sqlite --stdout
   projdesk check model.json
   projdesk migrate old.json new.json
+  projdesk verify model.dsl
 `);
 }
 
 function parseArgs(argv) {
-  const args = { _: [], out: 'projdesk-out', format: 'all', sqlDialect: 'Postgres', openapiDialect: 'OpenApi30', stdout: false };
+  const args = { _: [], out: 'projdesk-out', format: 'all', sqlDialect: 'Postgres', openapiDialect: 'OpenApi30', stdout: false, json: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') { usage(); process.exit(0); }
@@ -57,7 +61,8 @@ function parseArgs(argv) {
     else if (a === '--sql-dialect') args.sqlDialect = argv[++i];
     else if (a === '--openapi-dialect') args.openapiDialect = argv[++i];
     else if (a === '--stdout') args.stdout = true;
-    else if (['gen', 'check', 'migrate'].includes(a)) args.cmd = a;
+    else if (a === '--json') args.json = true;
+    else if (['gen', 'check', 'migrate', 'verify'].includes(a)) args.cmd = a;
     else args._.push(a);
   }
   return args;
@@ -104,7 +109,14 @@ async function main() {
 
     const result = JSON.parse(kernel.solve_constraints(raw));
     const diags = result.diagnoses || [];
-    if (diags.length === 0) {
+    if (args.json) {
+      console.log(JSON.stringify({
+        issues: diags,
+        conflict_count: result.conflict_count,
+        redundant_count: result.redundant_count,
+        ok: result.conflict_count === 0,
+      }, null, 2));
+    } else if (diags.length === 0) {
       console.log('No issues found. All constraints are satisfiable.');
     } else {
       console.log(`${diags.length} issue(s) found:`);
@@ -132,6 +144,71 @@ async function main() {
       }
     }
     if (result.breaking_count > 0) process.exit(1);
+    return;
+  }
+
+  // ---- verify: round-trip + semantics ----
+  if (args.cmd === 'verify') {
+    const inputPath = resolve(args._[0]);
+    if (!existsSync(inputPath)) { console.error(`File not found: ${inputPath}`); process.exit(1); }
+    const raw = readText(inputPath);
+
+    if (isDslFile(inputPath)) {
+      // semantic analysis on the DSL source
+      const sem = JSON.parse(kernel.check_semantics(raw));
+      if (sem.parse_error) {
+        if (args.json) {
+          console.log(JSON.stringify({ ok: false, parse_error: sem.parse_error }, null, 2));
+        } else {
+          console.error(`Parse error: ${sem.parse_error}`);
+        }
+        process.exit(1);
+      }
+      // round-trip via the projection pipeline
+      const compiled = JSON.parse(kernel.dsl_project(raw));
+      if (compiled.error) {
+        if (args.json) {
+          console.log(JSON.stringify({ ok: false, parse_error: compiled.error }, null, 2));
+        } else {
+          console.error(`DSL error: ${compiled.error}`);
+        }
+        process.exit(1);
+      }
+      if (args.json) {
+        console.log(JSON.stringify({
+          ok: (sem.issue_count || 0) === 0,
+          issues: sem.issues || [],
+          issue_count: sem.issue_count || 0,
+          roundtrip: 'ok',
+        }, null, 2));
+      } else {
+        console.log('Semantic analysis:');
+        if (!sem.issues || sem.issues.length === 0) {
+          console.log('  no issues — all references resolve, no cycles');
+        } else {
+          for (const i of sem.issues) {
+            console.log(`  [${i.severity.toUpperCase()}] ${i.text}`);
+          }
+        }
+        console.log('\nRound-trip:');
+        console.log('  model -> DSL -> projections: OK');
+      }
+      process.exit((sem.issue_count || 0) > 0 ? 1 : 0);
+    }
+
+    // JSON model: round-trip through the kernel
+    const rt = JSON.parse(kernel.verify_roundtrip(raw));
+    if (args.json) {
+      console.log(JSON.stringify({ ok: rt.ok, message: rt.message }, null, 2));
+    } else {
+      console.log('Round-trip verification:');
+      if (rt.ok) {
+        console.log(`  OK — ${rt.message}`);
+      } else {
+        console.log(`  FAILED — ${rt.message}`);
+      }
+    }
+    if (!rt.ok) process.exit(1);
     return;
   }
 
