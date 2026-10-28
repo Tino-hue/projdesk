@@ -8,7 +8,7 @@ license = "MIT"
 
 preferred_target = "wasm-gc"
 
-description = "ProjDesk MoonBit kernel — one model description, four projections (JSON Schema / OpenAPI / SQL DDL / GraphQL SDL)"
+description = "ProjDesk MoonBit kernel — five independent algorithm engines (DSL compiler, constraint solver, migration, equivalence, round-trip) over one model description, projected to seven targets"
 
 repository = "https://github.com/Tino-hue/projdesk"
 

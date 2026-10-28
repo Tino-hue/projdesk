@@ -1,5 +1,6 @@
 // AST pretty-printer tests: AST -> DSL round-trip
 
+///|
 test "printer: simple model prints back to DSL" {
   let (models, _, errors) = @main.dsl_parse(
     "model User {\n  id: Big\n  name: Text\n}",
@@ -11,6 +12,7 @@ test "printer: simple model prints back to DSL" {
   assert_true(printed.contains("name: Text"))
 }
 
+///|
 test "printer: constraints are preserved" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  x: Text [longest=64, shortest=1]\n}",
@@ -21,6 +23,7 @@ test "printer: constraints are preserved" {
   assert_true(printed.contains("shortest=1"))
 }
 
+///|
 test "printer: attributes are preserved" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  x: Big @unique\n  y: Text @optional\n  z: Text @nullable\n}",
@@ -32,6 +35,7 @@ test "printer: attributes are preserved" {
   assert_true(printed.contains("@nullable"))
 }
 
+///|
 test "printer: compound types are preserved" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  a: List(Text)\n  b: Dict(Int)\n  c: Ref(Address)\n}",
@@ -43,6 +47,7 @@ test "printer: compound types are preserved" {
   assert_true(printed.contains("Ref(Address)"))
 }
 
+///|
 test "printer: nested models are preserved" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  addr: Nest {\n    city: Text\n  }\n}",
@@ -53,6 +58,7 @@ test "printer: nested models are preserved" {
   assert_true(printed.contains("city: Text"))
 }
 
+///|
 test "printer: printed output re-parses to an equivalent model" {
   let src = "model User {\n  id: Big @unique\n  name: Text [longest=64]\n}"
   let (models, _, _) = @main.dsl_parse(src)
@@ -68,6 +74,7 @@ test "printer: printed output re-parses to an equivalent model" {
   assert_eq(reparsed[0].fields[1].checks.length(), 1)
 }
 
+///|
 test "printer: multiple models print together" {
   let (models, _, errors) = @main.dsl_parse(
     "model A {\n  x: Text\n}\n\nmodel B {\n  y: Int\n}",

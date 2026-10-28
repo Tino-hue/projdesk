@@ -1,4 +1,5 @@
-// WASM 鍐呮牳鍔犺浇涓庤皟鐢ㄥ皝瑁?// 閫氳繃 js-string builtins 鐩存帴浼犲瓧绗︿覆锛岄浂缂栬В鐮佸紑閿€
+// WASM 内核加载与调用封装
+// 通过 js-string builtins 直接传字符串，无需解码开销
 
 import type { KernelInput, KernelOutput, PresetModel, ModelInput } from './types';
 
@@ -12,15 +13,14 @@ interface ProjDeskExports {
   check_equivalence(a_json: string, b_json: string): string;
   verify_roundtrip(model_json: string): string;
   check_semantics(dsl: string): string;
-  check_semantics(dsl: string): string;
 }
 
 let exportsPromise: Promise<ProjDeskExports> | null = null;
 
-/** 鍔犺浇 WASM 鍐呮牳 */
+/** 加载 WASM 内核 */
 async function loadKernel(): Promise<ProjDeskExports> {
   const response = await fetch(import.meta.env.BASE_URL + 'projdesk.wasm');
-  // wasm-gc + js-string builtins 闇€瑕?compileOptions
+  // wasm-gc + js-string builtins 需要 compileOptions
   const compileOptions = {
     builtins: ['js-string'],
     importedStringConstants: '_',
@@ -35,7 +35,7 @@ async function loadKernel(): Promise<ProjDeskExports> {
   return result.instance.exports as unknown as ProjDeskExports;
 }
 
-/** 鑾峰彇鍐呮牳瀹炰緥锛堟噿鍔犺浇 + 缂撳瓨锛?*/
+/** 获取内核实例（懒加载 + 缓存） */
 export async function getKernel(): Promise<ProjDeskExports> {
   if (!exportsPromise) {
     exportsPromise = loadKernel().catch((e) => {
@@ -46,14 +46,14 @@ export async function getKernel(): Promise<ProjDeskExports> {
   return exportsPromise;
 }
 
-/** 璋冪敤鍥涙姇褰?*/
+/** 调用七投影 */
 export async function project(input: KernelInput): Promise<KernelOutput> {
   const kernel = await getKernel();
   const resultJson = kernel.project_from_json(JSON.stringify(input));
   return JSON.parse(resultJson) as KernelOutput;
 }
 
-/** 鑾峰彇棰勮妯″瀷 */
+/** 获取预设模型 */
 export async function getPresets(): Promise<PresetModel[]> {
   const kernel = await getKernel();
   const presetsJson = kernel.get_presets_json();
@@ -65,11 +65,6 @@ export async function importFromSchema(schemaText: string): Promise<ModelInput> 
   const modelJson = kernel.import_from_json_schema_str(schemaText);
   return JSON.parse(modelJson) as ModelInput;
 }
-
-
-
-
-
 
 export async function dslProject(dsl: string): Promise<string> {
   const kernel = await getKernel();

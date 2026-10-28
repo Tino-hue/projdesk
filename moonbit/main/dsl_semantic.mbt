@@ -42,21 +42,17 @@ pub fn SemanticIssue::severity(self : SemanticIssue) -> String {
 
 ///|
 /// Collect every Ref target used by a model, with the field it came from
-fn collect_refs(
-  model : AstModel,
-  out : Array[(String, String)],
-) -> Unit {
+fn collect_refs(model : AstModel, out : Array[(String, String)]) -> Unit {
   for f in model.fields {
     match f.kind {
       RefTo(target) => out.push((f.name, target))
-      Nested(inner) => {
+      Nested(inner) =>
         for g in inner.fields {
           match g.kind {
             RefTo(t) => out.push((f.name + "." + g.name, t))
             _ => ()
           }
         }
-      }
       _ => ()
     }
   }

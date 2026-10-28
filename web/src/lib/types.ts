@@ -1,7 +1,7 @@
-// 鍓嶇绫诲瀷瀹氫箟锛氫笌 MoonBit 鍐呮牳 ABI 涓€涓€瀵瑰簲
-// 鍓嶇绂佹瀹炵幇浠讳綍 schema/sql/sdl 鐢熸垚绠楁硶
+// 前端类型定义：与 MoonBit 内核 ABI 一一对应
+// 前端禁止实现任何 schema/sql/sdl 生成算法
 
-/** 瀛楁绫诲瀷缂栫爜 */
+/** 字段类型编码 */
 export type TypeSpec =
   | 'Bool'
   | 'Int'
@@ -17,7 +17,7 @@ export type TypeSpec =
   | { nest: ModelInput }
   | { raw: unknown };
 
-/** 绾︽潫 */
+/** 约束 */
 export interface CheckInput {
   least?: number | null;
   most?: number | null;
@@ -33,7 +33,7 @@ export interface CheckInput {
   unique?: boolean;
 }
 
-/** 瀛楁 */
+/** 字段 */
 export interface FieldInput {
   name: string;
   kind: TypeSpec;
@@ -44,14 +44,14 @@ export interface FieldInput {
   check: CheckInput;
 }
 
-/** 妯″瀷 */
+/** 模型 */
 export interface ModelInput {
   name: string;
   doc: string;
   fields: FieldInput[];
 }
 
-/** 鍐呮牳杈撳叆 */
+/** 内核输入 */
 export interface KernelInput {
   name: string;
   doc: string;
@@ -61,14 +61,14 @@ export interface KernelInput {
   sqlDialect?: 'Postgres' | 'Sqlite' | 'Mysql';
 }
 
-/** 涓㈠純鍘熷洜 */
+/** 丢弃原因 */
 export interface DropReason {
   field: string;
   constraint: string;
   why: string;
 }
 
-/** 鍐呮牳杈撳嚭 */
+/** 内核输出 */
 export interface KernelOutput {
   ok: boolean;
   error?: string;
@@ -87,7 +87,5 @@ export interface KernelOutput {
   };
 }
 
-/** 棰勮妯″瀷 */
+/** 预设模型 */
 export interface PresetModel extends ModelInput {}
-
-

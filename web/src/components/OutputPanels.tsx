@@ -105,9 +105,9 @@ export function OutputPanels({ output, openapiDialect, sqlDialect, model, known 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between px-2 sm:px-4 pt-4 pb-2 gap-2">
         <span className="text-xs text-slate-400">
-          Four projections live
+          Seven projections live
           <span className="ml-2 text-amber-500 text-xs">
-            {Object.values(changeSets).some((s) => s.size > 0) ? '鈼? lines highlighted = just changed' : ''}
+            {Object.values(changeSets).some((s) => s.size > 0) ? '✓ lines highlighted = just changed' : ''}
           </span>
         </span>
         <div className="flex gap-2">

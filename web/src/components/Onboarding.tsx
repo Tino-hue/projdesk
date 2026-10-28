@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 const STEPS = [
   {
     title: 'Welcome to ProjDesk',
-    body: 'Declare a business object once. See it projected into 4 targets simultaneously.',
+    body: 'Declare a business object once. See it projected into 7 targets simultaneously.',
     icon: '1',
   },
   {

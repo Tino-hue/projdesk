@@ -1,51 +1,73 @@
-﻿# 报名表纯文本版（直接复制粘贴）
+ProjDesk：模型工程工作台（Model Engineering Workbench）
 
-> 报名系统不支持 markdown 表格与加粗符号。以下为 PROPOSAL.md 的纯文本形式，按官方 8 项要求分节，可逐段粘贴。
+一、基本信息
 
----
-ProjDesk 椤圭洰鐢虫姤涔?
-鍩烘湰淇℃伅
+项目名称：ProjDesk：模型工程工作台（Model Engineering Workbench）
+参赛者：Tino-hue
+联系方式：Micxry060912@hotmil.com
+GitHub 仓库链接：https://github.com/Tino-hue/projdesk
+项目方向：MoonBit 模型工程工具链 / 编译器基础设施
+是否为移植项目：否
 
-椤圭洰鍚嶇О锛歅rojDesk锛氭ā鍨嬪伐绋嬪伐浣滃彴锛圡odel Engineering Workbench锛?- 鍙傝禌鑰咃細Tino-hue
-鑱旂郴鏂瑰紡锛歁icxry060912@hotmil.com
-GitHub 浠撳簱閾炬帴锛歨ttps://github.com/Tino-hue/projdesk
-椤圭洰鏂瑰悜锛歁oonBit 妯″瀷宸ョ▼宸ュ叿閾?/ 缂栬瘧鍣ㄥ熀纭€璁炬柦
-鏄惁涓虹Щ妞嶉」鐩細鍚?
-椤圭洰绠€浠?
-ProjDesk 鏄竴涓敤 MoonBit 瀹炵幇鐨勬ā鍨嬪伐绋嬪伐浣滃彴锛岃鐩栨暟鎹ā鍨嬬殑瀹屾暣鐢熷懡鍛ㄦ湡锛氬畾涔夈€佸垎鏋愩€佹紨鍖栥€佸姣斻€侀獙璇併€?
-鏍稿績鏄簲涓粠闆舵墜鍐欑殑 MoonBit 绠楁硶寮曟搸锛屽叡 2308 琛岀嫭绔嬪疄鐜帮紝鍒嗗埆钀藉湪缂栬瘧鍣ㄥ墠绔€佺害鏉熸眰瑙ｃ€佺増鏈紨鍖栥€佺被鍨嬬悊璁恒€佸舰寮忓寲楠岃瘉浜斾釜棰嗗煙銆傚紑鍙戣€呯敤涓€濂楀缓妯?DSL 澹版槑涓氬姟瀵硅薄锛屽伐浣滃彴瀹屾垚绾︽潫鎺ㄧ悊銆佽縼绉绘帹婕斻€佺瓑浠峰垽瀹氫笌姝ｇ‘鎬ч獙璇侊紝鏈€鍚庢姇褰变负 JSON Schema銆丱penAPI銆丼QL銆丟raphQL銆乀ypeScript銆乑od銆丳risma 涓冪濂戠害銆?
-鎶曞奖鐢卞紑婧愬簱 moonmodel 鎵挎媴锛堢浉褰撲簬缂栬瘧鍣ㄥ悗绔級锛涗簲涓紩鎿庡潎鏈」鐩嫭绔嬪疄鐜帮紝涓庡叾鏃犲姛鑳介噸鍙犮€?
-鏍稿績鍔熻兘鑼冨洿
+二、项目简介
 
-寤烘ā DSL锛氭墜鍐欒瘝娉曞垎鏋愬櫒锛圱oken ADT + 瀛楃绾ф壂鎻忥級銆侀€掑綊涓嬮檷璇硶鍒嗘瀽锛圓ST + 琛屽垪鍙烽敊璇仮澶嶏級銆丄ST 浠ｇ爜鐢熸垚锛屾敮鎸佽娉ㄩ噴涓庡祵濂楁ā鍨嬶紱
-绾︽潫姹傝В鍣?*锛氬尯闂村啿绐佹娴嬨€佽暣鍚笌鍐椾綑鍒嗘瀽銆佸寘鍚叧绯诲垽瀹氾紝杈撳嚭绫诲瀷鍖?Diagnosis 璇婃柇锛? 绫?9 鍙樹綋锛夛紱
-杩佺Щ寮曟搸锛氱粨鏋勫寲璇箟 diff锛堥潪鏂囨湰瀵规瘮锛夛紝鐢熸垚鍚牬鍧忔€у彉鏇存爣璁扮殑 ALTER TABLE锛岃鐩?Postgres/SQLite/MySQL锛?- 绛変环妫€娴?*锛氱被鍨嬪姞瀹介摼锛圛nt鈫払ig鈫扲eal锛夈€佺害鏉熷寘鍚€佸祵濂楁ā鍨嬩笌闆嗗悎閫掑綊鍒ゅ畾锛屽垎绫讳负 Equivalent/SubtypeOf/SupertypeOf/Incompatible锛?- Round-trip 楠岃瘉锛氭ā鍨?鈫?DSL 鈫?閲嶆柊瑙ｆ瀽 鈫?閫愬瓧娈垫瘮瀵癸紝楠岃瘉鏃犲瓧娈垫垨绾︽潫涓㈠け锛?- 灞炴€ф祴璇曟鏋?*锛氳嚜瀹炵幇 xorshift64* PRNG 涓庨殢鏈烘ā鍨嬬敓鎴愬櫒锛屽湪闅忔満妯″瀷涓婇獙璇?round-trip 淇濇寔鎬с€丏SL 瀹屽鎬с€乨iff 瀵圭О鎬х瓑涓冩潯涓嶅彉寮忥紱
-涓冪濂戠害鎶曞奖锛氬鐩爣鏃犳硶鎵胯浇鐨勭害鏉熻緭鍑虹被鍨嬪寲涓㈠純鎶ュ憡锛岃€岄潪闈欓粯涓㈠純锛?- 宸ュ叿閾?*锛歐ASM ABI锛? 瀵煎嚭锛夈€丆LI锛坓en/check/migrate锛夈€乂S Code 鎻掍欢銆丟itHub Action銆丆loudflare Workers 鍚庣銆?
-鍏ㄩ儴 MoonBit 浠ｇ爜缂栬瘧涓?wasm-gc锛屾祻瑙堝櫒鍐呴浂鏈嶅姟绔緷璧栬繍琛屻€?
-椤圭洰鏂瑰悜涓庨€氱敤鎬?
-闈㈠悜鎵€鏈夐渶瑕佺鐞嗘暟鎹ā鍨嬬殑寮€鍙戣€呫€備簲涓紩鎿庡搴旈€氱敤绠楁硶棰嗗煙锛屼笉缁戝畾浠讳綍鍓嶇妗嗘灦銆佸悗绔瑷€鎴栨暟鎹簱銆?
-鑳藉姏涓嶉檺浜?Web锛欳LI 鍙湪 CI 鏍￠獙妯″瀷锛孷S Code 鎻掍欢鍙湪寮€鍙戞椂鍗虫椂妫€鏌ワ紝GitHub Action 鍙湪 PR 涓樆姝㈢牬鍧忔€у彉鏇村悎鍏ャ€傚悇鍏ュ彛鍏辩敤鍚屼竴浠?WASM 鍐呮牳锛岃涓轰竴鑷淬€?
-棰勬湡浣跨敤鍦烘櫙
+ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模型的完整生命周期：定义、分析、演化、对比、验证。
 
-API 濂戠害璺ㄧ涓€鑷存€?*锛氱敤 DSL 涓€娆″０鏄庣粨鏋勶紝鍓嶇寰?TypeScript 涓?Zod锛屽悗绔緱 JSON Schema 涓?OpenAPI锛屾敼涓€澶勫洓绔悓姝ユ洿鏂般€?
-鎻愪氦鍓嶇害鏉熸帓鏌?*锛氬悓鏃跺瓨鍦?`least=10` 涓?`most=5` 鏃讹紝姹傝В鍣ㄥ湪寤烘ā闃舵鍗虫姤绌哄尯闂达紝鑰岄潪杩愯鏃跺啓鍏ュけ璐ャ€?
-妯″瀷婕旇繘涓庤縼绉?*锛氭敼妯″瀷鍚庤嚜鍔ㄨ緭鍑哄彉鏇存竻鍗曚笌 ALTER TABLE 鑴氭湰锛屾爣娉ㄧ牬鍧忔€у彉鏇翠緵璇勫銆?
-澶氱増鏈吋瀹规€у垽瀹?*锛氫袱浠芥ā鍨嬫槸绛変环銆佸瓙绫诲瀷杩樻槸瀛樺湪鏃犳硶鑷姩杩佺Щ鐨勫啿绐併€?
-瀹氫箟姝ｇ‘鎬у洖褰?*锛欳I 涓繍琛?Round-trip 楠岃瘉锛岀‘璁ゅ簭鍒楀寲鍐嶇敓鎴愬悗瀹氫箟鏃犳崯銆?
-鎷熷疄鐜扮殑鏍稿績鍔熻兘
+核心是五个从零手写的 MoonBit 算法引擎，共 3064 行独立实现（整个内核 4604 行实现代码 + 2315 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。开发者用一套建模 DSL 声明业务对象，工作台完成约束推理、迁移推演、等价判定与正确性验证，最后投影为 JSON Schema、OpenAPI、SQL、GraphQL、TypeScript、Zod、Prisma 七种契约。
 
-1. 浜斾釜 MoonBit 绠楁硶寮曟搸 + 灞炴€ф祴璇曟鏋讹紙7 鏉′笉鍙樺紡銆? 椤规€ц兘鍩哄噯锛?2. 涓冪濂戠害鎶曞奖 + 绫诲瀷鍖栦涪寮冭瘖鏂?3. 娴忚鍣ㄥ伐浣滃彴锛氭ā鍨嬬紪杈戝櫒锛堟嫋鎷?鎼滅储/鏆楄壊锛夈€佸叧绯诲浘銆佺害鏉熻瘖鏂€佽縼绉婚瑙堛€佺増鏈?Diff銆丒ngine Playground
-4. WASM ABI 8 瀵煎嚭
-5. CLI锛坓en/check/migrate锛夈€乂S Code 鎻掍欢銆丟itHub Action銆乄orkers 鍚庣
-6. CI锛歮oon check 闆惰鍛?+ 150 MoonBit 娴嬭瘯 + 80 鍓嶇娴嬭瘯锛堝惈 15 涓湡瀹?WASM 闆嗘垚娴嬭瘯锛? 鑷姩閮ㄧ讲
+投影由开源库 moonmodel 承担（相当于编译器后端）；五个引擎均本项目独立实现，与其无功能重叠。
 
-椤圭洰绫诲瀷璇存槑
+三、核心功能范围
 
-鍘熷垱椤圭洰锛岄潪绉绘銆侀潪鍙傝€冨凡鏈夊紑婧愰」鐩€?
-渚濊禆寮€婧愬簱 moonbitstack/moonmodel锛圓pache-2.0锛宧ttps://github.com/moonbitstack/moonmodel 锛夛紝浠呮彁渚?Model/Field/Check 鏁版嵁缁撴瀯涓庢姇褰辨牸寮忚浆鎹紝鐩稿綋浜庣紪璇戝櫒 AST 瀹氫箟涓庡悗绔唬鐮佺敓鎴愩€備簲涓紩鎿庛€丏SL 鍓嶇銆佹眰瑙ｇ畻娉曘€佽縼绉荤敓鎴愩€佺被鍨嬬郴缁熶笌楠岃瘉妗嗘灦鍧囦负鑷富瀹炵幇銆?
-GitHub 浠撳簱閾炬帴
+- 建模 DSL：手写词法分析器（Token ADT + 字符级扫描）、递归下降语法分析（AST + 行列号错误恢复）、AST 代码生成、AST 反向打印；支持行注释与块注释、嵌套模型、约束表达式（算术运算、内置函数 min/max/abs/ceil/floor、跨字段引用 a.least）；
+- 约束求解器：区间冲突检测、蕴含与冗余分析、包含关系判定、固定点区间传播，输出类型化 Diagnosis 诊断（9 变体）；
+- 迁移引擎：结构化语义 diff（非文本对比），生成含破坏性变更标记的 ALTER TABLE，覆盖 Postgres/SQLite/MySQL；
+- 等价检测：类型加宽链（Int→Big→Real）、约束包含、嵌套模型与集合递归判定，分类为 Equivalent/SubtypeOf/SupertypeOf/Incompatible；
+- Round-trip 验证：模型 → DSL → 重新解析 → 逐字段比对，验证无字段或约束丢失；
+- 语义检查：引用解析、自引用与环路检测；
+- 属性测试框架：自实现 xorshift64* PRNG 与随机模型生成器，在 100+ 随机模型上验证 12 条不变式（round-trip 保持性、DSL 完备性、diff 对称性等）；
+- 七种契约投影：对目标无法承载的约束输出类型化丢弃报告，而非静默丢弃；
+- 工具链：WASM ABI（9 导出）、CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Cloudflare Workers 后端。
+
+全部 MoonBit 代码编译为 wasm-gc，浏览器内零服务端依赖运行。
+
+四、项目方向与通用性
+
+面向所有需要管理数据模型的开发者。五个引擎对应通用算法领域，不绑定任何前端框架、后端语言或数据库。
+
+能力不限于 Web：CLI 可在 CI 校验模型，VS Code 插件可在开发时即时检查，GitHub Action 可在 PR 中阻止破坏性变更合入。各入口共用同一份 WASM 内核，行为一致。
+
+五、预期使用场景
+
+API 契约跨端一致性：用 DSL 一次声明结构，前端得 TypeScript 与 Zod，后端得 JSON Schema 与 OpenAPI，改一处四端同步更新。
+
+提交前约束排查：同时存在 least=10 与 most=5 时，求解器在建模阶段即报空区间，而非运行时写入失败。
+
+模型演进与迁移：改模型后自动输出变更清单与 ALTER TABLE 脚本，标注破坏性变更供评审。
+
+多版本兼容性判定：两份模型是等价、子类型还是存在无法自动迁移的冲突。
+
+定义正确性回归：CI 中运行 Round-trip 验证，确认序列化再生成后定义无损。
+
+六、拟实现的核心功能
+
+1. 五个 MoonBit 算法引擎 + 属性测试框架（12 条不变式、7 项性能基准）
+2. 七种契约投影 + 类型化丢弃诊断
+3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
+4. WASM ABI 9 导出
+5. CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
+6. 测试与 CI：195 个 MoonBit 测试 + 82 个前端测试（含 17 个加载真实 WASM 内核的集成测试）全部通过，CI 自动部署；内核侧 moon check 零警告
+
+七、项目类型说明
+
+原创项目，非移植、非参考已有开源项目。
+
+依赖开源库 moonbitstack/moonmodel（Apache-2.0，https://github.com/moonbitstack/moonmodel ），仅提供 Model/Field/Check 数据结构与投影格式转换，相当于编译器 AST 定义与后端代码生成。五个引擎、DSL 前端、求解算法、迁移生成、类型系统与验证框架均为自主实现。
+
+八、GitHub 仓库链接
 
 https://github.com/Tino-hue/projdesk
 
-95 涓互涓婃湁鏁堟彁浜ゃ€侰I 鍏ㄧ豢锛歮oon check 闆惰鍛婏紝150 涓?MoonBit 娴嬭瘯涓?80 涓墠绔祴璇曞叏閮ㄩ€氳繃銆?
-鍦ㄧ嚎婕旂ず锛歨ttps://tino-hue.github.io/projdesk/
+115 个以上有效提交。测试全绿：195 个 MoonBit 测试与 82 个前端测试全部通过，内核 moon check 零警告；CI 通过 17 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+
+在线演示：https://tino-hue.github.io/projdesk/

@@ -453,7 +453,11 @@ fn dsl_parse_expr_primary(p : Parser) -> (Expr?, Array[ParseError]) {
           Ident(constraint) => (Some(FieldRef(name, constraint)), errors)
           _ => {
             let (l, c) = cur_pos(p)
-            errors.push({ msg: "expected constraint name after '.'", line: l, col: c, })
+            errors.push({
+              msg: "expected constraint name after '.'",
+              line: l,
+              col: c,
+            })
             (None, errors)
           }
         }

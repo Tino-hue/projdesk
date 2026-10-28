@@ -2,7 +2,7 @@
 // This is the MoonBit depth showcase: trait + ADT + pattern matching
 
 ///|
-/// Typed drop reason 鈥?why a constraint cannot be carried by a target
+/// Typed drop reason — why a constraint cannot be carried by a target
 pub(all) enum DropReason {
   UniqueNotCarried(String)
   PatternNotCarried(String)
@@ -72,7 +72,7 @@ pub fn DropReason::field(self : DropReason) -> String {
 }
 
 ///|
-/// Pluggable projector trait 鈥?each target implements this
+/// Pluggable projector trait — each target implements this
 pub(open) trait Projector {
   /// Target name (e.g. "JSON Schema 2020-12")
   fn target_name(Self) -> String

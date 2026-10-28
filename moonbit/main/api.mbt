@@ -1,10 +1,10 @@
-﻿// ProjDesk WASM API
+// ProjDesk WASM API
 //
 // Compile: moon build --target wasm-gc --release
 // JS instantiate: { builtins: ["js-string"], importedStringConstants: "_" }
 
 ///|
-/// Main entry: run four projections from input JSON, return result JSON string
+/// Main entry: run the seven projections from input JSON, return result JSON string
 #export_name("project_from_json")
 pub fn project_from_json(input_json : String) -> String {
   let input = parse_input(input_json)
@@ -80,12 +80,19 @@ pub fn check_semantics_entry(dsl : String) -> String {
     let out : Map[String, Json] = Map([])
     out["issue_count"] = Json::number(0.0)
     out["issues"] = Json::array([])
-    out["parse_error"] = Json::string(if lex_errors.length() > 0 { lex_errors[0].to_text() } else { parse_errors[0].to_text() })
+    out["parse_error"] = Json::string(
+      if lex_errors.length() > 0 {
+        lex_errors[0].to_text()
+      } else {
+        parse_errors[0].to_text()
+      },
+    )
     return Json::object(out).stringify()
   }
   check_semantics_json(models)
 }
 
+///|
 #export_name("get_presets_json")
 pub fn get_presets_json() -> String {
   let arr : Array[Json] = []

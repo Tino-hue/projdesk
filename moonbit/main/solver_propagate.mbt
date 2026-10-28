@@ -28,7 +28,7 @@ pub extend Interval with Debug::{to_repr}
 ///|
 /// Create an unbounded interval
 pub fn unbounded() -> Interval {
-  { lower: None, upper: None }
+  { lower: None, upper: None, }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn Interval::intersect(self : Interval, other : Interval) -> Interval {
     (None, Some(b)) => Some(b)
     (None, None) => None
   }
-  { lower, upper }
+  { lower, upper, }
 }
 
 ///|
@@ -119,9 +119,7 @@ pub extend PropagationResult with Debug::{to_repr}
 ///
 /// `bounds` gives each field's own bounds, where a bound may be a literal or
 /// a reference to another field's bound of the same kind.
-pub fn propagate(
-  bounds : Array[FieldBounds],
-) -> PropagationResult {
+pub fn propagate(bounds : Array[FieldBounds]) -> PropagationResult {
   let n = bounds.length()
   if n == 0 {
     return Consistent([])
@@ -135,9 +133,7 @@ pub fn propagate(
   let deps : Array[Array[String]] = []
   for i = 0; i < n; i = i + 1 {
     let d : Array[String] = []
-    for b in [
-      bounds[i].least, bounds[i].most, bounds[i].over, bounds[i].under,
-    ] {
+    for b in [bounds[i].least, bounds[i].most, bounds[i].over, bounds[i].under] {
       match b {
         Some(bound) =>
           if bound.from_field != "" {
@@ -188,19 +184,19 @@ pub fn propagate(
   for i = 0; i < n; i = i + 1 {
     let mut iv = unbounded()
     match bounds[i].least {
-      Some(b) => iv = iv.intersect({ lower: Some(b.value), upper: None })
+      Some(b) => iv = iv.intersect({ lower: Some(b.value), upper: None, })
       None => ()
     }
     match bounds[i].most {
-      Some(b) => iv = iv.intersect({ lower: None, upper: Some(b.value) })
+      Some(b) => iv = iv.intersect({ lower: None, upper: Some(b.value), })
       None => ()
     }
     match bounds[i].over {
-      Some(b) => iv = iv.intersect({ lower: Some(b.value), upper: None })
+      Some(b) => iv = iv.intersect({ lower: Some(b.value), upper: None, })
       None => ()
     }
     match bounds[i].under {
-      Some(b) => iv = iv.intersect({ lower: None, upper: Some(b.value) })
+      Some(b) => iv = iv.intersect({ lower: None, upper: Some(b.value), })
       None => ()
     }
     intervals.push(iv)
@@ -213,9 +209,8 @@ pub fn propagate(
     rounds = rounds + 1
     for i = 0; i < n; i = i + 1 {
       let mut new_iv = intervals[i]
-      for b in [
-        bounds[i].least, bounds[i].most, bounds[i].over, bounds[i].under,
-      ] {
+      for
+        b in [bounds[i].least, bounds[i].most, bounds[i].over, bounds[i].under] {
         match b {
           Some(bound) =>
             if bound.from_field != "" && bound.from_field != bounds[i].name {
@@ -226,14 +221,20 @@ pub fn propagate(
                   match other.lower {
                     Some(v) =>
                       if bound.value == v {
-                        new_iv = new_iv.intersect({ lower: None, upper: Some(v) })
+                        new_iv = new_iv.intersect({
+                          lower: None,
+                          upper: Some(v),
+                        })
                       }
                     None => ()
                   }
                   match other.upper {
                     Some(v) =>
                       if bound.value == v {
-                        new_iv = new_iv.intersect({ lower: Some(v), upper: None })
+                        new_iv = new_iv.intersect({
+                          lower: Some(v),
+                          upper: None,
+                        })
                       }
                     None => ()
                   }
@@ -279,6 +280,7 @@ pub fn PropagationResult::to_text(self : PropagationResult) -> String {
       "consistent: " + parts.join(" ")
     }
     CyclicDependency(fields) => "cyclic dependency: " + fields.join(" -> ")
-    EmptyInterval(name, _) => "empty interval for " + name + " after propagation"
+    EmptyInterval(name, _) =>
+      "empty interval for " + name + " after propagation"
   }
 }

@@ -1,7 +1,8 @@
-﻿// Constraint expression tests: arithmetic, builtins, error handling
+// Constraint expression tests: arithmetic, builtins, error handling
 
 // ---- Lexer: operator tokens ----
 
+///|
 test "expr: lexer produces operator tokens" {
   let (tokens, errors) = @main.lex("+ - * / %")
   assert_eq(errors.length(), 0)
@@ -14,6 +15,7 @@ test "expr: lexer produces operator tokens" {
 
 // ---- Block comments ----
 
+///|
 test "expr: block comment is lexed" {
   let (tokens, errors) = @main.lex("/* hello */")
   assert_eq(errors.length(), 0)
@@ -23,6 +25,7 @@ test "expr: block comment is lexed" {
   }
 }
 
+///|
 test "expr: block comment spanning lines" {
   let (tokens, errors) = @main.lex("/* line1\nline2 */")
   assert_eq(errors.length(), 0)
@@ -32,6 +35,7 @@ test "expr: block comment spanning lines" {
   }
 }
 
+///|
 test "expr: block comment does not swallow following code" {
   let (tokens, errors) = @main.lex("/* c */ model T")
   assert_eq(errors.length(), 0)
@@ -43,6 +47,7 @@ test "expr: block comment does not swallow following code" {
   assert_eq(tokens[1].token, KwModel)
 }
 
+///|
 test "expr: unterminated block comment consumes to end" {
   let (_, errors) = @main.lex("/* never closed")
   // should not crash; lexer ends cleanly
@@ -51,9 +56,11 @@ test "expr: unterminated block comment consumes to end" {
 
 // ---- Expression evaluation ----
 
+///|
 test "expr: arithmetic evaluates" {
   let vars : Map[String, Double] = Map([])
-  let n = match @main.eval_expr(@main.Num(2.0) |> expr_add(@main.Num(3.0)), vars) {
+  let n = match
+    @main.eval_expr(@main.Num(2.0) |> expr_add(@main.Num(3.0)), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
@@ -65,39 +72,48 @@ fn expr_add(left : @main.Expr, right : @main.Expr) -> @main.Expr {
   @main.Binop("+", left, right)
 }
 
+///|
 test "expr: multiplication evaluates" {
   let vars : Map[String, Double] = Map([])
-  let n = match @main.eval_expr(@main.Binop("*", @main.Num(2.0), @main.Num(10.0)), vars) {
+  let n = match
+    @main.eval_expr(@main.Binop("*", @main.Num(2.0), @main.Num(10.0)), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
   assert_eq(n, 20.0)
 }
 
+///|
 test "expr: division evaluates" {
   let vars : Map[String, Double] = Map([])
-  let n = match @main.eval_expr(@main.Binop("/", @main.Num(10.0), @main.Num(4.0)), vars) {
+  let n = match
+    @main.eval_expr(@main.Binop("/", @main.Num(10.0), @main.Num(4.0)), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
   assert_eq(n, 2.5)
 }
 
+///|
 test "expr: division by zero is an error" {
   let vars : Map[String, Double] = Map([])
-  match @main.eval_expr(@main.Binop("/", @main.Num(1.0), @main.Num(0.0)), vars) {
+  match
+    @main.eval_expr(@main.Binop("/", @main.Num(1.0), @main.Num(0.0)), vars) {
     Ok(_) => abort("expected division by zero error")
     Err(e) => assert_eq(e, @main.DivByZero)
   }
 }
 
+///|
 test "expr: builtins min and max" {
   let vars : Map[String, Double] = Map([])
-  let lo = match @main.eval_expr(@main.Call("min", [@main.Num(3.0), @main.Num(7.0)]), vars) {
+  let lo = match
+    @main.eval_expr(@main.Call("min", [@main.Num(3.0), @main.Num(7.0)]), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
-  let hi = match @main.eval_expr(@main.Call("max", [@main.Num(3.0), @main.Num(7.0)]), vars) {
+  let hi = match
+    @main.eval_expr(@main.Call("max", [@main.Num(3.0), @main.Num(7.0)]), vars) {
     Ok(v) => v
     Err(_) => -1.0
   }
@@ -105,6 +121,7 @@ test "expr: builtins min and max" {
   assert_eq(hi, 7.0)
 }
 
+///|
 test "expr: builtin abs and ceil and floor" {
   let vars : Map[String, Double] = Map([])
   let a = match @main.eval_expr(@main.Call("abs", [@main.Num(-4.5)]), vars) {
@@ -124,6 +141,7 @@ test "expr: builtin abs and ceil and floor" {
   assert_eq(f, 4.0)
 }
 
+///|
 test "expr: unknown function is an error" {
   let vars : Map[String, Double] = Map([])
   match @main.eval_expr(@main.Call("nope", [@main.Num(1.0)]), vars) {
@@ -132,6 +150,7 @@ test "expr: unknown function is an error" {
   }
 }
 
+///|
 test "expr: wrong argument count is an error" {
   let vars : Map[String, Double] = Map([])
   match @main.eval_expr(@main.Call("min", [@main.Num(1.0)]), vars) {
@@ -140,6 +159,7 @@ test "expr: wrong argument count is an error" {
   }
 }
 
+///|
 test "expr: unknown variable is an error" {
   let vars : Map[String, Double] = Map([])
   match @main.eval_expr(@main.Var("missing"), vars) {
@@ -150,6 +170,7 @@ test "expr: unknown variable is an error" {
 
 // ---- Expression parsing in constraints ----
 
+///|
 test "expr: constraint accepts arithmetic expression" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  x: Text [longest=2*10]\n}",
@@ -158,6 +179,7 @@ test "expr: constraint accepts arithmetic expression" {
   assert_eq(models.length(), 1)
 }
 
+///|
 test "expr: constraint accepts function call" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  x: Text [longest=min(5,10)]\n}",
@@ -166,6 +188,7 @@ test "expr: constraint accepts function call" {
   assert_eq(models.length(), 1)
 }
 
+///|
 test "expr: negative literal in constraint" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  x: Real [least=-1]\n}",
@@ -174,6 +197,7 @@ test "expr: negative literal in constraint" {
   assert_eq(models.length(), 1)
 }
 
+///|
 test "expr: arithmetic with precedence parses" {
   let (models, _, errors) = @main.dsl_parse(
     "model T {\n  x: Real [least=1+2*3]\n}",
@@ -182,13 +206,13 @@ test "expr: arithmetic with precedence parses" {
   assert_eq(models.length(), 1)
 }
 
+///|
 test "expr: division by zero in constraint reports error" {
-  let (_, _, errors) = @main.dsl_parse(
-    "model T {\n  x: Real [least=1/0]\n}",
-  )
+  let (_, _, errors) = @main.dsl_parse("model T {\n  x: Real [least=1/0]\n}")
   assert_true(errors.length() > 0)
 }
 
+///|
 test "expr: unknown function in constraint reports error" {
   let (_, _, errors) = @main.dsl_parse(
     "model T {\n  x: Real [least=nope(1)]\n}",
@@ -196,6 +220,7 @@ test "expr: unknown function in constraint reports error" {
   assert_true(errors.length() > 0)
 }
 
+///|
 test "expr: expression result reaches the projection" {
   let (output, errors) = @main.dsl_project(
     "model T {\n  x: Text [longest=2*10]\n}",
