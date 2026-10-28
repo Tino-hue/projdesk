@@ -37,3 +37,7 @@ Thumbs.db
 
 # Wrangler local state
 backend/.wrangler/
+
+# Scratch files
+.tmp_*
+*.tmp
