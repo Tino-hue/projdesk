@@ -1,0 +1,94 @@
+{
+  "comments": {
+    "patterns": [
+      {
+        "name": "comment.line.double-slash.projdesk",
+        "match": "//.*$"
+      },
+      {
+        "name": "comment.block.projdesk",
+        "begin": "/\\*",
+        "end": "\\*/"
+      }
+    ]
+  },
+  "keywords": {
+    "patterns": [
+      {
+        "name": "keyword.control.model.projdesk",
+        "match": "\\b(model)\\b"
+      },
+      {
+        "name": "keyword.other.collection.projdesk",
+        "match": "\\b(List|Dict|Nest|Ref)\\b"
+      }
+    ]
+  },
+  "attributes": {
+    "patterns": [
+      {
+        "name": "storage.modifier.attribute.projdesk",
+        "match": "@(optional|nullable|unique|distinct)\\b"
+      }
+    ]
+  },
+  "types": {
+    "patterns": [
+      {
+        "name": "support.type.primitive.projdesk",
+        "match": "\\b(Bool|Int|Big|Real|Text|Bytes|Stamp|Any)\\b"
+      }
+    ]
+  },
+  "constraints": {
+    "patterns": [
+      {
+        "name": "variable.other.constraint.projdesk",
+        "match": "\\b(least|most|over|under|step|shortest|longest|pattern|format|options)\\b"
+      }
+    ]
+  },
+  "strings": {
+    "patterns": [
+      {
+        "name": "string.quoted.double.projdesk",
+        "begin": "\"",
+        "end": "\"",
+        "patterns": [
+          {
+            "name": "constant.character.escape.projdesk",
+            "match": "\\\\."
+          }
+        ]
+      }
+    ]
+  },
+  "numbers": {
+    "patterns": [
+      {
+        "name": "constant.numeric.projdesk",
+        "match": "\\b\\d+(\\.\\d+)?\\b"
+      }
+    ]
+  },
+  "operators": {
+    "patterns": [
+      {
+        "name": "keyword.operator.arithmetic.projdesk",
+        "match": "[+\\-*/%]|\\b(min|max|abs|ceil|floor)\\b"
+      }
+    ]
+  },
+  "punctuation": {
+    "patterns": [
+      {
+        "name": "punctuation.separator.projdesk",
+        "match": "[:,;=]"
+      },
+      {
+        "name": "punctuation.bracket.projdesk",
+        "match": "[\\[\\]{}()\\.]"
+      }
+    ]
+  }
+}
