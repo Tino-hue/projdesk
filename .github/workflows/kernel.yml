@@ -1,0 +1,65 @@
+name: Kernel tests
+
+# The kernel's own test suite runs here. The frontend CI does not build the
+# MoonBit kernel — the toolchain it needs is pinned, and the dependency it
+# pulls has to be adjusted for it, so the kernel is compiled and tested in
+# this workflow instead.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'moonbit/**'
+      - 'scripts/**'
+      - '.github/workflows/kernel.yml'
+  pull_request:
+    paths:
+      - 'moonbit/**'
+      - 'scripts/**'
+  workflow_dispatch:
+
+jobs:
+  kernel:
+    name: MoonBit kernel tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the MoonBit toolchain
+        run: |
+          set -uo pipefail
+          # The kernel is written against the toolchain that spells the 32-bit
+          # integer `Int`. Later releases renamed that type to `Int32`, so the
+          # version has to be pinned for the source to compile unchanged.
+          MOON_VERSION=0.1.20260920
+          INSTALL=/tmp/moon-install.sh
+          for host in https://cli.moonbitlang.com https://cli.moonbitlang.cn; do
+            if curl -fsSL --max-time 90 "$host/install/unix.sh" -o "$INSTALL"; then
+              echo "install script: $host"
+              break
+            fi
+          done
+          if [ ! -s "$INSTALL" ]; then
+            echo "::error::could not download the MoonBit install script"
+            exit 1
+          fi
+          echo "----- install script (first 40 lines) -----"
+          head -40 "$INSTALL"
+          echo "----------------------------------------"
+          bash "$INSTALL" -v "$MOON_VERSION" \
+            || bash "$INSTALL" --version "$MOON_VERSION" \
+            || bash "$INSTALL"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          moon version
+
+      - name: Fetch the moonmodel dependency
+        run: cd moonbit && moon build --target wasm-gc
+
+      - name: Patch moonmodel for this toolchain
+        run: pwsh -File scripts/patch_moonmodel.ps1 moonbit/.mooncakes/moonbitstack/moonmodel
+
+      - name: moon check
+        run: cd moonbit && moon check
+
+      - name: moon test
+        run: cd moonbit && moon test
