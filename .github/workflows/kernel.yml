@@ -36,6 +36,7 @@ jobs:
           # The official install script is not used here: it exits on the first
           # error, which hides which step broke. The steps are spelled out so
           # each one can report its own failure.
+          trap 'echo "::error::install step failed (status $?), last command on line $LINENO"' EXIT
           MOON_VERSION=latest
           MOON_HOST=https://cli.moonbitlang.com
           MOON_HOME="$HOME/.moon"
@@ -45,20 +46,28 @@ jobs:
             *) echo "::error::unsupported runner platform: $(uname -ms)"; exit 1 ;;
           esac
           mkdir -p "$MOON_HOME/bin" "$MOON_HOME/lib"
-          echo "target: $TARGET"
+          echo "::notice::target: $TARGET"
           curl -fsSL --retry 3 --retry-delay 5 --max-time 900 \
             -o /tmp/moonbit.tar.gz \
             "$MOON_HOST/binaries/$MOON_VERSION/moonbit-$TARGET.tar.gz" \
             || { echo "::error::could not download the toolchain"; exit 1; }
           tar xf /tmp/moonbit.tar.gz --directory="$MOON_HOME" \
             || { echo "::error::could not extract the toolchain"; exit 1; }
+          echo "::notice::extracted: $(ls "$MOON_HOME" | tr '\n' ' ')"
+          if [ ! -x "$MOON_HOME/bin/moon" ]; then
+            echo "::error::no moon binary at $MOON_HOME/bin/moon"
+            ls "$MOON_HOME/bin" | head -20 | while IFS= read -r f; do echo "::notice::bin/$f"; done
+            exit 1
+          fi
+          chmod +x "$MOON_HOME/bin"/* || echo "::notice::could not chmod the toolchain binaries"
+          chmod +x "$MOON_HOME/bin/internal/tcc" || echo "::notice::no internal/tcc to chmod"
           curl -fsSL --retry 3 --retry-delay 5 --max-time 900 \
             -o /tmp/core.tar.gz \
             "$MOON_HOST/cores/core-$MOON_VERSION.tar.gz" \
             || { echo "::error::could not download the core library"; exit 1; }
           tar xf /tmp/core.tar.gz --directory="$MOON_HOME/lib" \
             || { echo "::error::could not extract the core library"; exit 1; }
-          chmod +x "$MOON_HOME/bin"/* || { echo "::error::could not make the toolchain executable"; exit 1; }
+          echo "::notice::core: $(ls "$MOON_HOME/lib" | tr '\n' ' ')"
           "$MOON_HOME/bin/moon" -C "$MOON_HOME/lib/core" bundle --warn-list -a --all \
             || { echo "::error::could not bundle the core library"; exit 1; }
           "$MOON_HOME/bin/moon" -C "$MOON_HOME/lib/core" bundle --warn-list -a --target wasm-gc --quiet \
@@ -67,7 +76,8 @@ jobs:
           # toolchain on its PATH as well.
           export PATH="$MOON_HOME/bin:$PATH"
           echo "$MOON_HOME/bin" >> "$GITHUB_PATH"
-          moon version
+          moon version || { echo "::error::moon version failed"; exit 1; }
+          trap - EXIT
 
       - name: Refresh the registry index
         # A fresh toolchain has no registry index yet, and the moonmodel
