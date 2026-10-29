@@ -238,20 +238,15 @@ examples/               Worked examples, including one that contradicts itself
 
 ## Quick Start
 
-The kernel depends on the published `moonmodel` package, which is released against a newer spelling of the 32-bit integer than this kernel's toolchain uses. One setup step adjusts that dependency — it fetches it if needed, so it works on a fresh clone.
+The kernel needs **MoonBit 0.1.20261023 or newer** — the release that spells the 32-bit integer `Int32` the way the `moonmodel` package is published. An older toolchain compiles the dependency but not this kernel.
 
-```bash
-# one-time setup: fetch and adjust the moonmodel dependency
-python3 scripts/patch_moonmodel.py     # or: pwsh -File scripts/patch_moonmodel.ps1
-```
-
-Windows users can run the whole thing at once — setup, build and test:
+Windows users can run the whole thing at once — build and test:
 
 ```powershell
 .\setup.ps1
 ```
 
-Manual, after the one-time setup above:
+Manual:
 
 ```bash
 cd moonbit && moon build --target wasm-gc --release && moon test

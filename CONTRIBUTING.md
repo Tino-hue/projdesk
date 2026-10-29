@@ -1,5 +1,12 @@
 # Contributing to ProjDesk
 
+## Requirements
+
+- **MoonBit 0.1.20261023 or newer.** That is the release that spells the 32-bit
+  integer `Int32` the way the `moonmodel` package is published; an older
+  toolchain compiles the dependency but not this kernel.
+- Node.js 18 or newer.
+
 ## Branching Workflow
 
 ```

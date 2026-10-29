@@ -15,6 +15,16 @@ if (-not (Get-Command moon -ErrorAction SilentlyContinue)) {
   Write-Host "Install it from https://www.moonbitlang.com/download and run this again." -ForegroundColor Yellow
   exit 1
 }
+# The kernel is written for MoonBit 0.1.20261023 or newer, which is the
+# release that spells the 32-bit integer `Int32` the way moonmodel is
+# published. An older toolchain compiles the dependency but not this kernel.
+$version = (& moon version | Select-Object -First 1)
+$build = [regex]::Match($version, '(\d+)\.\d+\.(\d+)')
+if ($build.Success -and [int]$build.Groups[2].Value -lt 20261023) {
+  Write-Host "MoonBit $version is too old; 0.1.20261023 or newer is required." -ForegroundColor Red
+  Write-Host "Upgrade with 'moon upgrade', or reinstall from https://www.moonbitlang.com/download" -ForegroundColor Yellow
+  exit 1
+}
 
 # The MoonBit toolchain writes progress to stderr. PowerShell turns that into
 # a terminating error when the output is piped, so the preference is relaxed
@@ -33,12 +43,8 @@ function Invoke-Moon([string[]]$MoonArgs, [string]$WorkingDirectory) {
   }
 }
 
-# 2. Fetch and adjust the moonmodel dependency (fetches it when missing)
-Write-Host "`n[1/3] Preparing the moonmodel dependency..." -ForegroundColor Yellow
-& "$root\scripts\patch_moonmodel.ps1"
-
-# 3. Build and test the kernel
-Write-Host "[2/3] Building and testing the kernel..." -ForegroundColor Yellow
+# 2. Build and test the kernel
+Write-Host "`n[1/2] Building and testing the kernel..." -ForegroundColor Yellow
 if ((Invoke-Moon @("build", "--target", "wasm-gc", "--release") "$root\moonbit") -ne 0) {
   Write-Host "The kernel build failed." -ForegroundColor Red
   exit 1
@@ -51,8 +57,8 @@ Copy-Item "$root\moonbit\_build\wasm-gc\release\build\main\main.wasm" "$root\web
 Copy-Item "$root\moonbit\_build\wasm-gc\release\build\main\main.wasm" "$root\cli\projdesk.wasm" -Force
 Write-Host "  WASM copied to web/public/ and cli/" -ForegroundColor Green
 
-# 4. Build and test the frontend
-Write-Host "[3/3] Building and testing the frontend..." -ForegroundColor Yellow
+# 3. Build and test the frontend
+Write-Host "[2/2] Building and testing the frontend..." -ForegroundColor Yellow
 Push-Location "$root\web"
 try {
   $ErrorActionPreference = 'Continue'

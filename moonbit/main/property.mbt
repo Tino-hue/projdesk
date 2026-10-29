@@ -30,7 +30,7 @@ pub fn Rng::next_int64(self : Rng) -> Int64 {
 
 ///|
 /// Generate next pseudo-random Int in [0, bound)
-pub fn Rng::next_int(self : Rng, bound : Int) -> Int {
+pub fn Rng::next_int(self : Rng, bound : Int32) -> Int32 {
   if bound <= 0 {
     return 0
   }
@@ -48,7 +48,7 @@ pub fn Rng::next_double(self : Rng) -> Double {
 
 ///|
 /// Pick one element from an array
-pub fn Rng::pick(self : Rng, arr : Array[Int]) -> Int {
+pub fn Rng::pick(self : Rng, arr : Array[Int32]) -> Int32 {
   if arr.length() == 0 {
     return 0
   }
@@ -149,7 +149,7 @@ pub fn random_model(rng : Rng, name : String) -> @moonmodel.Model {
 
 ///|
 /// Generate N random models
-pub fn random_models(rng : Rng, count : Int) -> Array[@moonmodel.Model] {
+pub fn random_models(rng : Rng, count : Int32) -> Array[@moonmodel.Model] {
   let out : Array[@moonmodel.Model] = []
   for i = 0; i < count; i = i + 1 {
     out.push(random_model(rng, "Random" + i.to_string()))

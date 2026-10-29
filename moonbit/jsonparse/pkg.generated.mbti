@@ -4,7 +4,7 @@ package "Tino-hue/projdesk-kernel/jsonparse"
 // Values
 pub fn parse_json(String) -> Json
 
-pub fn stringify_json(Json, indent? : Int) -> String
+pub fn stringify_json(Json, indent? : Int32) -> String
 
 // Errors
 

@@ -120,8 +120,8 @@ pub fn dsl_to_models(
 /// Returns: (primary model text outputs, errors)
 pub fn dsl_project(
   src : String,
-  openapi_dialect? : String = "OpenApi30",
-  sql_dialect? : String = "Postgres",
+  openapi_dialect~ : String = "OpenApi30",
+  sql_dialect~ : String = "Postgres",
 ) -> (String, Array[String]) {
   let (models, lex_errors, parse_errors) = dsl_parse(src)
   let errors = []

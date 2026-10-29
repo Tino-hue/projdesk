@@ -25,6 +25,13 @@ The MoonBit kernel (`moonbit/`) is published separately as
 - The README carries a "Verify the claims" section: every claim points at the
   code and the command that shows it.
 
+### Changed
+
+- The kernel now requires **MoonBit 0.1.20261023 or newer**, which is the
+  release that spells the 32-bit integer `Int32` the way the `moonmodel`
+  package is published. The compatibility patch that adjusted the dependency
+  at build time is gone: the dependency is used exactly as published.
+
 ### Fixed
 
 - The round-trip verifier reported models as sound while losing their

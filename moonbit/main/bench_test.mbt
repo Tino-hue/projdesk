@@ -11,7 +11,7 @@
 
 ///|
 /// Time a projection of a model with N fields
-fn bench_projection(field_count : Int) -> (Double, Int) {
+fn bench_projection(field_count : Int32) -> (Double, Int32) {
   let fields : Array[@moonmodel.Field] = []
   for i = 0; i < field_count; i = i + 1 {
     fields.push(
@@ -32,7 +32,7 @@ fn bench_projection(field_count : Int) -> (Double, Int) {
 
 ///|
 /// Build a model with N simple fields
-fn make_fields(n : Int) -> Array[@moonmodel.Field] {
+fn make_fields(n : Int32) -> Array[@moonmodel.Field] {
   let fields : Array[@moonmodel.Field] = []
   for i = 0; i < n; i = i + 1 {
     fields.push(

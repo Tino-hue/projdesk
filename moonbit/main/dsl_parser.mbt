@@ -105,8 +105,8 @@ pub(all) enum AstCheck {
 /// Parse error with position
 pub(all) struct ParseError {
   msg : String
-  line : Int
-  col : Int
+  line : Int32
+  col : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -120,9 +120,9 @@ pub fn ParseError::to_text(self : ParseError) -> String {
 /// Parser state (mutable via Ref)
 pub(all) struct Parser {
   tokens : Array[Lexeme]
-  pos : Ref[Int]
+  pos : Ref[Int32]
   /// Resolved numeric constraints of the current model, keyed by field name.
-  /// Lets a later field reference an earlier one: `b: Int [over=a.least]`.
+  /// Lets a later field reference an earlier one: `b: Int32 [over=a.least]`.
   field_env : Ref[Map[String, Map[String, Double]]]
 }
 
@@ -146,7 +146,7 @@ fn advance(p : Parser) -> Token {
 
 ///|
 /// Get current position for error reporting
-fn cur_pos(p : Parser) -> (Int, Int) {
+fn cur_pos(p : Parser) -> (Int32, Int32) {
   if p.pos.val < p.tokens.length() {
     (p.tokens[p.pos.val].line, p.tokens[p.pos.val].col)
   } else {

@@ -59,7 +59,7 @@ pub fn Migration::is_breaking(self : Migration) -> Bool {
 /// Full migration report
 pub(all) struct MigrationReport {
   changes : Array[Migration]
-  breaking_count : Int
+  breaking_count : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -224,7 +224,7 @@ pub fn diff_models(
 pub fn generate_sql_migration(
   old_model : @moonmodel.Model,
   new_model : @moonmodel.Model,
-  dialect? : String = "Postgres",
+  dialect~ : String = "Postgres",
 ) -> String {
   let report = diff_models(old_model, new_model)
   let out = StringBuilder()

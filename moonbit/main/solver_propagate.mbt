@@ -2,7 +2,7 @@
 //
 // Beyond per-field checking, this builds a constraint graph across fields and
 // propagates bounds to a fixed point. A field's bound may reference another
-// field's bound (e.g. `b: Int [most=a.least]`), so bounds form a system of
+// field's bound (e.g. `b: Int32 [most=a.least]`), so bounds form a system of
 // equations that must be solved together.
 //
 // The algorithm is a worklist over intervals:
@@ -122,9 +122,9 @@ pub extend PropagationResult with Debug::{to_repr}
 fn walk_for_cycle(
   current : String,
   deps : Array[Array[String]],
-  index : Map[String, Int],
+  index : Map[String, Int32],
   path : Array[String],
-  depth : Int,
+  depth : Int32,
 ) -> Array[String] {
   if depth > 100 {
     return []
@@ -157,7 +157,7 @@ pub fn propagate(bounds : Array[FieldBounds]) -> PropagationResult {
     return Consistent([])
   }
   // index by name
-  let index : Map[String, Int] = Map([])
+  let index : Map[String, Int32] = Map([])
   for i = 0; i < n; i = i + 1 {
     index[bounds[i].name] = i
   }

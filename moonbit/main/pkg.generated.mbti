@@ -94,7 +94,7 @@ pub fn random_constraint_model(Rng) -> @moonmodel.Model
 
 pub fn random_model(Rng, String) -> @moonmodel.Model
 
-pub fn random_models(Rng, Int) -> Array[@moonmodel.Model]
+pub fn random_models(Rng, Int32) -> Array[@moonmodel.Model]
 
 pub fn redundancies_only(Array[Diagnosis]) -> Array[Diagnosis]
 
@@ -306,9 +306,9 @@ pub fn JsonProjector::target_name(Self) -> String
 pub impl Projector for JsonProjector
 
 pub(all) enum LexError {
-  UnexpectedChar(Char, Int, Int)
-  UnterminatedString(Int, Int)
-  InvalidNumber(String, Int, Int)
+  UnexpectedChar(Char, Int32, Int32)
+  UnterminatedString(Int32, Int32)
+  InvalidNumber(String, Int32, Int32)
 } derive(Eq, @debug.Debug)
 pub fn LexError::equal(Self, Self) -> Bool
 pub fn LexError::not_equal(Self, Self) -> Bool
@@ -317,8 +317,8 @@ pub fn LexError::to_text(Self) -> String
 
 pub(all) struct Lexeme {
   token : Token
-  line : Int
-  col : Int
+  line : Int32
+  col : Int32
 } derive(Eq, @debug.Debug)
 pub fn Lexeme::equal(Self, Self) -> Bool
 pub fn Lexeme::not_equal(Self, Self) -> Bool
@@ -326,9 +326,9 @@ pub fn Lexeme::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Lexer {
   src : String
-  pos : @ref.Ref[Int]
-  line : @ref.Ref[Int]
-  col : @ref.Ref[Int]
+  pos : @ref.Ref[Int32]
+  line : @ref.Ref[Int32]
+  col : @ref.Ref[Int32]
 }
 
 pub(all) enum Migration {
@@ -349,7 +349,7 @@ pub fn Migration::to_text(Self) -> String
 
 pub(all) struct MigrationReport {
   changes : Array[Migration]
-  breaking_count : Int
+  breaking_count : Int32
 } derive(Eq, @debug.Debug)
 pub fn MigrationReport::equal(Self, Self) -> Bool
 pub fn MigrationReport::not_equal(Self, Self) -> Bool
@@ -364,8 +364,8 @@ pub impl Projector for OpenApiProj
 
 pub(all) struct ParseError {
   msg : String
-  line : Int
-  col : Int
+  line : Int32
+  col : Int32
 } derive(Eq, @debug.Debug)
 pub fn ParseError::equal(Self, Self) -> Bool
 pub fn ParseError::not_equal(Self, Self) -> Bool
@@ -374,7 +374,7 @@ pub fn ParseError::to_text(Self) -> String
 
 pub(all) struct Parser {
   tokens : Array[Lexeme]
-  pos : @ref.Ref[Int]
+  pos : @ref.Ref[Int32]
   field_env : @ref.Ref[Map[String, Map[String, Double]]]
 }
 
@@ -416,9 +416,9 @@ pub(all) struct Rng {
 }
 pub fn Rng::next_bool(Self) -> Bool
 pub fn Rng::next_double(Self) -> Double
-pub fn Rng::next_int(Self, Int) -> Int
+pub fn Rng::next_int(Self, Int32) -> Int32
 pub fn Rng::next_int64(Self) -> Int64
-pub fn Rng::pick(Self, Array[Int]) -> Int
+pub fn Rng::pick(Self, Array[Int32]) -> Int32
 
 pub(all) enum RoundTrip {
   Pass

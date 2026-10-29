@@ -10,6 +10,15 @@ if (-not (Get-Command moon -ErrorAction SilentlyContinue)) {
   Write-Host "Install it from https://www.moonbitlang.com/download and run this again." -ForegroundColor Yellow
   exit 1
 }
+# The kernel needs MoonBit 0.1.20261023 or newer: that is the release that
+# spells the 32-bit integer the way the moonmodel package is published.
+$version = (& moon version | Select-Object -First 1)
+$build = [regex]::Match($version, '(\d+)\.\d+\.(\d+)')
+if ($build.Success -and [int]$build.Groups[2].Value -lt 20261023) {
+  Write-Host "MoonBit $version is too old; 0.1.20261023 or newer is required." -ForegroundColor Red
+  Write-Host "Upgrade with 'moon upgrade', or reinstall from https://www.moonbitlang.com/download" -ForegroundColor Yellow
+  exit 1
+}
 
 # The MoonBit toolchain writes progress to stderr, which PowerShell turns into
 # a terminating error when the output is piped. The preference is relaxed
@@ -27,9 +36,6 @@ function Invoke-Moon([string[]]$MoonArgs, [string]$WorkingDirectory) {
     Pop-Location
   }
 }
-
-Write-Host "=== 0. moonmodel dependency ===" -ForegroundColor Cyan
-& "$root\scripts\patch_moonmodel.ps1"
 
 Write-Host "=== 1. MoonBit kernel build ===" -ForegroundColor Cyan
 if ((Invoke-Moon @("build", "--target", "wasm-gc", "--release") "$root\moonbit") -ne 0) {
