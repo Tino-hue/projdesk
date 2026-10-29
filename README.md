@@ -175,14 +175,21 @@ models/                 Example models verified by the GitHub Action
 
 ## Quick Start
 
+The kernel depends on the published `moonmodel` package, which is released against a newer spelling of the 32-bit integer than this kernel's toolchain uses. One setup step adjusts that dependency — it fetches it if needed, so it works on a fresh clone.
+
 ```powershell
-# Windows one-shot setup (applies moonmodel compat patch + builds + tests)
-.\setup.ps1
-# or
-.\build.ps1
+# one-time setup: fetch and adjust the moonmodel dependency
+pwsh -File scripts/patch_moonmodel.ps1
 ```
 
-Manual:
+Windows users can run the whole thing at once — setup, build and test:
+
+```powershell
+.\setup.ps1
+```
+
+Manual, after the one-time setup above:
+
 ```bash
 cd moonbit && moon build --target wasm-gc --release && moon test
 cd ../web && npm install && npm run build && npm run test

@@ -12,6 +12,9 @@ The patch is deliberately minimal: it renames the type in type positions and
 leaves everything else alone. It is applied to the copy of the package that
 the build downloaded, never to the registry cache.
 
+If the dependency has not been fetched yet, this fetches it first, so it can
+be run on a fresh clone without any other step.
+
 .PARAMETER Path
 The moonmodel package directory. Defaults to the copy inside the module.
 
@@ -24,13 +27,30 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$moduleDir = Join-Path $repoRoot "moonbit"
+
 if ($Path -eq "") {
-  $repoRoot = Split-Path -Parent $PSScriptRoot
-  $Path = Join-Path $repoRoot "moonbit\.mooncakes\moonbitstack\moonmodel"
+  $Path = Join-Path $moduleDir ".mooncakes\moonbitstack\moonmodel"
 }
 
 if (-not (Test-Path $Path)) {
-  Write-Host "moonmodel not found at $Path - run 'moon build' first to fetch it" -ForegroundColor Red
+  Write-Host "Fetching the moonmodel dependency..." -ForegroundColor Yellow
+  Push-Location $moduleDir
+  try {
+    # This build fails until the dependency is patched, which is what this
+    # script is here to do, so the failure is expected and ignored.
+    moon build --target wasm-gc 2>&1 | Out-Null
+  } catch {
+    # a newer toolchain may fail for a different reason; the check below decides
+  } finally {
+    Pop-Location
+  }
+}
+
+if (-not (Test-Path $Path)) {
+  Write-Host "moonmodel not found at $Path" -ForegroundColor Red
+  Write-Host "Run 'cd moonbit && moon build' to fetch it, then run this script again." -ForegroundColor Yellow
   exit 1
 }
 
