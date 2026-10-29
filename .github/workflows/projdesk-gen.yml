@@ -30,7 +30,7 @@ jobs:
           # Node 20 cannot instantiate ("Unknown type code 0x50").
           node-version: 24
 
-      - name: Verify model semantics and round-trip
+      - name: Verify model semantics, constraints and round-trip
         run: |
           shopt -s nullglob
           models=(models/*.dsl models/*.json)
@@ -41,7 +41,10 @@ jobs:
           status=0
           for m in "${models[@]}"; do
             echo "::group::Verifying $m"
-            if node cli/index.js verify "$m"; then
+            # `verify` checks the semantics and the round-trip; `check` runs the
+            # constraint solver, so a model whose bounds cannot be satisfied
+            # fails the build as well
+            if node cli/index.js verify "$m" && node cli/index.js check "$m"; then
               echo "OK: $m"
             else
               echo "::error::$m failed verification"
