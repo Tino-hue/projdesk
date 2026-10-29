@@ -62,8 +62,8 @@ pub extend Token with Debug::{to_repr}
 /// A positioned token for error reporting
 pub(all) struct Lexeme {
   token : Token
-  line : Int
-  col : Int
+  line : Int32
+  col : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -72,17 +72,17 @@ pub(all) struct Lexeme {
 /// Lexer state
 pub(all) struct Lexer {
   src : String
-  pos : Ref[Int]
-  line : Ref[Int]
-  col : Ref[Int]
+  pos : Ref[Int32]
+  line : Ref[Int32]
+  col : Ref[Int32]
 }
 
 ///|
 /// Lexer error with position
 pub(all) enum LexError {
-  UnexpectedChar(Char, Int, Int)
-  UnterminatedString(Int, Int)
-  InvalidNumber(String, Int, Int)
+  UnexpectedChar(Char, Int32, Int32)
+  UnterminatedString(Int32, Int32)
+  InvalidNumber(String, Int32, Int32)
 } derive(Eq, Debug)
 
 ///|

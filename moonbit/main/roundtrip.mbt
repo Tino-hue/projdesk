@@ -180,7 +180,7 @@ fn type_difference(a : AstType, b : AstType) -> String {
 
 ///|
 /// How many times a key occurs in a list
-fn count_key(keys : Array[String], key : String) -> Int {
+fn count_key(keys : Array[String], key : String) -> Int32 {
   let mut n = 0
   for k in keys {
     if k == key {

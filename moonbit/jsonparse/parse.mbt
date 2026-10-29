@@ -10,7 +10,7 @@ pub fn parse_json(text : String) -> Json {
 
 ///|
 /// 将 Json 序列化为字符串
-pub fn stringify_json(j : Json, indent? : Int = 0) -> String {
+pub fn stringify_json(j : Json, indent~ : Int32 = 0) -> String {
   if indent > 0 {
     j.stringify(indent~)
   } else {

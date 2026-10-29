@@ -29,7 +29,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-**Compatibility note**: A minimal `Int32` to `Int` compatibility patch is applied at build time (see `setup.ps1`) to work with the current MoonBit toolchain. This patch does not modify the library's logic or license.
+**Compatibility note**: The package is used as published. The kernel requires MoonBit 0.1.20261023 or newer, which is the release that spells the 32-bit integer the way this package is published.
 
 ---
 
