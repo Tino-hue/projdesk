@@ -15,12 +15,13 @@ const KERNEL_EXPORTS = [
   'check_equivalence',
   'verify_roundtrip',
   'verify_roundtrip_dsl',
+  'dsl_to_model',
   'check_semantics',
 ];
 
 describe('Engine ABI contract', () => {
-  it('all 10 kernel exports are declared on the frontend interface', () => {
-    expect(KERNEL_EXPORTS).toHaveLength(10);
+  it('all 11 kernel exports are declared on the frontend interface', () => {
+    expect(KERNEL_EXPORTS).toHaveLength(11);
     for (const name of KERNEL_EXPORTS) {
       expect(name).toMatch(/^[a-z_]+$/);
     }

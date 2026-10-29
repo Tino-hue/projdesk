@@ -15,6 +15,7 @@ interface Kernel {
   check_equivalence(a_json: string, b_json: string): string;
   verify_roundtrip(model_json: string): string;
   verify_roundtrip_dsl(dsl: string): string;
+  dsl_to_model(dsl: string): string;
   check_semantics(dsl: string): string;
 }
 
@@ -23,6 +24,7 @@ const EXPECTED_EXPORTS = [
   'get_presets_json',
   'import_from_json_schema_str',
   'dsl_project',
+  'dsl_to_model',
   'solve_constraints',
   'generate_migration',
   'check_equivalence',
@@ -146,6 +148,13 @@ describe.skipIf(!wasmGcSupported)('Round-trip verification (real WASM)', () => {
 });
 
 describe.skipIf(!wasmGcSupported)('Projection honesty (real WASM)', () => {
+  it('compiles a DSL source into the model the other commands consume', () => {
+    const model = JSON.parse(kernel.dsl_to_model('model T {\n  x: Int [least=5]\n  y: Text [longest=8]\n}'));
+    expect(model.name).toBe('T');
+    expect(model.fields.length).toBe(2);
+    expect(model.fields[0].check.least).toBe(5);
+    expect(model.fields[1].check.longest).toBe(8);
+  });
   const TARGETS = ['jsonSchema', 'openapi', 'sql', 'graphql', 'typescript', 'zod', 'prisma'];
 
   it('reports a drop list for every projection target', () => {
