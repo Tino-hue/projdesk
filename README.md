@@ -211,9 +211,9 @@ models/                 Example models verified by the GitHub Action
 
 The kernel depends on the published `moonmodel` package, which is released against a newer spelling of the 32-bit integer than this kernel's toolchain uses. One setup step adjusts that dependency — it fetches it if needed, so it works on a fresh clone.
 
-```powershell
+```bash
 # one-time setup: fetch and adjust the moonmodel dependency
-pwsh -File scripts/patch_moonmodel.ps1
+python3 scripts/patch_moonmodel.py     # or: pwsh -File scripts/patch_moonmodel.ps1
 ```
 
 Windows users can run the whole thing at once — setup, build and test:
