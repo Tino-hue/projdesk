@@ -95,6 +95,26 @@ function isDslFile(path) {
   return path.endsWith('.dsl') || path.endsWith('.projdesk');
 }
 
+/**
+ * The model JSON the migration engine compares. A DSL source is compiled
+ * first; the kernel is the only thing that can parse it.
+ */
+async function modelJson(kernel, path) {
+  const resolved = resolve(path);
+  if (!existsSync(resolved)) {
+    console.error(`File not found: ${resolved}`);
+    process.exit(1);
+  }
+  const raw = readText(resolved);
+  if (!isDslFile(resolved)) return raw;
+  const compiled = JSON.parse(kernel.dsl_to_model(raw));
+  if (compiled.error) {
+    console.error(`Could not compile ${resolved}: ${compiled.error}`);
+    process.exit(1);
+  }
+  return JSON.stringify(compiled);
+}
+
 /** Read a file, stripping UTF-8 BOM if present */
 function readText(path) {
   const raw = readFileSync(path, 'utf-8');
@@ -144,9 +164,9 @@ async function main() {
   // ---- migrate: SQL migration ----
   if (args.cmd === 'migrate') {
     if (args._.length < 2) { console.error('Need two model files'); process.exit(1); }
-    const oldRaw = readText(resolve(args._[0]));
-    const newRaw = readText(resolve(args._[1]));
-    const result = JSON.parse(kernel.generate_migration(oldRaw, newRaw));
+    const oldJson = await modelJson(kernel, args._[0]);
+    const newJson = await modelJson(kernel, args._[1]);
+    const result = JSON.parse(kernel.generate_migration(oldJson, newJson));
     if (args.stdout) {
       console.log(result.sql);
     } else {

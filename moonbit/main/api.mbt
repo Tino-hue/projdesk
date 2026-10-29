@@ -71,6 +71,35 @@ pub fn verify_roundtrip_dsl_entry(dsl : String) -> String {
 }
 
 ///|
+#export_name("dsl_to_model")
+pub fn dsl_to_model_entry(dsl : String) -> String {
+  let (models, lex_errors, parse_errors) = dsl_parse(dsl)
+  if lex_errors.length() > 0 || parse_errors.length() > 0 {
+    let msg = if lex_errors.length() > 0 {
+      lex_errors[0].to_text()
+    } else {
+      parse_errors[0].to_text()
+    }
+    return error_json(msg)
+  }
+  let (primary, known) = dsl_to_models(models)
+  let out : Map[String, Json] = Map([])
+  out["name"] = Json::string(primary.name)
+  out["doc"] = Json::string(primary.doc)
+  let fields : Array[Json] = []
+  for f in primary.fields {
+    fields.push(field_to_json(f))
+  }
+  out["fields"] = Json::array(fields)
+  let knowns : Array[Json] = []
+  for k in known {
+    knowns.push(model_to_json(k))
+  }
+  out["known"] = Json::array(knowns)
+  Json::object(out).stringify()
+}
+
+///|
 /// Render a round-trip result as the ABI's JSON shape
 fn roundtrip_result_to_json(result : RoundTrip, ok_message : String) -> String {
   let out : Map[String, Json] = Map([])

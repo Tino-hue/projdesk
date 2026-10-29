@@ -12,6 +12,9 @@ The patch is deliberately minimal: it renames the type in type positions and
 leaves everything else alone. It is applied to the copy of the package that
 the build downloaded, never to the registry cache.
 
+If the dependency has not been fetched yet, this fetches it first, so it can
+be run on a fresh clone without any other step.
+
 .PARAMETER Path
 The moonmodel package directory. Defaults to the copy inside the module.
 
@@ -24,26 +27,71 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$moduleDir = Join-Path $repoRoot "moonbit"
+
 if ($Path -eq "") {
-  $repoRoot = Split-Path -Parent $PSScriptRoot
-  $Path = Join-Path $repoRoot "moonbit\.mooncakes\moonbitstack\moonmodel"
+  $Path = Join-Path $moduleDir ".mooncakes\moonbitstack\moonmodel"
 }
 
-if (-not (Test-Path $Path)) {
-  Write-Host "moonmodel not found at $Path - run 'moon build' first to fetch it" -ForegroundColor Red
+function Get-DependencyFiles {
+  if (-not (Test-Path $Path)) {
+    return @()
+  }
+  return @(Get-ChildItem $Path -Recurse -File -Filter "*.mbt")
+}
+
+if ((Get-DependencyFiles).Count -eq 0) {
+  Write-Host "Fetching the moonmodel dependency..." -ForegroundColor Yellow
+  Push-Location $moduleDir
+  try {
+    # `moon install` fetches the dependency without compiling it. A build
+    # would fail here, because the dependency is what still needs patching.
+    #
+    # The error preference is relaxed for the call on purpose: redirecting a
+    # native command's stderr into a pipeline turns its warnings into
+    # terminating errors, which would kill it before it downloaded anything.
+    $ErrorActionPreference = 'Continue'
+    moon install *> $null
+  } catch {
+    # not every toolchain has `moon install`; the build below fetches too
+  } finally {
+    $ErrorActionPreference = 'Stop'
+    Pop-Location
+  }
+}
+
+if ((Get-DependencyFiles).Count -eq 0) {
+  Push-Location $moduleDir
+  try {
+    # The build fails until the dependency is patched, which is what this
+    # script is here to do, so the failure is expected.
+    $ErrorActionPreference = 'Continue'
+    moon build --target wasm-gc *> $null
+  } catch {
+  } finally {
+    $ErrorActionPreference = 'Stop'
+    Pop-Location
+  }
+}
+
+$files = Get-DependencyFiles
+if ($files.Count -eq 0) {
+  Write-Host "moonmodel not found at $Path" -ForegroundColor Red
+  Write-Host "Run 'cd moonbit && moon build' to fetch it, then run this script again." -ForegroundColor Yellow
   exit 1
 }
 
 $patched = 0
 $alreadyOk = $true
 
-Get-ChildItem $Path -Recurse -File -Filter "*.mbt" | ForEach-Object {
-  $content = Get-Content $_.FullName -Raw -Encoding UTF8
+foreach ($file in $files) {
+  $content = Get-Content $file.FullName -Raw -Encoding UTF8
   # The type name only: a quoted "Int32" is a JSON format value, not a type.
   $updated = [regex]::Replace($content, '(?<![a-zA-Z"''])Int32(?![a-zA-Z"''])', 'Int')
   if ($updated -ne $content) {
     # Write without a BOM: the compiler treats a leading BOM as a stray token.
-    [System.IO.File]::WriteAllText($_.FullName, $updated, (New-Object System.Text.UTF8Encoding($false)))
+    [System.IO.File]::WriteAllText($file.FullName, $updated, (New-Object System.Text.UTF8Encoding($false)))
     $patched++
     $alreadyOk = $false
   }

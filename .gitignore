@@ -50,4 +50,5 @@ projdesk-out/
 .verify_*.py
 .scan_*.py
 .watch_*.py
+.audit_*.py
 .patch_tmp.py

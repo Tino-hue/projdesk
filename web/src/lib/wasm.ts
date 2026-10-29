@@ -13,6 +13,7 @@ interface ProjDeskExports {
   check_equivalence(a_json: string, b_json: string): string;
   verify_roundtrip(model_json: string): string;
   verify_roundtrip_dsl(dsl: string): string;
+  dsl_to_model(dsl: string): string;
   check_semantics(dsl: string): string;
 }
 

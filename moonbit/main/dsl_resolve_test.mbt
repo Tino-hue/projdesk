@@ -107,6 +107,18 @@ test "resolve: a field reached from two places is not a cycle" {
 }
 
 ///|
+test "resolve: a DSL source compiles to the model the ABI expects" {
+  let json = @main.dsl_to_model_entry(
+    "model T {\n  x: Int [least=5]\n  y: Text [longest=8]\n}",
+  )
+  let parsed = @main.parse_input(json)
+  assert_eq(parsed.model.name, "T")
+  assert_eq(parsed.model.fields.length(), 2)
+  assert_eq(parsed.model.fields[0].check.least, Some(5.0))
+  assert_eq(parsed.model.fields[1].check.longest, Some(8))
+}
+
+///|
 test "resolve: a source with an unsettled bound is not projected" {
   let (output, errors) = @main.dsl_project(
     "model T {\n  a: Int [least=b.least]\n  b: Int [least=a.least]\n}",
