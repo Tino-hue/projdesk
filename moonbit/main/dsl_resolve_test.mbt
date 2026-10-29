@@ -93,6 +93,20 @@ test "resolve: the field bounds carry the reference they came from" {
 }
 
 ///|
+test "resolve: a field reached from two places is not a cycle" {
+  // value depends on floor, and ceiling depends on floor as well
+  let (models, _, _) = @main.dsl_parse(
+    "model T {\n  value: Int [least=floor.least, most=ceiling.least]\n  ceiling: Int [least=floor.least]\n  floor: Int [least=4]\n}",
+  )
+  let issues = @main.check_semantics(models)
+  assert_eq(issues.length(), 0)
+  match models[0].fields[0].checks[0] {
+    @main.Least(b) => assert_eq(b.value, Some(4.0))
+    _ => abort("expected Least")
+  }
+}
+
+///|
 test "resolve: a source with an unsettled bound is not projected" {
   let (output, errors) = @main.dsl_project(
     "model T {\n  a: Int [least=b.least]\n  b: Int [least=a.least]\n}",
