@@ -29,6 +29,7 @@ ProjDesk CLI - one model description, seven projections
 Usage:
   projdesk gen <model.json|model.dsl> [options]
   projdesk check <model.json|model.dsl>
+  projdesk contrast <model.dsl>
   projdesk migrate <old.json> <new.json> [options]
   projdesk verify <model.json|model.dsl>
   projdesk init <ModelName> [--out <dir>] [--as-json]
@@ -47,6 +48,7 @@ Examples:
   projdesk gen model.dsl --format json,sql --out ./schemas
   projdesk gen model.json --sql-dialect Sqlite --stdout
   projdesk check model.json
+  projdesk contrast model.dsl
   projdesk migrate old.json new.json
   projdesk verify model.dsl
   projdesk init Order --out ./models
@@ -66,7 +68,7 @@ function parseArgs(argv) {
     else if (a === '--json') args.json = true;
     else if (a === '--as-json') args.scaffold = 'json';
     else if (a === '--dsl') args.scaffold = 'dsl';
-    else if (['gen', 'check', 'migrate', 'verify', 'init'].includes(a)) args.cmd = a;
+    else if (['gen', 'check', 'contrast', 'migrate', 'verify', 'init'].includes(a)) args.cmd = a;
     else args._.push(a);
   }
   return args;
@@ -133,15 +135,16 @@ async function main() {
     if (!existsSync(inputPath)) { console.error(`File not found: ${inputPath}`); process.exit(1); }
     const raw = readText(inputPath);
 
+    let result;
     if (isDslFile(inputPath)) {
-      const out = JSON.parse(kernel.dsl_project(raw));
-      if (out.error) { console.error(`Parse error: ${out.error}`); process.exit(1); }
-      console.log('DSL parsed successfully. See projections with "projdesk gen".');
-      return;
+      // a DSL source is compiled to a model first, then analysed
+      const model = JSON.parse(kernel.dsl_to_model(raw));
+      if (model.error) { console.error(`Parse error: ${model.error}`); process.exit(1); }
+      result = JSON.parse(kernel.solve_constraints(JSON.stringify(model)));
+    } else {
+      result = JSON.parse(kernel.solve_constraints(raw));
     }
-
-    const result = JSON.parse(kernel.solve_constraints(raw));
-    const diags = result.diagnoses || [];
+    const diags = (result.diagnoses || []).filter((d) => d.severity !== 'ok');
     if (args.json) {
       console.log(JSON.stringify({
         issues: diags,
@@ -154,11 +157,57 @@ async function main() {
     } else {
       console.log(`${diags.length} issue(s) found:`);
       for (const d of diags) {
-        console.log(`  [${d.severity.toUpperCase()}] ${d.text}`);
+        console.log(`  ${d.text}`);
       }
     }
     if (result.conflict_count > 0) process.exit(1);
     return;
+  }
+
+  // ---- contrast: what the solver sees that the projection does not ----
+  if (args.cmd === 'contrast') {
+    const inputPath = resolve(args._[0]);
+    if (!existsSync(inputPath)) { console.error(`File not found: ${inputPath}`); process.exit(1); }
+    const raw = readText(inputPath);
+
+    const model = JSON.parse(kernel.dsl_to_model(raw));
+    if (model.error) { console.error(`Could not compile ${inputPath}: ${model.error}`); process.exit(1); }
+    const projected = JSON.parse(kernel.dsl_project(raw));
+    const solved = JSON.parse(kernel.solve_constraints(JSON.stringify(model)));
+
+    const schema = JSON.parse(projected.jsonSchema);
+    const properties = schema.properties || {};
+    const diagnoses = solved.diagnoses || [];
+
+    if (args.json) {
+      console.log(JSON.stringify({ model: model.name, diagnoses, conflict_count: solved.conflict_count }, null, 2));
+      process.exit(solved.conflict_count > 0 ? 1 : 0);
+    }
+
+    console.log(`Model: ${model.name}`);
+    console.log('');
+    for (const field of model.fields) {
+      const keywords = properties[field.name] || {};
+      const carried = Object.keys(keywords)
+        .filter((k) => k !== 'type')
+        .map((k) => `${k}: ${keywords[k]}`);
+      const findings = diagnoses.filter((d) => d.text.includes(`${field.name}:`));
+      const kind = typeof field.kind === 'string' ? field.kind : JSON.stringify(field.kind);
+      console.log(`  ${field.name} (${kind})`);
+      console.log(`    projection (moonmodel)  ${carried.join('  ') || '(nothing)'}`);
+      if (findings.length === 0) {
+        console.log('    solver (this project)   no findings');
+      } else {
+        for (const d of findings) console.log(`    solver (this project)   ${d.text}`);
+      }
+    }
+    console.log('');
+    if (diagnoses.length === 0) {
+      console.log('The solver found nothing the projection would have hidden.');
+    } else {
+      console.log('The projection carries these through without saying anything about them.');
+    }
+    process.exit(solved.conflict_count > 0 ? 1 : 0);
   }
 
   // ---- migrate: SQL migration ----

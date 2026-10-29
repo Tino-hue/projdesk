@@ -21,12 +21,13 @@ Everything this project claims can be checked from this repository alone. Each r
 | Claim | Implemented in | Check it with |
 |---|---|---|
 | Five independent MoonBit engines | `moonbit/main/` — the table below lists every file and its size | `wc -l moonbit/main/roundtrip.mbt` |
-| 241 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
+| 247 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
 | The kernel compiles with zero warnings | the same source | `cd moonbit && moon check` |
 | 95 frontend tests, 26 of them against the real compiled kernel | `web/src/lib/*.test.ts` | `cd web && npm run test` |
 | 11 exports on the compiled kernel | `moonbit/main/api.mbt` | the command below |
 | Seven projections, each with a typed drop report | `moonbit/main/codegen.mbt` `moonbit/main/projector.mbt` | `node cli/index.js gen models/Order.dsl && cat projdesk-out/drops.txt` |
 | Cross-field constraints resolve; reference cycles are reported | `moonbit/main/dsl_resolve.mbt` | `node cli/index.js verify models/CrossField.dsl` |
+| The solver finds conflicts the projection carries in silence | `moonbit/main/independence_test.mbt` | `node cli/index.js contrast examples/Conflicting.dsl` |
 | The round-trip verifier compares every field, type and constraint | `moonbit/main/roundtrip.mbt` | `node cli/index.js verify models/Order.dsl` |
 | The kernel's own tests run on every push | `.github/workflows/kernel.yml` | the "Kernel tests" check on any commit |
 | The projection formats come from moonmodel, not from here | `NOTICE.md` | — |
@@ -39,7 +40,7 @@ node -e "const fs=require('fs');WebAssembly.instantiate(fs.readFileSync('web/pub
 Three commands, about two minutes:
 
 ```bash
-cd moonbit && moon check && moon test   # the kernel: zero warnings, 241 tests
+cd moonbit && moon check && moon test   # the kernel: zero warnings, 247 tests
 cd ../web && npm run test               # the frontend: 95 tests
 cd .. && node cli/index.js verify models/CrossField.dsl
 ```
@@ -57,9 +58,9 @@ cd .. && node cli/index.js verify models/CrossField.dsl
 | 5 | **Round-trip Verifier** | `roundtrip.mbt` | 353 | Source-level generate-parse-compare, comparing every field, type and constraint |
 | | **Five engines** | | **3611** | |
 
-On top of the engines the kernel carries **1915 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **5526 lines** of MoonBit implementation, plus **3003 lines** of test code.
+On top of the engines the kernel carries **1915 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **5526 lines** of MoonBit implementation, plus **3159 lines** of test code.
 
-**241 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **95 frontend tests** (26 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
+**247 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **95 frontend tests** (26 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
 
 ---
 
@@ -140,6 +141,33 @@ All five engines — plus the semantic checker — are exposed through the WASM 
 
 The five engines cover what a projection library cannot: they reason *about* the model rather than merely reformat it. Together they form a complete workflow — write DSL, solve constraints, evolve with migrations, compare versions, verify correctness, then project.
 
+## What the engines do that projection does not
+
+Projection formats a model. The engines reason about it. The difference is not a matter of taste — it is measurable, and this repository measures it.
+
+`examples/Conflicting.dsl` is a model whose constraints cannot be satisfied. The two sides, side by side:
+
+````
+$ projdesk contrast examples/Conflicting.dsl
+
+Model: Reading
+
+  ceiling (Int)
+    projection (moonmodel)  format: int32  minimum: 0  maximum: -1
+    solver (this project)   [CONFLICT] ceiling: least(0) > most(-1): empty range
+  code (Text)
+    projection (moonmodel)  maxLength: 3  enum: toolong
+    solver (this project)   [CONFLICT] code: option 'toolong' exceeds longest(3)
+
+The projection carries these through without saying anything about them.
+````
+
+moonmodel writes `minimum: 0` next to `maximum: -1` and emits a schema no value can satisfy. It has no notion that the range is empty, that a closed set does not fit its length bound, or that one field's bound may be another field's bound.
+
+That difference is asserted rather than asserted-about: `moonbit/main/independence_test.mbt` runs both sides over randomly generated models and checks that every conflict the solver reports is carried through the projection in silence.
+
+---
+
 ## Projection (delegated to moonmodel)
 
 After lifecycle management, the model projects to seven targets:
@@ -176,7 +204,7 @@ moonbit/                 MoonBit kernel (wasm-gc)
     abi.mbt              JSON <-> moonmodel.Model conversion
     api.mbt              WASM ABI exports (10)
     jsonparse/           Minimal JSON wrapper (name-collision workaround)
-    *_test.mbt           Engine test suites (14 files, 241 tests)
+    *_test.mbt           Engine test suites (15 files, 247 tests)
 web/                    React + TypeScript frontend (31 files)
   src/components/
     EnginePanel.tsx      Engine playground (6 interactive engine tabs)
@@ -200,9 +228,10 @@ web/                    React + TypeScript frontend (31 files)
     types.ts             ABI type definitions
     *.test.ts            Test suites (7 files, 95 tests)
 backend/                Cloudflare Workers + D1 API (optional)
-cli/                    Command-line tool (gen/check/migrate/verify/init)
+cli/                    Command-line tool (gen/check/contrast/migrate/verify/init)
 vscode-extension/       VS Code plugin (DSL highlighting + preview)
 models/                 Example models verified by the GitHub Action
+examples/               Worked examples, including one that contradicts itself
 ```
 
 ---
@@ -297,7 +326,7 @@ npm run dev  # http://127.0.0.1:3000
 
 | Suite | Count | Command |
 |-------|-------|---------|
-| MoonBit kernel | 241 | `cd moonbit && moon test` |
+| MoonBit kernel | 247 | `cd moonbit && moon test` |
 | &nbsp;&nbsp;— property-based | 16 | (12 invariants over 100+ random models, 4 PRNG properties) |
 | &nbsp;&nbsp;— performance benchmarks | 7 | (100–200 field models, `monotonic_clock` budgets) |
 | Frontend unit | 69 | `cd web && npm run test` |
@@ -319,7 +348,7 @@ Beyond hand-picked examples, the kernel is verified with **property-based testin
 
 Performance budgets are asserted with `monotonic_clock` for models of 100-200 fields across projection, solving, parsing, diffing, round-trip, and equivalence.
 
-**How CI verifies the kernel.** The `Kernel tests` workflow installs the MoonBit toolchain, fetches the `moonmodel` dependency, and runs `moon check` and `moon test` on the kernel source — all 241 tests, on every push and pull request that touches `moonbit/`. The toolchain cannot be pinned (the distribution host publishes only the `latest` and `nightly` archives), so the job installs `latest`; the kernel compiles and passes against both that release and the older one it was developed against.
+**How CI verifies the kernel.** The `Kernel tests` workflow installs the MoonBit toolchain, fetches the `moonmodel` dependency, and runs `moon check` and `moon test` on the kernel source — all 247 tests, on every push and pull request that touches `moonbit/`. The toolchain cannot be pinned (the distribution host publishes only the `latest` and `nightly` archives), so the job installs `latest`; the kernel compiles and passes against both that release and the older one it was developed against.
 
 The compiled kernel is verified separately: the artifact (`web/public/projdesk.wasm`) is committed to the repository and exercised by 26 real-WASM integration tests, and the `ProjDesk Generate` action runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
 
