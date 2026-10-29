@@ -20,6 +20,11 @@ keywords = [
   "sql",
   "graphql",
   "projection",
+  "dsl",
+  "migration",
+  "constraint",
+  "equivalence",
+  "modeling",
 ]
 
 import {
