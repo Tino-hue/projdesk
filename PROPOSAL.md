@@ -13,7 +13,7 @@
 
 ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模型的完整生命周期：定义、分析、演化、对比、验证。
 
-核心是五个从零手写的 MoonBit 算法引擎，共 3611 行独立实现（整个内核 5526 行实现代码 + 3159 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。开发者用一套建模 DSL 声明业务对象，工作台完成约束推理、迁移推演、等价判定与正确性验证，最后投影为 JSON Schema、OpenAPI、SQL、GraphQL、TypeScript、Zod、Prisma 七种契约。
+核心是五个从零手写的 MoonBit 算法引擎，共 3691 行独立实现（整个内核 5613 行实现代码 + 3225 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。开发者用一套建模 DSL 声明业务对象，工作台完成约束推理、迁移推演、等价判定与正确性验证，最后投影为 JSON Schema、OpenAPI、SQL、GraphQL、TypeScript、Zod、Prisma 七种契约。
 
 投影由开源库 moonmodel 承担（相当于编译器后端）；五个引擎均本项目独立实现，与其无功能重叠。
 
@@ -56,7 +56,7 @@ ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模�
 3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
 4. WASM ABI 11 导出
 5. CLI（gen/check/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
-6. 测试与 CI：CI 直接安装 MoonBit 工具链，对内核源码跑 moon check（零警告）与 moon test（247 个测试），另有 95 个前端测试（含 26 个加载真实 WASM 内核的集成测试）全部通过，并自动部署演示站点
+6. 测试与 CI：CI 直接安装 MoonBit 工具链，对内核源码跑 moon check（零警告）与 moon test（251 个测试），另有 95 个前端测试（含 26 个加载真实 WASM 内核的集成测试）全部通过，并自动部署演示站点
 
 ## 项目类型说明
 
@@ -70,6 +70,6 @@ ProjDesk 是一个用 MoonBit 实现的模型工程工作台，覆盖数据模�
 
 https://github.com/Tino-hue/projdesk
 
-118 个以上有效提交。测试全绿：CI 中 247 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+118 个以上有效提交。测试全绿：CI 中 251 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 在线演示：https://tino-hue.github.io/projdesk/

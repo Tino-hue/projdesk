@@ -24,6 +24,9 @@ import { fileURLToPath } from 'url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MODULE = 'Tino-hue/projdesk-kernel';
 const PROJECTIONS = ['jsonSchema', 'openapi', 'sql', 'graphql', 'typescript', 'zod', 'prisma'];
+// The typed round-trip failure: what went wrong, and which source broke.
+const FAILURE_KIND = 'parse_error';
+const FAILURE_STAGE = 'printed';
 
 function fail(message) {
   console.error(`FAIL: ${message}`);
@@ -85,6 +88,11 @@ function writeConsumer(dir, version) {
       '  for problem in problems {',
       '    println(problem)',
       '  }',
+      '  // a failure the kernel reports as a kind and a stage, not a sentence',
+      '  let verdict = @projdesk.verify_roundtrip_dsl_entry(',
+      '    "model T {\\n  x: Text [format=\\"a b\\"]\\n}",',
+      '  )',
+      '  println(verdict)',
       '}',
       '',
     ].join('\n'),
@@ -135,12 +143,21 @@ try {
     console.error(output);
     fail(`the published kernel did not produce: ${missing.join(', ')}`);
   }
+  for (const expected of [FAILURE_KIND, FAILURE_STAGE]) {
+    if (!output.includes(expected)) {
+      console.error(output);
+      fail(`the published kernel did not report the failure as "${expected}"`);
+    }
+  }
   if (output.includes('Warning') || output.includes('deprecated')) {
     console.error(output);
     fail('the consumer emitted a warning');
   }
 
-  console.log(`OK: a fresh module consumed ${MODULE}@${version} and got all ${PROJECTIONS.length} projections`);
+  console.log(
+    `OK: a fresh module consumed ${MODULE}@${version}, got all ${PROJECTIONS.length} projections ` +
+      `and a typed failure (${FAILURE_KIND}/${FAILURE_STAGE})`,
+  );
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }

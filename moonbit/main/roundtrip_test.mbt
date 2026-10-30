@@ -12,7 +12,7 @@ test "roundtrip: simple model survives round-trip" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -30,7 +30,7 @@ test "roundtrip: all simple types survive" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -42,7 +42,7 @@ test "roundtrip: List and Dict survive" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -53,7 +53,7 @@ test "roundtrip: Ref survives" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -67,7 +67,7 @@ test "roundtrip: optional and nullable flags survive" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -93,7 +93,7 @@ test "roundtrip: constraints survive" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -108,7 +108,7 @@ test "roundtrip: exclusive bounds and step survive" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -136,7 +136,7 @@ test "roundtrip: pattern, format and options survive" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -154,7 +154,7 @@ test "roundtrip: a nested model keeps its inner fields" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -168,7 +168,7 @@ test "roundtrip: a known model travels with the primary one" {
   ])
   match @main.roundtrip_model(m, [address]) {
     Pass => ()
-    Fail(msg) => abort("roundtrip failed: " + msg)
+    Fail(e) => abort("roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -179,7 +179,9 @@ test "roundtrip: a raw type is reported instead of silently degraded" {
   ])
   match @main.roundtrip_model(m, []) {
     Pass => abort("expected a raw type to fail the round-trip")
-    Fail(msg) => assert_true(msg.contains("raw type"))
+    Fail(TypeNotExpressible(field)) => assert_eq(field, "blob")
+    Fail(e) =>
+      abort("expected a raw-type failure, got " + @main.roundtrip_error_kind(e))
   }
 }
 
@@ -188,7 +190,8 @@ test "roundtrip: DSL string round-trips" {
   let dsl = "model User {\n  id: Big @unique\n  name: Text [longest=64]\n}"
   match @main.roundtrip_dsl(dsl) {
     Pass => ()
-    Fail(msg) => abort("DSL roundtrip failed: " + msg)
+    Fail(e) =>
+      abort("DSL roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -197,7 +200,8 @@ test "roundtrip: a DSL source with every construct round-trips" {
   let dsl = "model User {\n  id: Big @unique\n  name: Text [shortest=1, longest=64]\n  email: Text [format=email]\n  age: Int @optional [least=0, under=150]\n  tags: List(Text) @optional @distinct\n  home: Ref(Address)\n  addr: Nest {\n    city: Text\n  }\n}\n\nmodel Address {\n  line: Text\n}"
   match @main.roundtrip_dsl(dsl) {
     Pass => ()
-    Fail(msg) => abort("DSL roundtrip failed: " + msg)
+    Fail(e) =>
+      abort("DSL roundtrip failed: " + @main.roundtrip_error_message(e))
   }
 }
 
@@ -208,7 +212,14 @@ test "roundtrip: a format value the DSL cannot print is reported" {
   let dsl = "model T {\n  x: Text [format=\"a b\"]\n}"
   match @main.roundtrip_dsl(dsl) {
     Pass => abort("expected an unprintable format to fail the round-trip")
-    Fail(_) => ()
+    // The given source parses; the printed one does not. Saying which of the
+    // two broke is the difference between a bad model and a bad printer.
+    Fail(ParseError(Printed, _)) => ()
+    Fail(e) =>
+      abort(
+        "expected a parse error in the printed source, got " +
+        @main.roundtrip_error_kind(e),
+      )
   }
 }
 
@@ -242,4 +253,57 @@ test "roundtrip: the comparison sees no difference for identical models" {
   let (a, _, _) = @main.dsl_parse(src)
   let (b, _, _) = @main.dsl_parse(src)
   assert_eq(@main.ast_difference(a[0], b[0]), "")
+}
+
+///|
+test "roundtrip: a source that does not parse is reported against that source" {
+  match @main.roundtrip_dsl("model T {") {
+    Pass => abort("expected an unterminated model to fail the round-trip")
+    // The stage says the *given* source broke, not the printed one.
+    Fail(ParseError(Original, _)) => ()
+    Fail(e) =>
+      abort(
+        "expected a parse error in the given source, got " +
+        @main.roundtrip_error_kind(e),
+      )
+  }
+}
+
+///|
+test "roundtrip: a source with no models is reported as such" {
+  match @main.roundtrip_dsl("") {
+    Pass => abort("expected an empty source to fail the round-trip")
+    Fail(NoModels) => ()
+    Fail(e) => abort("expected no models, got " + @main.roundtrip_error_kind(e))
+  }
+}
+
+///|
+test "roundtrip: the failure kind and stage are machine-readable" {
+  match @main.roundtrip_dsl("model T {") {
+    Pass => abort("expected an unterminated model to fail the round-trip")
+    Fail(e) => {
+      assert_eq(@main.roundtrip_error_kind(e), "parse_error")
+      assert_eq(@main.roundtrip_error_stage(e), "original")
+      assert_true(@main.roundtrip_error_message(e).contains("parse errors"))
+    }
+  }
+}
+
+///|
+test "roundtrip: the failure is an error type, so it can be raised and caught" {
+  let caught = try {
+    raise_no_models()
+    "not raised"
+  } catch {
+    e => @main.roundtrip_error_kind(e)
+  } noraise {
+    _ => "not raised"
+  }
+  assert_eq(caught, "no_models")
+}
+
+///|
+fn raise_no_models() -> Unit raise @main.RoundTripError {
+  raise @main.RoundTripError::NoModels
 }

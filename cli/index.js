@@ -297,6 +297,10 @@ model ${name} {
           issues: sem.issues || [],
           issue_count: sem.issue_count || 0,
           roundtrip: rt.ok ? 'ok' : rt.message,
+          // The kind and the stage say why it failed and where, without the
+          // caller having to read the message.
+          roundtrip_reason: rt.ok ? null : (rt.reason || null),
+          roundtrip_stage: rt.ok ? null : (rt.stage || null),
         }, null, 2));
       } else {
         console.log('Semantic analysis:');
@@ -320,7 +324,12 @@ model ${name} {
     // JSON model: round-trip through the kernel
     const rt = JSON.parse(kernel.verify_roundtrip(raw));
     if (args.json) {
-      console.log(JSON.stringify({ ok: rt.ok, message: rt.message }, null, 2));
+      console.log(JSON.stringify({
+        ok: rt.ok,
+        message: rt.message,
+        reason: rt.ok ? null : (rt.reason || null),
+        stage: rt.ok ? null : (rt.stage || null),
+      }, null, 2));
     } else {
       console.log('Round-trip verification:');
       if (rt.ok) {

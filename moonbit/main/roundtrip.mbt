@@ -8,10 +8,57 @@
 // model as sound when it is not.
 
 ///|
+/// Which source a round-trip failure came from.
+///
+/// The distinction is the point: a source that does not parse was already
+/// broken, while a source the printer produced that does not parse back is a
+/// bug in the printer.
+pub(all) enum RoundTripStage {
+  /// The source as it was handed to the verifier.
+  Original
+  /// The source the AST printer produced, parsed back.
+  Printed
+} derive(Eq, Debug)
+
+///|
+pub extend RoundTripStage with Eq::{equal, not_equal}
+
+///|
+pub extend RoundTripStage with Debug::{to_repr}
+
+///|
+/// Why a round-trip failed.
+///
+/// The reasons are variants rather than one free-form string, so a caller can
+/// tell "the source did not parse" from "a constraint was lost" without
+/// matching on English. It is an error type, so it can also be raised and
+/// caught.
+pub(all) suberror RoundTripError {
+  /// The source did not lex; the string is the lexer's own message.
+  LexError(RoundTripStage, String)
+  /// The source did not parse; the string is the parser's own message.
+  ParseError(RoundTripStage, String)
+  /// The number of models changed: how many were expected, how many came back.
+  ModelCountChanged(Int32, Int32)
+  /// A model did not survive: its name and what differed.
+  ModelMismatch(String, String)
+  /// A field has a type the DSL cannot express: the field's name.
+  TypeNotExpressible(String)
+  /// The source contained no models.
+  NoModels
+} derive(Eq, Debug)
+
+///|
+pub extend RoundTripError with Eq::{equal, not_equal}
+
+///|
+pub extend RoundTripError with Debug::{to_repr}
+
+///|
 /// Round-trip test result
 pub(all) enum RoundTrip {
   Pass
-  Fail(String)
+  Fail(RoundTripError)
 } derive(Eq, Debug)
 
 ///|
@@ -19,6 +66,54 @@ pub extend RoundTrip with Eq::{equal, not_equal}
 
 ///|
 pub extend RoundTrip with Debug::{to_repr}
+
+///|
+/// A human-readable description of why a round-trip failed
+pub fn roundtrip_error_message(e : RoundTripError) -> String {
+  match e {
+    LexError(Original, m) => "lex errors in input DSL: " + m
+    LexError(Printed, m) => "lex errors in printed DSL: " + m
+    ParseError(Original, m) => "parse errors in input DSL: " + m
+    ParseError(Printed, m) => "parse errors in printed DSL: " + m
+    ModelCountChanged(expected, got) =>
+      "model count changed: " + expected.to_string() + " -> " + got.to_string()
+    ModelMismatch(name, difference) => "model " + name + ": " + difference
+    TypeNotExpressible(field) =>
+      "field " + field + " has a raw type, which the DSL cannot express"
+    NoModels => "no models in input DSL"
+  }
+}
+
+///|
+/// The name of the failure kind, for output a program reads rather than shows
+pub fn roundtrip_error_kind(e : RoundTripError) -> String {
+  match e {
+    LexError(_, _) => "lex_error"
+    ParseError(_, _) => "parse_error"
+    ModelCountChanged(_, _) => "model_count_changed"
+    ModelMismatch(_, _) => "model_mismatch"
+    TypeNotExpressible(_) => "type_not_expressible"
+    NoModels => "no_models"
+  }
+}
+
+///|
+/// The stage a failure came from, or "" when the failure has no stage
+pub fn roundtrip_error_stage(e : RoundTripError) -> String {
+  match e {
+    LexError(stage, _) => stage_name(stage)
+    ParseError(stage, _) => stage_name(stage)
+    _ => ""
+  }
+}
+
+///|
+fn stage_name(stage : RoundTripStage) -> String {
+  match stage {
+    Original => "original"
+    Printed => "printed"
+  }
+}
 
 ///|
 /// Whether a type carries a raw JSON payload, which the DSL cannot express
@@ -41,16 +136,6 @@ fn find_raw_field(m : @moonmodel.Model) -> String {
     }
   }
   ""
-}
-
-///|
-/// Why a model cannot be expressed in the DSL, or "" when it can
-fn raw_type_error(m : @moonmodel.Model) -> String {
-  let field = find_raw_field(m)
-  if field == "" {
-    return ""
-  }
-  "field " + field + " has a raw type, which the DSL cannot express"
 }
 
 ///|
@@ -291,23 +376,18 @@ fn ast_roundtrip(models : Array[AstModel]) -> RoundTrip {
   let printed = print_models(models)
   let (reparsed, lex_errors, parse_errors) = dsl_parse(printed)
   if lex_errors.length() > 0 {
-    return Fail("lex errors in printed DSL: " + lex_errors[0].to_text())
+    return Fail(LexError(Printed, lex_errors[0].to_text()))
   }
   if parse_errors.length() > 0 {
-    return Fail("parse errors in printed DSL: " + parse_errors[0].to_text())
+    return Fail(ParseError(Printed, parse_errors[0].to_text()))
   }
   if reparsed.length() != models.length() {
-    return Fail(
-      "model count changed: " +
-      models.length().to_string() +
-      " -> " +
-      reparsed.length().to_string(),
-    )
+    return Fail(ModelCountChanged(models.length(), reparsed.length()))
   }
   for i = 0; i < models.length(); i = i + 1 {
     let d = ast_difference(models[i], reparsed[i])
     if d != "" {
-      return Fail("model " + models[i].name + ": " + d)
+      return Fail(ModelMismatch(models[i].name, d))
     }
   }
   Pass
@@ -321,15 +401,15 @@ pub fn roundtrip_model(
   m : @moonmodel.Model,
   known : Array[@moonmodel.Model],
 ) -> RoundTrip {
-  let error = raw_type_error(m)
-  if error != "" {
-    return Fail(error)
+  let field = find_raw_field(m)
+  if field != "" {
+    return Fail(TypeNotExpressible(field))
   }
   let asts = [model_to_ast(m)]
   for k in known {
-    let known_error = raw_type_error(k)
-    if known_error != "" {
-      return Fail(known_error)
+    let known_field = find_raw_field(k)
+    if known_field != "" {
+      return Fail(TypeNotExpressible(known_field))
     }
     asts.push(model_to_ast(k))
   }
@@ -341,13 +421,13 @@ pub fn roundtrip_model(
 pub fn roundtrip_dsl(dsl : String) -> RoundTrip {
   let (models, lex_errors, parse_errors) = dsl_parse(dsl)
   if lex_errors.length() > 0 {
-    return Fail("lex errors in input DSL: " + lex_errors[0].to_text())
+    return Fail(LexError(Original, lex_errors[0].to_text()))
   }
   if parse_errors.length() > 0 {
-    return Fail("parse errors in input DSL: " + parse_errors[0].to_text())
+    return Fail(ParseError(Original, parse_errors[0].to_text()))
   }
   if models.length() == 0 {
-    return Fail("no models in input DSL")
+    return Fail(NoModels)
   }
   ast_roundtrip(models)
 }

@@ -28,6 +28,14 @@ The MoonBit kernel (`moonbit/`) is published separately as
   Mooncakes, compiles a throwaway consumer module against it, runs it and fails
   unless all seven projections come out. The CI runs it, so "a third party can
   consume this" is a check rather than a claim.
+- A failed round-trip is now typed instead of prose. `RoundTripError` is a
+  MoonBit error type with one variant per way a round-trip can fail — a lex
+  error, a parse error, a changed model count, a mismatching model, a type the
+  DSL cannot express, no models at all — and each one says whether the source
+  that was handed in or the source the printer produced is the one that broke.
+  The ABI adds `reason` and `stage` beside the existing `ok` and `message`.
+- `examples/Unprintable.dsl` is a model the printer cannot reproduce, so the
+  typed failure can be seen from the command line.
 
 ### Changed
 
@@ -36,6 +44,9 @@ The MoonBit kernel (`moonbit/`) is published separately as
   package is published. The compatibility patch that adjusted the dependency
   at build time is gone: the dependency is used exactly as published.
 - The kernel is published to Mooncakes as `Tino-hue/projdesk-kernel`.
+- `RoundTrip::Fail` carries a `RoundTripError` instead of a `String`, so the
+  kernel's public API changed and the published package moves to **0.2.0**.
+  0.1.0 stays as it was published.
 
 ### Fixed
 

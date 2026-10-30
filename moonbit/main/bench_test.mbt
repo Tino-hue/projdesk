@@ -139,7 +139,7 @@ test "bench: round-trip on 50-field model within budget" {
   let elapsed = @bench.monotonic_clock_end(start)
   match result {
     Pass => ()
-    Fail(msg) => abort("round-trip failed: " + msg)
+    Fail(e) => abort("round-trip failed: " + @main.roundtrip_error_message(e))
   }
   assert_true(
     elapsed < 10000.0,
