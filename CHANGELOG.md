@@ -50,6 +50,11 @@ The MoonBit kernel (`moonbit/`) is published separately as
 
 ### Fixed
 
+- The registry consumption check read "the registry could not be reached" as
+  "this version is not published yet", so an outage turned the check into a
+  silent skip. It now tells the three outcomes apart — published, missing
+  (the registry answered), and unreachable (the registry did not answer) —
+  and fails loudly on the last one instead of skipping.
 - The README's consumer example printed the result tuple, which the compiler
   reports as a deprecated `Show`; it now prints the projections and the
   problems separately, and the CI check fails on any warning.

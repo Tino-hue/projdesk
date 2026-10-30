@@ -51,14 +51,45 @@ function versionInMoonMod() {
   return match[1];
 }
 
-function publishedVersion(version) {
-  const result = moon(['view', `${MODULE}@${version}`, '--json'], ROOT);
-  if (result.status !== 0) return false;
-  try {
-    return JSON.parse(result.stdout).status === 'success';
-  } catch {
-    return false;
+// `moon view <module>@<version> --json` has three possible outcomes and they
+// must not be confused:
+//   published    — the registry says this version exists
+//   missing      — the registry answered, and this version is not there
+//   unreachable  — the registry could not be reached (DNS, network, outage)
+// The third one is not "missing". Treating it as missing turns a registry
+// outage into a silent skip, and a skip proves nothing.
+function classifyView(result) {
+  const out = (result.stdout || '').trim();
+  if (result.status === 0 && out) {
+    try {
+      const parsed = JSON.parse(out);
+      if (parsed.status === 'success' && parsed.result) return 'published';
+      const message = (parsed.messages || []).map((m) => m.message || '').join(' ');
+      if (/404|not found/i.test(message)) return 'missing';
+      return 'unreachable';
+    } catch {
+      // fall through to the text check
+    }
   }
+  if (/404|not found/i.test(out + (result.stderr || ''))) return 'missing';
+  return 'unreachable';
+}
+
+function sleep(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function publishedVersion(version) {
+  let state = 'unreachable';
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    state = classifyView(moon(['view', `${MODULE}@${version}`, '--json'], ROOT));
+    if (state !== 'unreachable') return state;
+    if (attempt < 3) {
+      console.log(`  the registry did not answer (attempt ${attempt}), retrying...`);
+      sleep(5000);
+    }
+  }
+  return state;
 }
 
 // The consumer module. It is written by hand rather than by `moon new` so
@@ -104,13 +135,62 @@ const requirePublished = argv.includes('--require-published');
 const positional = argv.filter((a) => !a.startsWith('--'));
 const version = positional[0] ?? versionInMoonMod();
 
+if (argv.includes('--selftest')) {
+  // The three outcomes are decided here, so they are checked here too.
+  const samples = [
+    ['published', { status: 0, stdout: JSON.stringify({ status: 'success', result: { version: '0.2.0' } }), stderr: '' }],
+    [
+      'missing',
+      {
+        status: 1,
+        stdout: JSON.stringify({
+          status: 'failure',
+          result: null,
+          messages: [
+            {
+              level: 'error',
+              message:
+                'registry module request failed at https://mooncakes.io/api/v0/manifest/X@9.9.9: ' +
+                'HTTP status client error (404 Not Found) for url (...)',
+            },
+          ],
+        }),
+        stderr: '',
+      },
+    ],
+    [
+      'unreachable',
+      { status: 1, stdout: '', stderr: 'error sending request ... dns error ... 不知道这样的主机。' },
+    ],
+    ['unreachable', { status: 0, stdout: '', stderr: '' }],
+    ['missing', { status: 1, stdout: '', stderr: 'HTTP status client error (404 Not Found)' }],
+  ];
+  let bad = 0;
+  for (const [expected, sample] of samples) {
+    const got = classifyView(sample);
+    const ok = got === expected;
+    if (!ok) bad += 1;
+    console.log(`  ${ok ? 'OK  ' : 'BAD '} expected ${expected.padEnd(11)} got ${got}`);
+  }
+  console.log(bad === 0 ? 'selftest passed.' : `selftest failed: ${bad} case(s).`);
+  process.exit(bad === 0 ? 0 : 1);
+}
+
 console.log(`ProjDesk — registry consumption check for ${MODULE}@${version}`);
 
-if (!publishedVersion(version)) {
+const state = publishedVersion(version);
+if (state === 'missing') {
   const message = `${MODULE}@${version} is not published yet`;
   if (requirePublished) fail(message);
   console.log(`SKIP: ${message} — publish it, then run this again`);
   process.exit(0);
+}
+if (state === 'unreachable') {
+  fail(
+    `could not reach the Mooncakes registry, so it is unknown whether ` +
+      `${MODULE}@${version} is published. This is a network problem, not a ` +
+      `missing version — do not treat it as a skip.`,
+  );
 }
 
 const dir = mkdtempSync(join(tmpdir(), 'projdesk-consumer-'));
