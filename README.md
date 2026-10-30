@@ -132,14 +132,14 @@ cd .. && node cli/index.js verify models/CrossField.dsl
 
 | # | Engine | Source | Lines | What it does |
 |---|--------|--------|-------|--------------|
-| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` `dsl_resolve.mbt` | 2114 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks + cross-field bound resolution |
-| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 571 | Conflict / redundancy / containment analysis, cross-field bound resolution, fixed-point interval propagation, reference-cycle detection |
-| 3 | **Migration Engine** | `migration.mbt` | 349 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
-| 4 | **Equivalence Checker** | `equiv.mbt` | 224 | Type subtyping + constraint containment + classification |
+| 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` `dsl_resolve.mbt` | 2127 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks + cross-field bound resolution |
+| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 579 | Conflict / redundancy / containment analysis, cross-field bound resolution, fixed-point interval propagation, reference-cycle detection |
+| 3 | **Migration Engine** | `migration.mbt` | 364 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
+| 4 | **Equivalence Checker** | `equiv.mbt` | 229 | Type subtyping + constraint containment + classification |
 | 5 | **Round-trip Verifier** | `roundtrip.mbt` | 433 | Source-level generate-parse-compare, comparing every field, type and constraint; failures are typed, not prose |
-| | **Five engines** | | **3691** | |
+| | **Five engines** | | **3732** | |
 
-On top of the engines the kernel carries **1922 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **5613 lines** of MoonBit implementation, plus **3225 lines** of test code.
+On top of the engines the kernel carries **2008 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **5740 lines** of MoonBit implementation, plus **3225 lines** of test code.
 
 **251 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **95 frontend tests** (26 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
 

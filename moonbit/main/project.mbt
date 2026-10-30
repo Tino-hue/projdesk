@@ -83,29 +83,54 @@ pub fn project_all(
 }
 
 ///|
+/// One dropped constraint as it goes on the wire
+priv struct WireDrop {
+  field : String
+  constraint : String
+  why : String
+} derive(ToJson)
+
+///|
+/// The drop report of every target as it goes on the wire
+priv struct WireDrops {
+  jsonSchema : Array[WireDrop]
+  openapi : Array[WireDrop]
+  sql : Array[WireDrop]
+  graphql : Array[WireDrop]
+  typescript : Array[WireDrop]
+  zod : Array[WireDrop]
+  prisma : Array[WireDrop]
+} derive(ToJson)
+
+///|
 /// Build the per-target drop report as JSON
 pub fn drops_map_to_json(result : ProjectionResult) -> Json {
-  let drops : Map[String, Json] = Map([])
-  drops["jsonSchema"] = drops_to_json(result.drops_json)
-  drops["openapi"] = drops_to_json(result.drops_open)
-  drops["sql"] = drops_to_json(result.drops_sql)
-  drops["graphql"] = drops_to_json(result.drops_gql)
-  drops["typescript"] = drops_to_json(result.drops_ts)
-  drops["zod"] = drops_to_json(result.drops_zod)
-  drops["prisma"] = drops_to_json(result.drops_prisma)
-  Json::object(drops)
+  ToJson::to_json(WireDrops::{
+    jsonSchema: drop_reasons_to_json(result.drops_json),
+    openapi: drop_reasons_to_json(result.drops_open),
+    sql: drop_reasons_to_json(result.drops_sql),
+    graphql: drop_reasons_to_json(result.drops_gql),
+    typescript: drop_reasons_to_json(result.drops_ts),
+    zod: drop_reasons_to_json(result.drops_zod),
+    prisma: drop_reasons_to_json(result.drops_prisma),
+  })
 }
 
 ///|
 /// Convert DropReason list to JSON-compatible format
 pub fn drops_to_json(drops : Array[DropReason]) -> Json {
-  let arr : Array[Json] = []
+  ToJson::to_json(drop_reasons_to_json(drops))
+}
+
+///|
+fn drop_reasons_to_json(drops : Array[DropReason]) -> Array[WireDrop] {
+  let arr : Array[WireDrop] = []
   for d in drops {
-    let m : Map[String, Json] = Map([])
-    m["field"] = Json::string(d.field())
-    m["constraint"] = Json::string(d.constraint())
-    m["why"] = Json::string(d.to_text())
-    arr.push(Json::object(m))
+    arr.push(WireDrop::{
+      field: d.field(),
+      constraint: d.constraint(),
+      why: d.to_text(),
+    })
   }
-  Json::array(arr)
+  arr
 }

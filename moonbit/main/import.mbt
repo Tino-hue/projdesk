@@ -222,5 +222,5 @@ pub fn import_from_json_schema(j : Json) -> @moonmodel.Model {
 pub fn import_from_json_schema_str(text : String) -> String {
   let j = @jsonparse.parse_json(text)
   let model = import_from_json_schema(j)
-  model_to_json(model).stringify()
+  ToJson::to_json(model_to_json(model)).stringify()
 }

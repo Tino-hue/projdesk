@@ -68,7 +68,7 @@ model User {
 
 ## Closing (20s)
 
-> "Five independent MoonBit engines, 3691 lines of engine code, 251 tests including property-based verification over 100 random models. That's ProjDesk."
+> "Five independent MoonBit engines, 3732 lines of engine code, 251 tests including property-based verification over 100 random models. That's ProjDesk."
 
 **Run `moon test` live to show 251 green tests.**
 
