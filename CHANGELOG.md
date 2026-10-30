@@ -85,6 +85,25 @@ The MoonBit kernel (`moonbit/`) is published separately as
   kernel's public API changed and the published package moves to **0.2.0**.
   0.1.0 stays as it was published.
 
+### Added
+
+- `scripts/audit-claims.js` checks every number the documents state against
+  the code: the line counts per engine, the implementation and test totals, the
+  export count, and the test counts. The test counts are read from the source
+  rather than remembered — `it.each(table)` expands into one case per row, so
+  counting the calls alone would undercount. `make audit` runs it, and it is
+  part of `make all`, so a number that drifts is caught instead of shipped.
+
+### Removed
+
+- `PROPOSAL.md`, which had become byte-identical to `SUBMISSION-TEXT.md` down
+  to the title, and the script that kept the two in step. One declaration is
+  easier to keep right than two.
+- `cli/example.dsl` and `cli/example-model.json`: nothing referred to them,
+  and `models/` already holds four documented models.
+- `examples/ContradictorySchema.json`: the artifact `moon_zod` produced
+  covers the same kinds of contradiction, with a third party as the author.
+
 ### Fixed
 
 - `projdesk check` on a JSON Schema reported nothing at all: it handed the
