@@ -30,6 +30,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
       - name: Install the MoonBit toolchain
         run: |
           set -uo pipefail
@@ -100,3 +104,10 @@ jobs:
             exit $status
           fi
           tail -2 /tmp/test.log | while IFS= read -r line; do echo "::notice::$line"; done
+
+      - name: Verify that a third-party module can consume the published kernel
+        # This resolves the package from Mooncakes rather than from this
+        # checkout, so it checks the artifact a consumer actually gets. The
+        # script skips itself when the version in moonbit/moon.mod has not been
+        # published yet.
+        run: node scripts/verify-registry-consumption.js

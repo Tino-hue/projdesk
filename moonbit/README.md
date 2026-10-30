@@ -42,15 +42,26 @@ pkgtype(kind: "executable")
 ```moonbit
 // cmd/demo/main.mbt
 fn main {
-  let projections = @projdesk.dsl_project(
+  let (projections, problems) = @projdesk.dsl_project(
     "model User {\n  id: Big @unique\n  name: Text [shortest=1, longest=64]\n}",
   )
   println(projections)
+  for problem in problems {
+    println(problem)
+  }
 }
+```
+
+```bash
+moon run cmd/demo
 ```
 
 The alias is not optional in practice: the kernel's package is called `main`,
 and so is the package you would import it from.
+
+`node scripts/verify-registry-consumption.js` (from the repository root) checks
+that the published package — not this checkout — is consumable by a module that
+has nothing to do with the project.
 
 ## Build
 

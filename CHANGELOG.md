@@ -24,6 +24,10 @@ The MoonBit kernel (`moonbit/`) is published separately as
 - The CI runs the kernel's own test suite (`moon check` and `moon test`).
 - The README carries a "Verify the claims" section: every claim points at the
   code and the command that shows it.
+- `scripts/verify-registry-consumption.js` resolves the published kernel from
+  Mooncakes, compiles a throwaway consumer module against it, runs it and fails
+  unless all seven projections come out. The CI runs it, so "a third party can
+  consume this" is a check rather than a claim.
 
 ### Changed
 
@@ -35,6 +39,9 @@ The MoonBit kernel (`moonbit/`) is published separately as
 
 ### Fixed
 
+- The README's consumer example printed the result tuple, which the compiler
+  reports as a deprecated `Show`; it now prints the projections and the
+  problems separately, and the CI check fails on any warning.
 - The round-trip verifier reported models as sound while losing their
   constraints, and reported a field reached from two places as a cycle.
 - `projdesk migrate` answered "0 changes" for DSL sources instead of failing,

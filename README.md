@@ -30,6 +30,7 @@ Everything this project claims can be checked from this repository alone. Each r
 | The solver finds conflicts the projection carries in silence | `moonbit/main/independence_test.mbt` | `node cli/index.js contrast examples/Conflicting.dsl` |
 | The round-trip verifier compares every field, type and constraint | `moonbit/main/roundtrip.mbt` | `node cli/index.js verify models/Order.dsl` |
 | The kernel's own tests run on every push | `.github/workflows/kernel.yml` | the "Kernel tests" check on any commit |
+| The published kernel is consumable by a module that has nothing to do with this repository | `scripts/verify-registry-consumption.js` | `node scripts/verify-registry-consumption.js` |
 | The projection formats come from moonmodel, not from here | `NOTICE.md` | — |
 
 ```bash
@@ -276,15 +277,30 @@ pkgtype(kind: "executable")
 ```moonbit
 // cmd/demo/main.mbt
 fn main {
-  // the kernel compiles a DSL source and projects it
-  let projections = @projdesk.dsl_project(
+  // the kernel compiles a DSL source and projects it to all seven targets
+  let (projections, problems) = @projdesk.dsl_project(
     "model User {\n  id: Big @unique\n  name: Text [shortest=1, longest=64]\n}",
   )
   println(projections)
+  for problem in problems {
+    println(problem)
+  }
 }
 ```
 
+```bash
+moon run cmd/demo
+```
+
 The alias is not optional in practice: the kernel's package is called `main`, and so is the package you would import it from.
+
+To check that the *published* package — not this checkout — is consumable:
+
+```bash
+node scripts/verify-registry-consumption.js
+```
+
+It resolves the package from the registry, compiles a throwaway consumer module against it, runs it, and fails unless all seven projections come out.
 
 ---
 
