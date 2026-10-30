@@ -178,7 +178,7 @@ async function main() {
       } else if (findings.length === 0) {
         console.log('No contradictions found. The schema admits at least one value.');
       } else {
-        console.log(`${findings.length} issue(s) found:`);
+        console.log(`${findings.length} contradiction(s) found:`);
         for (const f of findings) {
           console.log(`  [${f.kind}] ${f.path || '(root)'} — ${f.message}`);
         }
