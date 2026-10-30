@@ -11,19 +11,31 @@
 
 ## 项目简介
 
-ProjDesk 用 MoonBit 实现的是**模型定义的正确性工具链**：判定一个数据模型自身是否自洽、两个版本是否兼容、投影成契约时到底丢了什么、以及定义在整条工具链里是否无损。
+**生态里的 Schema 库回答的都是"这个值合不合法"，没有一个回答"这份 schema 还有没有解"。**
 
-核心是六个从零手写的 MoonBit 算法引擎，共 4586 行独立实现（整个内核 6601 行实现代码 + 3378 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证、JSON Schema 可满足性判定六个领域。
+moon_zod、moonschema、colmugx/json-schema、moonbitstack/moonschema 都是实例级的：定义模型、校验数据、导出 JSON Schema。moon_schema_plan、moon-data-contract、moonpack、moon_proto 把"两个模型之间发生了什么"做透了。这两类工具都不回答第三类问题——**模型定义自身是否自洽**。
 
-**与生态现有方案是互补，不是重复。** MoonBit 生态里已经有成熟的 Schema 库（Betterlol/moon_zod、QuietlyChan/moonschema、moonbitstack/moonschema、colmugx/json-schema 等）负责"把模型变成产物"，也有 schema diff / 迁移 / 兼容性工具（kath61105/moon_schema_plan、lyjttio/moon-data-contract、001-Elsa/moonpack、123123213weqw/moon_proto）负责"两个模型之间发生了什么"。ProjDesk 负责的是这些工具**不回答**的那一类问题：
+这不是边角情况。moon_zod 0.9.2 的 min/max 是一个一个套用的、从不互相比对，于是
 
-- **模型本身自不自洽**（在任何数据存在之前判定）；
-- **投影有没有悄悄丢信息**（逐字段逐约束量化）；
-- **定义在工具链中是否无损**（往返逐字段比对）。
+    @moon_zod.number().min(10).max(5)        // 静默接受，不报错
 
-一句话概括边界：**生态负责"把模型变成产物"，ProjDesk 负责"证明这个模型是对的、这个产物是没丢的"。**
+被导出成 `minimum: 10, maximum: 5`——一份没有任何值能满足的 schema。运行时它会拒绝每一个值，报错还像是"值的问题"（`Value must be <= 5, got: Number(10)`）。仓库里的 `examples/moon_zod_dead_schema.json` 就是 moon_zod 自己导出的那份产物，逐字节未改。
 
-投影由开源库 moonmodel 承担（相当于编译器后端），JSON Schema / OpenAPI / SQL / GraphQL 四种格式我们不重复造。
+ProjDesk 的第六个引擎就是回答这个问题的——读 JSON Schema，判定它**还有没有解**，并指出矛盾在哪儿：
+
+    $ projdesk check-schema examples/moon_zod_dead_schema.json
+    3 contradiction(s) found:
+      [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
+      [empty_length] /properties/code — no string satisfies these length bounds
+      [empty_items] /properties/tags — no array satisfies these item-count bounds
+
+**这个能力不需要我们自己的记法**：它读的是生态的格式，吃的是生态的产物。已经有 schema 的团队不必改用我们的 DSL，就能把它们检查一遍。
+
+在此之上是另外五个从零手写的 MoonBit 算法引擎（共 4586 行，整个内核 6601 行实现 + 3378 行测试），把同一类"模型本身对不对"的问题在模型一侧做完：约束系统有没有解、两个版本是否兼容、投影丢了什么、定义在工具链中是否无损。
+
+**自定义 DSL 只是这套能力的一个输入前端，另一个前端是生态自己的 JSON Schema——它不是产品本身。**
+
+一句话概括边界：**生态负责"把模型变成产物"，ProjDesk 负责"证明这个模型是对的、这个产物是没丢的"。** 投影由开源库 moonmodel 承担，我们不重复造。
 
 ## 核心功能范围
 
