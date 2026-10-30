@@ -327,6 +327,21 @@ pub fn generate_sql_migration(
 }
 
 ///|
+/// One change as it goes on the wire
+priv struct WireMigrationChange {
+  text : String
+  breaking : Bool
+} derive(ToJson)
+
+///|
+/// The migration report as it goes on the wire
+priv struct WireMigrationResult {
+  changes : Array[WireMigrationChange]
+  breaking_count : Double
+  sql : String
+} derive(ToJson)
+
+///|
 /// Full migration pipeline: two models -> migration JSON
 pub fn generate_migration(
   old_model : @moonmodel.Model,
@@ -334,16 +349,16 @@ pub fn generate_migration(
 ) -> String {
   let report = diff_models(old_model, new_model)
   let sql = generate_sql_migration(old_model, new_model)
-  let changes_arr : Array[Json] = []
+  let changes_arr : Array[WireMigrationChange] = []
   for c in report.changes {
-    let m : Map[String, Json] = Map([])
-    m["text"] = Json::string(c.to_text())
-    m["breaking"] = Json::boolean(c.is_breaking())
-    changes_arr.push(Json::object(m))
+    changes_arr.push(WireMigrationChange::{
+      text: c.to_text(),
+      breaking: c.is_breaking(),
+    })
   }
-  let out : Map[String, Json] = Map([])
-  out["changes"] = Json::array(changes_arr)
-  out["breaking_count"] = Json::number(report.breaking_count.to_double())
-  out["sql"] = Json::string(sql)
-  Json::object(out).stringify()
+  ToJson::to_json(WireMigrationResult::{
+    changes: changes_arr,
+    breaking_count: report.breaking_count.to_double(),
+    sql,
+  }).stringify()
 }

@@ -419,7 +419,9 @@ fn dsl_parse_type(p : Parser) -> (AstType, Array[ParseError]) {
         Some(e) => errors.push(e)
         None => ()
       }
-      let nested = { name: "", fields: inner_fields, doc: "", }
+      // The annotation is needed because the wire shape of a model carries the
+      // same three fields as the AST model, so the literal would be ambiguous.
+      let nested : AstModel = { name: "", fields: inner_fields, doc: "", }
       (Nested(nested), errors)
     }
     Ident(s) => (Named(s), errors)

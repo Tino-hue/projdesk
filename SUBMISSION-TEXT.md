@@ -13,7 +13,7 @@ GitHub 仓库链接：https://github.com/Tino-hue/projdesk
 
 ProjDesk 用 MoonBit 实现的是**模型定义的正确性工具链**：判定一个数据模型自身是否自洽、两个版本是否兼容、投影成契约时到底丢了什么、以及定义在整条工具链里是否无损。
 
-核心是五个从零手写的 MoonBit 算法引擎，共 3691 行独立实现（整个内核 5613 行实现代码 + 3225 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。
+核心是五个从零手写的 MoonBit 算法引擎，共 3732 行独立实现（整个内核 5740 行实现代码 + 3225 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。
 
 **与生态现有方案是互补，不是重复。** MoonBit 生态里已经有成熟的 Schema 库（Betterlol/moon_zod、QuietlyChan/moonschema、moonbitstack/moonschema、colmugx/json-schema 等）负责"把模型变成产物"，也有 schema diff / 迁移 / 兼容性工具（kath61105/moon_schema_plan、lyjttio/moon-data-contract、001-Elsa/moonpack、123123213weqw/moon_proto）负责"两个模型之间发生了什么"。ProjDesk 负责的是这些工具**不回答**的那一类问题：
 

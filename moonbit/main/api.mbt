@@ -83,44 +83,50 @@ pub fn dsl_to_model_entry(dsl : String) -> String {
     return error_json(msg)
   }
   let (primary, known) = dsl_to_models(models)
-  let out : Map[String, Json] = Map([])
-  out["name"] = Json::string(primary.name)
-  out["doc"] = Json::string(primary.doc)
-  let fields : Array[Json] = []
+  let fields : Array[WireField] = []
   for f in primary.fields {
     fields.push(field_to_json(f))
   }
-  out["fields"] = Json::array(fields)
-  let knowns : Array[Json] = []
+  let knowns : Array[WireModel] = []
   for k in known {
     knowns.push(model_to_json(k))
   }
-  out["known"] = Json::array(knowns)
-  Json::object(out).stringify()
+  ToJson::to_json(WireCompiledModel::{
+    name: primary.name,
+    doc: primary.doc,
+    fields,
+    known: knowns,
+  }).stringify()
 }
 
 ///|
 /// Render a round-trip result as the ABI's JSON shape
 fn roundtrip_result_to_json(result : RoundTrip, ok_message : String) -> String {
-  let out : Map[String, Json] = Map([])
-  match result {
-    Pass => {
-      out["ok"] = Json::boolean(true)
-      out["message"] = Json::string(ok_message)
-    }
+  let json = match result {
+    Pass =>
+      ToJson::to_json(WireRoundTripResult::{
+        ok: true,
+        message: ok_message,
+        reason: None,
+        stage: None,
+      })
     Fail(e) => {
-      out["ok"] = Json::boolean(false)
-      out["message"] = Json::string(roundtrip_error_message(e))
-      // The kind and the stage are there so a program can branch on them
-      // instead of reading the message.
-      out["reason"] = Json::string(roundtrip_error_kind(e))
       let stage = roundtrip_error_stage(e)
-      if stage != "" {
-        out["stage"] = Json::string(stage)
-      }
+      ToJson::to_json(WireRoundTripResult::{
+        ok: false,
+        message: roundtrip_error_message(e),
+        // The kind and the stage are there so a program can branch on them
+        // instead of reading the message.
+        reason: Some(roundtrip_error_kind(e)),
+        stage: if stage == "" {
+          None
+        } else {
+          Some(stage)
+        },
+      })
     }
   }
-  Json::object(out).stringify()
+  json.stringify()
 }
 
 ///|
@@ -128,17 +134,15 @@ fn roundtrip_result_to_json(result : RoundTrip, ok_message : String) -> String {
 pub fn check_semantics_entry(dsl : String) -> String {
   let (models, lex_errors, parse_errors) = dsl_parse(dsl)
   if lex_errors.length() > 0 || parse_errors.length() > 0 {
-    let out : Map[String, Json] = Map([])
-    out["issue_count"] = Json::number(0.0)
-    out["issues"] = Json::array([])
-    out["parse_error"] = Json::string(
-      if lex_errors.length() > 0 {
+    return ToJson::to_json(WireSemanticsError::{
+      issue_count: 0.0,
+      issues: [],
+      parse_error: if lex_errors.length() > 0 {
         lex_errors[0].to_text()
       } else {
         parse_errors[0].to_text()
       },
-    )
-    return Json::object(out).stringify()
+    }).stringify()
   }
   check_semantics_json(models)
 }
@@ -148,55 +152,137 @@ pub fn check_semantics_entry(dsl : String) -> String {
 pub fn get_presets_json() -> String {
   let arr : Array[Json] = []
   for m in presets() {
-    arr.push(model_to_json(m))
+    arr.push(ToJson::to_json(model_to_json(m)))
   }
   Json::array(arr).stringify()
 }
 
 ///|
+/// One model as it goes on the wire
+priv struct WireModel {
+  name : String
+  doc : String
+  fields : Array[WireField]
+} derive(ToJson)
+
+///|
+/// One field as it goes on the wire
+priv struct WireField {
+  name : String
+  kind : Json
+  required : Bool
+  nullable : Bool
+  doc : String
+  default : Json
+  check : Json
+} derive(ToJson)
+
+///|
+/// One constraint set as it goes on the wire. A constraint the model does not
+/// carry is left out, which is what the projection does with it too.
+priv struct WireCheck {
+  least : Double?
+  most : Double?
+  over : Double?
+  under : Double?
+  step : Double?
+  shortest : Double?
+  longest : Double?
+  pattern : String?
+  format : String?
+  options : Array[Json]?
+  distinct : Bool?
+  unique : Bool?
+} derive(ToJson)
+
+///|
+/// The seven projections as they go on the wire
+priv struct WireProjectionResult {
+  ok : Bool
+  jsonSchema : String
+  openapi : String
+  sql : String
+  graphql : String
+  typescript : String
+  zod : String
+  prisma : String
+  drops : Json
+} derive(ToJson)
+
+///|
+/// The round-trip verdict as it goes on the wire
+priv struct WireRoundTripResult {
+  ok : Bool
+  message : String
+  reason : String?
+  stage : String?
+} derive(ToJson)
+
+///|
+/// The semantic report as it goes on the wire
+priv struct WireSemanticsError {
+  issue_count : Double
+  issues : Array[WireSemanticIssue]
+  parse_error : String
+} derive(ToJson)
+
+///|
+/// A model with its known models, as they go on the wire
+priv struct WireCompiledModel {
+  name : String
+  doc : String
+  fields : Array[WireField]
+  known : Array[WireModel]
+} derive(ToJson)
+
+///|
+/// An error as it goes on the wire
+priv struct WireError {
+  ok : Bool
+  error : String
+} derive(ToJson)
+
+///|
 /// Serialize ProjectionResult to JSON string
 fn result_to_json(result : ProjectionResult) -> String {
-  let out : Map[String, Json] = Map([])
-  out["ok"] = Json::boolean(true)
-  out["jsonSchema"] = Json::string(result.json_schema)
-  out["openapi"] = Json::string(result.openapi)
-  out["sql"] = Json::string(result.sql)
-  out["graphql"] = Json::string(result.graphql)
-  out["typescript"] = Json::string(result.typescript)
-  out["zod"] = Json::string(result.zod)
-  out["prisma"] = Json::string(result.prisma)
-  out["drops"] = drops_map_to_json(result)
-  Json::object(out).stringify()
+  ToJson::to_json(WireProjectionResult::{
+    ok: true,
+    jsonSchema: result.json_schema,
+    openapi: result.openapi,
+    sql: result.sql,
+    graphql: result.graphql,
+    typescript: result.typescript,
+    zod: result.zod,
+    prisma: result.prisma,
+    drops: drops_map_to_json(result),
+  }).stringify()
 }
 
 ///|
 /// Serialize Model to JSON (for preset export)
-fn model_to_json(m : @moonmodel.Model) -> Json {
-  let out : Map[String, Json] = Map([])
-  out["name"] = Json::string(m.name)
-  out["doc"] = Json::string(m.doc)
-  let fields : Array[Json] = []
+fn model_to_json(m : @moonmodel.Model) -> WireModel {
+  let fields : Array[WireField] = []
   for f in m.fields {
     fields.push(field_to_json(f))
   }
-  out["fields"] = Json::array(fields)
-  Json::object(out)
+  WireModel::{ name: m.name, doc: m.doc, fields, }
 }
 
 ///|
-fn field_to_json(f : @moonmodel.Field) -> Json {
-  let out : Map[String, Json] = Map([])
-  out["name"] = Json::string(f.name)
-  out["kind"] = type_to_json(f.kind)
-  out["required"] = Json::boolean(f.required)
-  out["nullable"] = Json::boolean(f.nullable)
-  out["doc"] = Json::string(f.doc)
-  match f.default {
-    Some(v) => out["default"] = v
-    None => out["default"] = Json::null()
+fn field_to_json(f : @moonmodel.Field) -> WireField {
+  let default = match f.default {
+    Some(v) => v
+    None => Json::null()
   }
-  out["check"] = check_to_json(f.check)
-  Json::object(out)
+  WireField::{
+    name: f.name,
+    kind: type_to_json(f.kind),
+    required: f.required,
+    nullable: f.nullable,
+    doc: f.doc,
+    default,
+    check: ToJson::to_json(check_to_json(f.check)),
+  }
 }
 
 ///|
@@ -227,7 +313,7 @@ fn type_to_json(t : @moonmodel.Type) -> Json {
     }
     Nest(model) => {
       let m : Map[String, Json] = Map([])
-      m["nest"] = model_to_json(model)
+      m["nest"] = ToJson::to_json(model_to_json(model))
       Json::object(m)
     }
     Raw(j) => {
@@ -239,60 +325,35 @@ fn type_to_json(t : @moonmodel.Type) -> Json {
 }
 
 ///|
-fn check_to_json(c : @moonmodel.Check) -> Json {
-  let out : Map[String, Json] = Map([])
-  match c.least {
-    Some(v) => out["least"] = Json::number(v)
-    None => ()
+fn check_to_json(c : @moonmodel.Check) -> WireCheck {
+  let shortest = match c.shortest {
+    Some(v) => Some(v.to_double())
+    None => None
   }
-  match c.most {
-    Some(v) => out["most"] = Json::number(v)
-    None => ()
+  let longest = match c.longest {
+    Some(v) => Some(v.to_double())
+    None => None
   }
-  match c.over {
-    Some(v) => out["over"] = Json::number(v)
-    None => ()
+  let options = if c.options.length() > 0 { Some(c.options) } else { None }
+  let distinct = if c.distinct { Some(true) } else { None }
+  let unique = if c.unique { Some(true) } else { None }
+  WireCheck::{
+    least: c.least,
+    most: c.most,
+    over: c.over,
+    under: c.under,
+    step: c.step,
+    shortest,
+    longest,
+    pattern: c.pattern,
+    format: c.format,
+    options,
+    distinct,
+    unique,
   }
-  match c.under {
-    Some(v) => out["under"] = Json::number(v)
-    None => ()
-  }
-  match c.step {
-    Some(v) => out["step"] = Json::number(v)
-    None => ()
-  }
-  match c.shortest {
-    Some(v) => out["shortest"] = Json::number(v.to_double())
-    None => ()
-  }
-  match c.longest {
-    Some(v) => out["longest"] = Json::number(v.to_double())
-    None => ()
-  }
-  match c.pattern {
-    Some(v) => out["pattern"] = Json::string(v)
-    None => ()
-  }
-  match c.format {
-    Some(v) => out["format"] = Json::string(v)
-    None => ()
-  }
-  if c.options.length() > 0 {
-    out["options"] = Json::array(c.options)
-  }
-  if c.distinct {
-    out["distinct"] = Json::boolean(true)
-  }
-  if c.unique {
-    out["unique"] = Json::boolean(true)
-  }
-  Json::object(out)
 }
 
 ///|
 fn error_json(msg : String) -> String {
-  let out : Map[String, Json] = Map([])
-  out["ok"] = Json::boolean(false)
-  out["error"] = Json::string(msg)
-  Json::object(out).stringify()
+  ToJson::to_json(WireError::{ ok: false, error: msg, }).stringify()
 }

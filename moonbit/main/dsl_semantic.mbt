@@ -156,18 +156,29 @@ pub fn check_semantics(models : Array[AstModel]) -> Array[SemanticIssue] {
 }
 
 ///|
+/// One semantic issue as it goes on the wire
+priv struct WireSemanticIssue {
+  text : String
+  severity : String
+} derive(ToJson)
+
+///|
+/// The semantic report as it goes on the wire
+priv struct WireSemanticResult {
+  issues : Array[WireSemanticIssue]
+  issue_count : Double
+} derive(ToJson)
+
+///|
 /// Semantic check as JSON
 pub fn check_semantics_json(models : Array[AstModel]) -> String {
   let issues = check_semantics(models)
-  let arr : Array[Json] = []
+  let arr : Array[WireSemanticIssue] = []
   for i in issues {
-    let m : Map[String, Json] = Map([])
-    m["text"] = Json::string(i.to_text())
-    m["severity"] = Json::string(i.severity())
-    arr.push(Json::object(m))
+    arr.push(WireSemanticIssue::{ text: i.to_text(), severity: i.severity(), })
   }
-  let out : Map[String, Json] = Map([])
-  out["issues"] = Json::array(arr)
-  out["issue_count"] = Json::number(issues.length().to_double())
-  Json::object(out).stringify()
+  ToJson::to_json(WireSemanticResult::{
+    issues: arr,
+    issue_count: issues.length().to_double(),
+  }).stringify()
 }

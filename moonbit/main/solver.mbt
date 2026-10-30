@@ -228,23 +228,31 @@ pub fn has_conflicts(diags : Array[Diagnosis]) -> Bool {
 }
 
 ///|
+/// One diagnosis as it goes on the wire
+priv struct WireDiagnosis {
+  text : String
+  severity : String
+} derive(ToJson)
+
+///|
+/// The solver's report as it goes on the wire
+priv struct WireSolveResult {
+  diagnoses : Array[WireDiagnosis]
+  conflict_count : Double
+  redundant_count : Double
+} derive(ToJson)
+
+///|
 /// Full analysis pipeline: model -> diagnosis JSON
 pub fn solve_constraints(model : @moonmodel.Model) -> String {
   let diags = analyze_model(model)
-  let arr : Array[Json] = []
+  let arr : Array[WireDiagnosis] = []
   for d in diags {
-    let m : Map[String, Json] = Map([])
-    m["text"] = Json::string(d.to_text())
-    m["severity"] = Json::string(d.severity())
-    arr.push(Json::object(m))
+    arr.push(WireDiagnosis::{ text: d.to_text(), severity: d.severity(), })
   }
-  let out : Map[String, Json] = Map([])
-  out["diagnoses"] = Json::array(arr)
-  out["conflict_count"] = Json::number(
-    conflicts_only(diags).length().to_double(),
-  )
-  out["redundant_count"] = Json::number(
-    redundancies_only(diags).length().to_double(),
-  )
-  Json::object(out).stringify()
+  ToJson::to_json(WireSolveResult::{
+    diagnoses: arr,
+    conflict_count: conflicts_only(diags).length().to_double(),
+    redundant_count: redundancies_only(diags).length().to_double(),
+  }).stringify()
 }

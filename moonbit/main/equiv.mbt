@@ -210,15 +210,20 @@ pub fn model_equiv(a : @moonmodel.Model, b : @moonmodel.Model) -> EquivResult {
 }
 
 ///|
+/// The equivalence verdict as it goes on the wire
+priv struct WireEquivResult {
+  result : String
+  equivalent : Bool
+} derive(ToJson)
+
+///|
 pub fn check_equivalence(a : @moonmodel.Model, b : @moonmodel.Model) -> String {
   let result = model_equiv(a, b)
-  let out : Map[String, Json] = Map([])
-  out["result"] = Json::string(result.to_text())
-  out["equivalent"] = Json::boolean(
-    match result {
+  ToJson::to_json(WireEquivResult::{
+    result: result.to_text(),
+    equivalent: match result {
       Equivalent => true
       _ => false
     },
-  )
-  Json::object(out).stringify()
+  }).stringify()
 }

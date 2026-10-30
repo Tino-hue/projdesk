@@ -43,6 +43,14 @@ The MoonBit kernel (`moonbit/`) is published separately as
 
 ### Changed
 
+- The kernel serializes to JSON with the language's `derive(ToJson)` wherever
+  the shape is a fixed record. The wire shapes are now declared once, as
+  types, instead of being assembled key by key: 138 hand-written
+  `Json::` builder calls became 59, and every `Json::number` call is gone —
+  the number and boolean formatting is the language's now. What is left is
+  what a derive cannot express: leaf values (`Json::string` for a default or
+  an option set) and the one genuinely heterogeneous shape, a type that is
+  either a name, a list, a dict, a reference, a nested model or raw JSON.
 - The README, the proposal and the submission text now state the boundary
   against the existing MoonBit ecosystem explicitly — which library covers
   which part, where the overlap really is (three emitters), and which three
