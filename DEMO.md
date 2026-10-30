@@ -4,7 +4,36 @@
 
 ---
 
-## Climax 1: DSL Compiler (50s)
+## Climax 1: Schema Solvability (40s) — the one that lands
+
+1. In a terminal:
+```
+$ node cli/index.js check examples/moon_zod_dead_schema.json
+3 contradiction(s) found:
+  [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
+  [empty_length] /properties/code — no string satisfies these length bounds
+  [empty_items] /properties/tags — no array satisfies these item-count bounds
+```
+
+2. Show the file it just read — `examples/moon_zod_dead_schema.json` is **byte for byte** what `moon_zod` 0.9.2 exported from this:
+
+```moonbit
+@moon_zod.object({
+  "level": @moon_zod.number().min(10).max(5),
+  "code": @moon_zod.string().min(5).max(2),
+  "tags": @moon_zod.array(@moon_zod.string()).min(5).max(2),
+})
+```
+
+> "That file is the ecosystem's own output. `moon_zod` built it without a word of complaint, and it then rejects every value handed to it — with an error that blames the value. No validator in the ecosystem tells you the schema itself is dead. This does, and it needs no notation of ours: it reads JSON Schema."
+
+**This is also the answer to "why another modeling language?"** — you do not need ours. Point this at the schemas you already have.
+
+---
+
+---
+
+## Climax 2: DSL Compiler (40s)
 
 1. Open the **Engine Playground** panel (top of the output area)
 2. Tab: **DSL Compiler**
@@ -27,7 +56,7 @@ model User {
 
 ---
 
-## Climax 2: Constraint Solver (35s)
+## Climax 3: Constraint Solver (30s)
 
 1. Tab: **Constraint Solver** -> **Analyze Constraints**
 2. Then edit a field: set `least = 10` and `most = 5`
@@ -39,7 +68,7 @@ model User {
 
 ---
 
-## Climax 3: Migration Engine (40s)
+## Climax 4: Migration Engine (30s)
 
 1. Tab: **Migration** -> **Generate Migration**
 2. Shows structured diff + generated `ALTER TABLE` SQL + breaking-change flags
@@ -48,7 +77,7 @@ model User {
 
 ---
 
-## Climax 4: Equivalence Checker (30s)
+## Climax 5: Equivalence Checker (25s)
 
 1. Tab: **Equivalence** -> **Check Equivalence**
 2. Result: `SubtypeOf` / `SupertypeOf` / `Incompatible`
@@ -57,39 +86,12 @@ model User {
 
 ---
 
-## Climax 5: Round-trip Verification (25s)
+## Climax 6: Round-trip Verification (25s)
 
 1. Tab: **Round-trip** -> **Verify Round-trip**
 2. Result: verified / failed with reason
 
 > "Formal generate-parse-compare. The model round-trips without losing a field or a constraint."
-
----
-
-## Climax 6: Schema Solvability (30s) — the one that lands
-
-1. In a terminal:
-```
-$ node cli/index.js check-schema examples/moon_zod_dead_schema.json
-3 contradiction(s) found:
-  [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
-  [empty_length] /properties/code — no string satisfies these length bounds
-  [empty_items] /properties/tags — no array satisfies these item-count bounds
-```
-
-2. Show the file it just read — `examples/moon_zod_dead_schema.json` is **byte for byte** what `moon_zod` 0.9.2 exported from this:
-
-```moonbit
-@moon_zod.object({
-  "level": @moon_zod.number().min(10).max(5),
-  "code": @moon_zod.string().min(5).max(2),
-  "tags": @moon_zod.array(@moon_zod.string()).min(5).max(2),
-})
-```
-
-> "That file is the ecosystem's own output. `moon_zod` built it without a word of complaint, and it then rejects every value handed to it — with an error that blames the value. No validator in the ecosystem tells you the schema itself is dead. This does, and it needs no notation of ours: it reads JSON Schema."
-
-**This is also the answer to "why another modeling language?"** — you do not need ours. Point this at the schemas you already have.
 
 ---
 

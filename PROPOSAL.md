@@ -23,13 +23,13 @@ moon_zod、moonschema、colmugx/json-schema、moonbitstack/moonschema 都是实�
 
 ProjDesk 的第六个引擎就是回答这个问题的——读 JSON Schema，判定它**还有没有解**，并指出矛盾在哪儿：
 
-    $ projdesk check-schema examples/moon_zod_dead_schema.json
+    $ projdesk check examples/moon_zod_dead_schema.json
     3 contradiction(s) found:
       [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
       [empty_length] /properties/code — no string satisfies these length bounds
       [empty_items] /properties/tags — no array satisfies these item-count bounds
 
-**这个能力不需要我们自己的记法**：它读的是生态的格式，吃的是生态的产物。已经有 schema 的团队不必改用我们的 DSL，就能把它们检查一遍。
+**这个能力不需要我们自己的记法**：它读的是生态的格式，吃的是生态的产物。已经有 schema 的团队不必改用我们的 DSL —— `projdesk check openapi.json` 直接就能查。
 
 在此之上是另外五个从零手写的 MoonBit 算法引擎（共 4586 行，整个内核 6601 行实现 + 3378 行测试），把同一类"模型本身对不对"的问题在模型一侧做完：约束系统有没有解、两个版本是否兼容、投影丢了什么、定义在工具链中是否无损。
 

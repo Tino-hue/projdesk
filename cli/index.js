@@ -100,6 +100,31 @@ function isDslFile(path) {
 }
 
 /**
+ * A JSON Schema, as opposed to the model JSON this kernel produces.
+ *
+ * The model JSON has "fields"; a schema has "properties", "$schema",
+ * "$defs" or "allOf". Feeding a schema to the model solver would silently
+ * report nothing, because a schema has no fields for it to read.
+ */
+function isJsonSchema(text) {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return false;
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+  if (Array.isArray(parsed.fields)) return false;
+  return (
+    'properties' in parsed ||
+    '$schema' in parsed ||
+    'allOf' in parsed ||
+    '$defs' in parsed ||
+    'definitions' in parsed
+  );
+}
+
+/**
  * The model JSON the migration engine compares. A DSL source is compiled
  * first; the kernel is the only thing that can parse it.
  */
@@ -136,6 +161,38 @@ async function main() {
     const inputPath = resolve(args._[0]);
     if (!existsSync(inputPath)) { console.error(`File not found: ${inputPath}`); process.exit(1); }
     const raw = readText(inputPath);
+
+    // A JSON Schema is not a model. Checking it means asking whether it has
+    // a solution at all, which is a different question from analysing a
+    // model's constraints — and it is the question a schema library cannot
+    // answer.
+    if (!isDslFile(inputPath) && isJsonSchema(raw)) {
+      const schema = JSON.parse(kernel.check_schema_satisfiability(raw));
+      const findings = schema.findings || [];
+      if (args.json) {
+        console.log(JSON.stringify({
+          ok: schema.ok,
+          findings,
+          finding_count: schema.finding_count,
+        }, null, 2));
+      } else if (findings.length === 0) {
+        console.log('No contradictions found. The schema admits at least one value.');
+      } else {
+        console.log(`${findings.length} issue(s) found:`);
+        for (const f of findings) {
+          console.log(`  [${f.kind}] ${f.path || '(root)'} — ${f.message}`);
+        }
+        console.log('');
+        console.log(
+          'Checked with the schema solvability engine. The model-level engines ' +
+            '(cross-field constraints, version comparison, migration) need the ' +
+            'DSL, because JSON Schema cannot express a constraint that refers ' +
+            'to another field\'s constraint.',
+        );
+      }
+      if (findings.length > 0) process.exit(1);
+      return;
+    }
 
     let result;
     if (isDslFile(inputPath)) {

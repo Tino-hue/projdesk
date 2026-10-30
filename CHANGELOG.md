@@ -87,6 +87,13 @@ The MoonBit kernel (`moonbit/`) is published separately as
 
 ### Fixed
 
+- `projdesk check` on a JSON Schema reported nothing at all: it handed the
+  schema to the model solver, which found no fields in it, and said the schema
+  was fine. It now recognises a schema and checks it with the solvability
+  engine, and says why the model-level engines need the DSL.
+- `examples/moon_zod_dead_schema.json` carried a byte-order mark, so it was not
+  what `moon_zod` produced and a strict JSON parser rejected it. It is now
+  moon_zod's raw output, byte for byte.
 - The registry consumption check read "the registry could not be reached" as
   "this version is not published yet", so an outage turned the check into a
   silent skip. It now tells the three outcomes apart — published, missing

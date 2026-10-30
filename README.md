@@ -7,7 +7,7 @@ A pure-browser toolchain for the **correctness of a data model**: is the model i
 **Core value**: Six independent MoonBit algorithm engines, and one of them answers a question the MoonBit ecosystem does not answer at all. Its schema libraries ([moon_zod](https://mooncakes.io/packages/Betterlol/moon_zod), [moonschema](https://mooncakes.io/packages/QuietlyChan/moonschema), [moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel)) judge a *value*; its diff tools ([moon_schema_plan](https://mooncakes.io/packages/kath61105/moon_schema_plan), [moon-data-contract](https://mooncakes.io/packages/lyjttio/moon-data-contract)) compare two models. **None of them judges whether the schema itself has a solution.** `moon_zod` will happily build `number().min(10).max(5)` and export it as `minimum: 10, maximum: 5` — a schema no value can satisfy. `projdesk check-schema` reads that file and names the contradiction.
 
 ```bash
-node cli/index.js check-schema examples/moon_zod_dead_schema.json
+node cli/index.js check examples/moon_zod_dead_schema.json
 ```
 
 The ecosystem generates; this verifies.
@@ -148,6 +148,8 @@ A projection can be piped straight into it, which is how the CI proves the check
 node cli/index.js gen models/Order.dsl --format json --stdout | node cli/index.js check-schema -
 ```
 
+`projdesk check` recognises a JSON Schema on its own, so a team that already has schemas needs no new notation to have them checked: `projdesk check openapi.json`.
+
 **This is also why the custom notation is not necessary.** The checker needs no notation of ours at all — it reads the format the ecosystem already speaks, and it works on the artifact `moon_zod` exports. The DSL remains useful for what JSON Schema cannot express, but nothing in this project *requires* it any more: a team that already has schemas can have them checked instead.
 
 ---
@@ -159,7 +161,7 @@ Everything this project claims can be checked from this repository alone. Each r
 | Claim | Implemented in | Check it with |
 |---|---|---|
 | Six independent MoonBit engines | `moonbit/main/` — the table below lists every file and its size | `wc -l moonbit/main/roundtrip.mbt` |
-| A JSON Schema that no value can satisfy is reported, not blamed on the value | `moonbit/main/schema_check.mbt` | `node cli/index.js check-schema examples/moon_zod_dead_schema.json` |
+| A JSON Schema that no value can satisfy is reported, not blamed on the value | `moonbit/main/schema_check.mbt` | `node cli/index.js check examples/moon_zod_dead_schema.json` |
 | 268 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
 | The kernel compiles with zero warnings | the same source | `cd moonbit && moon check` |
 | 95 frontend tests, 26 of them against the real compiled kernel | `web/src/lib/*.test.ts` | `cd web && npm run test` |
