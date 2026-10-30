@@ -173,9 +173,15 @@ async function main() {
   // `minimum: 10` and `maximum: 5` passes every conformance suite and
   // rejects every value that reaches it.
   if (args.cmd === 'check-schema') {
-    const inputPath = resolve(args._[0]);
-    if (!existsSync(inputPath)) { console.error(`File not found: ${inputPath}`); process.exit(1); }
-    const raw = readText(inputPath);
+    const inputPath = resolve(args._[0] ?? '');
+    let raw;
+    if (args._[0] === '-') {
+      // read the schema from stdin, so a projection can be piped in
+      raw = readFileSync(0, 'utf-8');
+    } else {
+      if (!existsSync(inputPath)) { console.error(`File not found: ${inputPath}`); process.exit(1); }
+      raw = readText(inputPath);
+    }
     const result = JSON.parse(kernel.check_schema_satisfiability(raw));
     const findings = result.findings || [];
     if (args.json) {
