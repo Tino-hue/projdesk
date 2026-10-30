@@ -104,6 +104,12 @@ pub fn resolve_model_bounds(AstModel) -> Array[String]
 
 pub fn roundtrip_dsl(String) -> RoundTrip
 
+pub fn roundtrip_error_kind(RoundTripError) -> String
+
+pub fn roundtrip_error_message(RoundTripError) -> String
+
+pub fn roundtrip_error_stage(RoundTripError) -> String
+
 pub fn roundtrip_model(@moonmodel.Model, Array[@moonmodel.Model]) -> RoundTrip
 
 pub fn solve_constraints(@moonmodel.Model) -> String
@@ -121,6 +127,17 @@ pub fn verify_roundtrip_entry(String) -> String
 pub fn with_bound_value(AstCheck, Double) -> AstCheck
 
 // Errors
+pub(all) suberror RoundTripError {
+  LexError(RoundTripStage, String)
+  ParseError(RoundTripStage, String)
+  ModelCountChanged(Int32, Int32)
+  ModelMismatch(String, String)
+  TypeNotExpressible(String)
+  NoModels
+} derive(Eq, @debug.Debug)
+pub fn RoundTripError::equal(Self, Self) -> Bool
+pub fn RoundTripError::not_equal(Self, Self) -> Bool
+pub fn RoundTripError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) struct AstBound {
@@ -422,11 +439,19 @@ pub fn Rng::pick(Self, Array[Int32]) -> Int32
 
 pub(all) enum RoundTrip {
   Pass
-  Fail(String)
+  Fail(RoundTripError)
 } derive(Eq, @debug.Debug)
 pub fn RoundTrip::equal(Self, Self) -> Bool
 pub fn RoundTrip::not_equal(Self, Self) -> Bool
 pub fn RoundTrip::to_repr(Self) -> @debug.Repr
+
+pub(all) enum RoundTripStage {
+  Original
+  Printed
+} derive(Eq, @debug.Debug)
+pub fn RoundTripStage::equal(Self, Self) -> Bool
+pub fn RoundTripStage::not_equal(Self, Self) -> Bool
+pub fn RoundTripStage::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SemanticIssue {
   UndefinedRef(String, String)

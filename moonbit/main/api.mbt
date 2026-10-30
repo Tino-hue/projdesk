@@ -108,9 +108,16 @@ fn roundtrip_result_to_json(result : RoundTrip, ok_message : String) -> String {
       out["ok"] = Json::boolean(true)
       out["message"] = Json::string(ok_message)
     }
-    Fail(msg) => {
+    Fail(e) => {
       out["ok"] = Json::boolean(false)
-      out["message"] = Json::string(msg)
+      out["message"] = Json::string(roundtrip_error_message(e))
+      // The kind and the stage are there so a program can branch on them
+      // instead of reading the message.
+      out["reason"] = Json::string(roundtrip_error_kind(e))
+      let stage = roundtrip_error_stage(e)
+      if stage != "" {
+        out["stage"] = Json::string(stage)
+      }
     }
   }
   Json::object(out).stringify()

@@ -52,7 +52,13 @@ test "property: round-trip holds for 100 random models" {
   for m in models {
     match @main.roundtrip_model(m, []) {
       Pass => ()
-      Fail(msg) => abort("round-trip failed for " + m.name + ": " + msg)
+      Fail(e) =>
+        abort(
+          "round-trip failed for " +
+          m.name +
+          ": " +
+          @main.roundtrip_error_message(e),
+        )
     }
   }
 }
@@ -64,7 +70,7 @@ test "property: round-trip holds for random constraint models" {
     let m = @main.random_constraint_model(rng)
     match @main.roundtrip_model(m, []) {
       Pass => ()
-      Fail(msg) => abort("round-trip failed: " + msg)
+      Fail(e) => abort("round-trip failed: " + @main.roundtrip_error_message(e))
     }
   }
 }
