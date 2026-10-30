@@ -1,6 +1,6 @@
 # ProjDesk 3-Minute Demo Script
 
-> **Framing (say this first):** "MoonBit already has schema libraries — moon_zod, moonschema — and schema-diff tools like moon_schema_plan. Those turn a model into artifacts and compare two models. ProjDesk answers the question they leave open: **is the model itself consistent, and did the projection lose anything?** The ecosystem generates; this verifies. Five independent MoonBit algorithm engines — constraint reasoning, round-trip verification, migration, equivalence, and a compiler front end."
+> **Framing (say this first):** "MoonBit already has schema libraries — moon_zod, moonschema — and schema-diff tools like moon_schema_plan. Those turn a model into artifacts and compare two models. ProjDesk answers the question they leave open: **is the model itself consistent, and did the projection lose anything?** The ecosystem generates; this verifies. Six independent MoonBit algorithm engines — constraint reasoning, round-trip verification, migration, equivalence, a compiler front end, and a schema solvability checker that reads the ecosystem's own JSON Schema."
 
 ---
 
@@ -66,11 +66,36 @@ model User {
 
 ---
 
+## Climax 6: Schema Solvability (30s) — the one that lands
+
+1. In a terminal:
+```
+$ node cli/index.js check-schema examples/moon_zod_dead_schema.json
+2 contradiction(s) found:
+  [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
+  [empty_length] /properties/code — no string satisfies these length bounds
+```
+
+2. Show the file it just read — `examples/moon_zod_dead_schema.json` is **byte for byte** what `moon_zod` 0.9.2 exported from this:
+
+```moonbit
+@moon_zod.object({
+  "level": @moon_zod.number().min(10).max(5),
+  "code": @moon_zod.string().min(5).max(2),
+})
+```
+
+> "That file is the ecosystem's own output. `moon_zod` built it without a word of complaint, and it then rejects every value handed to it — with an error that blames the value. No validator in the ecosystem tells you the schema itself is dead. This does, and it needs no notation of ours: it reads JSON Schema."
+
+**This is also the answer to "why another modeling language?"** — you do not need ours. Point this at the schemas you already have.
+
+---
+
 ## Closing (20s)
 
-> "Five independent MoonBit engines, 3732 lines of engine code, 251 tests including property-based verification over 100 random models. That's ProjDesk."
+> "Six independent MoonBit engines, 4499 lines of engine code, 266 tests including property-based verification over 100 random models. That's ProjDesk."
 
-**Run `moon test` live to show 251 green tests.**
+**Run `moon test` live to show 266 green tests.**
 
 ---
 
@@ -79,11 +104,14 @@ model User {
 **"Isn't this just another schema library, like moon_zod or moonschema?"**
 > "Those judge a *value* — you hand them an instance and they say yes or no. This judges the *model*, statically, with no data at all: is the constraint system satisfiable, do two versions stay compatible, did the projection drop anything, does the definition survive the round-trip. And I'm not claiming they are wrong — `moonmodel`, the library I build on, writes `minimum: 0` next to `maximum: -1` and emits a schema no value can satisfy. The demo shows that side by side. The ecosystem generates; this verifies."
 
+**"But `moon_zod` could produce a dead schema too — isn't that a gap in *your* tool?"**
+> "It's a gap in every one of them, and it is a gap in the format as much as in the libraries. `moon_zod` applies `min` and `max` one at a time and never compares them, so `number().min(10).max(5)` is accepted silently and exported as `minimum: 10, maximum: 5`. My checker reads exactly that file — the one `moon_zod` exported — and says the schema can never be satisfied, and where. That is the difference: they make you find out at runtime, from the value; this tells you before any value exists."
+
 **"Isn't the projection just moonmodel?"**
-> "Four of the seven targets are — that is deliberate, I don't rebuild what exists. The TypeScript / Zod / Prisma emitters are mine, and that does overlap a generic code generator; I'm not going to pretend otherwise. They are mine because they have to understand model semantics, and they sit behind a trait so a model-aware emitter could replace them. The five engines are the product, and none of them is a projection."
+> "Four of the seven targets are — that is deliberate, I don't rebuild what exists. The TypeScript / Zod / Prisma emitters are mine, and that does overlap a generic code generator; I'm not going to pretend otherwise. They are mine because they have to understand model semantics, and they sit behind a trait so a model-aware emitter could replace them. The six engines are the product, and none of them is a projection."
 
 **"Then why write a custom modeling language?"**
-> "For exactly one reason: a field's constraint has to be able to reference another field's constraint — `b: Int [over=a.least]`. In JSON Schema or Zod a constraint is a constant hanging off one field, so there is nowhere to put 'a constraint that depends on another constraint'. Cross-field satisfiability needs a notation that can say it. Everything else I reuse: model data structures and four projection backends from `moonmodel`, runtime validation from libraries like `moon_zod`."
+> "For exactly one reason: a field's constraint has to be able to reference another field's constraint — `b: Int [over=a.least]`. In JSON Schema or Zod a constraint is a constant hanging off one field, so there is nowhere to put 'a constraint that depends on another constraint'. Cross-field satisfiability needs a notation that can say it. Everything else I reuse: model data structures and four projection backends from `moonmodel`, runtime validation from libraries like `moon_zod` — and the schema solvability checker takes plain JSON Schema, so you do not need my notation for that either."
 
 **"What did you build that Prisma/Drizzle don't?"**
 > "They generate code from a model. This one reasons about the model: whether its constraints are satisfiable, whether two versions are compatible, what SQL migration a change implies, and whether it survives a round-trip."
@@ -92,4 +120,4 @@ model User {
 > "The kernel compiles to wasm-gc and runs entirely in the browser — one binary, no server. The pattern matching and ADT support made the compiler frontend and type-equivalence engine direct rather than ceremony."
 
 **"How do you know it works?"**
-> "251 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 26 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."
+> "266 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 26 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."

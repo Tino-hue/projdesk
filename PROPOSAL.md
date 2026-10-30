@@ -13,7 +13,7 @@
 
 ProjDesk 用 MoonBit 实现的是**模型定义的正确性工具链**：判定一个数据模型自身是否自洽、两个版本是否兼容、投影成契约时到底丢了什么、以及定义在整条工具链里是否无损。
 
-核心是五个从零手写的 MoonBit 算法引擎，共 3732 行独立实现（整个内核 5740 行实现代码 + 3225 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证五个领域。
+核心是六个从零手写的 MoonBit 算法引擎，共 4499 行独立实现（整个内核 6514 行实现代码 + 3361 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证、JSON Schema 可满足性判定六个领域。
 
 **与生态现有方案是互补，不是重复。** MoonBit 生态里已经有成熟的 Schema 库（Betterlol/moon_zod、QuietlyChan/moonschema、moonbitstack/moonschema、colmugx/json-schema 等）负责"把模型变成产物"，也有 schema diff / 迁移 / 兼容性工具（kath61105/moon_schema_plan、lyjttio/moon-data-contract、001-Elsa/moonpack、123123213weqw/moon_proto）负责"两个模型之间发生了什么"。ProjDesk 负责的是这些工具**不回答**的那一类问题：
 
@@ -27,6 +27,7 @@ ProjDesk 用 MoonBit 实现的是**模型定义的正确性工具链**：判定�
 
 ## 核心功能范围
 
+- **Schema 可满足性判定（生态缺口）**：对 JSON Schema 做静态可满足性分析 —— 回答"这份 schema 还有解吗"，而不是"这个值合不合法"。区间代数作用在 `allOf` / `anyOf` / `oneOf` / `not` / `$ref` 上，枚举值与周边边界互相校验，检出悬空引用与非正的 `multipleOf`，逐条按 JSON Pointer 给出位置。**不需要我们自己的记法**，直接读生态产出的 JSON Schema。
 - **约束求解器（模型自洽性）**：区间冲突检测、蕴含与冗余分析、包含关系判定、固定点区间传播，输出类型化 Diagnosis 诊断（4 种：Conflict / Redundant / Warning / NoConstraints）；跨字段约束引用在建模层符号化解析（可前向或后向引用），检出未知引用与引用环路，并由区间传播引擎判定整个约束系统是否有解；
 - **Round-trip 验证（定义无损）**：DSL → AST → DSL → AST 逐字段逐类型逐约束比对（含嵌套模型与全部 12 种约束），任何字段、类型或约束丢失都会被检出；
 - **契约保真度（投影丢了什么）**：每个投影目标对承载不了的约束输出类型化丢弃报告（9 种 DropReason），逐条给出"丢了哪个字段的哪个约束、为什么"，而非静默丢弃；
@@ -35,7 +36,7 @@ ProjDesk 用 MoonBit 实现的是**模型定义的正确性工具链**：判定�
 - **建模 DSL（仅作为上述能力的输入记法）**：手写词法分析器（Token ADT + 字符级扫描）、递归下降语法分析（AST + 行列号错误恢复）、AST 代码生成、AST 反向打印；支持行注释与块注释、嵌套模型、约束表达式（算术运算、内置函数 min/max/abs/ceil/floor）、跨字段约束引用（b: Int [over=a.least]，编译期求值）；
 - **语义检查**：引用解析、自引用与环路检测；
 - **属性测试框架**：自实现 xorshift64* PRNG 与随机模型生成器，在 100+ 随机模型上验证 12 条不变式（round-trip 保持性、DSL 完备性、diff 对称性等）；
-- **工具链**：WASM ABI（11 导出）、CLI（gen/check/contrast/migrate/verify/init，contrast 并排展示投影与求解器的差异）、VS Code 插件、GitHub Action、Cloudflare Workers 后端。
+- **工具链**：WASM ABI（12 导出）、CLI（gen/check/check-schema/contrast/migrate/verify/init，contrast 并排展示投影与求解器的差异，check-schema 判定 schema 是否有解）、VS Code 插件、GitHub Action、Cloudflare Workers 后端。
 
 全部 MoonBit 代码编译为 wasm-gc，浏览器内零服务端依赖运行。
 
@@ -89,17 +90,19 @@ The projection carries these through without saying anything about them.
 | mizchi/codegen、moonbitstack/moonmodel | 通用 IR 与多目标 emitter（JSON Schema / Zod / …） | 部分重叠，见下 |
 | wflixu/Orion | Schema DSL + CRUD + 迁移 SQL 生成 | 我们的迁移引擎面向**模型语义**（约束、引用、枚举值）而非数据库表结构 |
 
-**主动交代重叠部分**：七种契约里 JSON Schema / OpenAPI / SQL / GraphQL 由 moonmodel 投影；TypeScript / Zod / Prisma 三个 emitter 是我们写的，**这部分与通用 codegen 库（如 mizchi/codegen）确实存在功能重叠，我们承认**。保留它们是因为它们必须理解模型语义（约束、引用、枚举值），而通用 IR 不表达这些；但三个 emitter 都实现同一个 Projector trait，生态一旦提供模型语义的 emitter 可直接替换掉。重叠面仅限这三个 emitter，五个引擎不在其中。
+**主动交代重叠部分**：七种契约里 JSON Schema / OpenAPI / SQL / GraphQL 由 moonmodel 投影；TypeScript / Zod / Prisma 三个 emitter 是我们写的，**这部分与通用 codegen 库（如 mizchi/codegen）确实存在功能重叠，我们承认**。保留它们是因为它们必须理解模型语义（约束、引用、枚举值），而通用 IR 不表达这些；但三个 emitter 都实现同一个 Projector trait，生态一旦提供模型语义的 emitter 可直接替换掉。重叠面仅限这三个 emitter，六个引擎不在其中。
 
 ## 项目方向与通用性
 
-面向所有需要管理数据模型的开发者。五个引擎对应通用算法领域，不绑定任何前端框架、后端语言或数据库。
+面向所有需要管理数据模型的开发者。六个引擎对应通用算法领域，不绑定任何前端框架、后端语言或数据库。
 
 能力不限于 Web：CLI 可在 CI 校验模型，VS Code 插件可在开发时即时检查，GitHub Action 可在 PR 中阻止破坏性变更合入。各入口共用同一份 WASM 内核，行为一致。
 
 ## 预期使用场景
 
 **提交前模型自检**：模型里同时存在 least=10 与 most=5 时，求解器在建模阶段即报空区间 —— 早于任何一次数据写入。
+
+**已有 schema 的体检**：把团队现有的 JSON Schema（哪怕是 moon_zod 导出的）交给 `projdesk check-schema`，直接得到"这份 schema 永远无解"以及矛盾的确切位置，而不是等到运行时才发现每个值都被拒。
 
 **契约生成前的缺口盘点**：投影到七种目标时，逐字段列出每个目标承载不了的约束及原因，评审时能直接看到"这份契约在 TypeScript 端会丢什么"。
 
@@ -114,15 +117,15 @@ The projection carries these through without saying anything about them.
 1. 五个 MoonBit 算法引擎 + 属性测试框架（12 条不变式、7 项性能基准）
 2. 七种契约投影 + 类型化丢弃诊断（9 种 DropReason）
 3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
-4. WASM ABI 11 导出
+4. WASM ABI 12 导出
 5. CLI（gen/check/contrast/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
-6. 测试与 CI：CI 直接安装 MoonBit 工具链，对内核源码跑 moon check（零警告）与 moon test（251 个测试），另有 95 个前端测试（含 26 个加载真实 WASM 内核的集成测试）全部通过，并自动部署演示站点
+6. 测试与 CI：CI 直接安装 MoonBit 工具链，对内核源码跑 moon check（零警告）与 moon test（266 个测试），另有 95 个前端测试（含 26 个加载真实 WASM 内核的集成测试）全部通过，并自动部署演示站点
 
 ## 项目类型说明
 
 原创项目，非移植、非参考已有开源项目。
 
-依赖开源库 moonbitstack/moonmodel（Apache-2.0，https://github.com/moonbitlang/moonmodel ），仅提供 Model/Field/Check 数据结构与投影格式转换，相当于编译器 AST 定义与后端代码生成。五个引擎、DSL 前端、求解算法、迁移生成、类型系统与验证框架均为自主实现。
+依赖开源库 moonbitstack/moonmodel（Apache-2.0，https://github.com/moonbitlang/moonmodel ），仅提供 Model/Field/Check 数据结构与投影格式转换，相当于编译器 AST 定义与后端代码生成。六个引擎、DSL 前端、求解算法、迁移生成、类型系统、验证框架与 Schema 可满足性判定均为自主实现。
 
 两者的差别不是说法，是可以验证的：**投影会把 minimum: 0 与 maximum: -1 一并写进 schema 而不作任何提示，求解器会报出空区间冲突**。`projdesk contrast examples/Conflicting.dsl` 把两侧并排打出，仓库还以随机模型对该差异做了属性测试（moonbit/main/independence_test.mbt）。
 
@@ -132,7 +135,7 @@ The projection carries these through without saying anything about them.
 
 https://github.com/Tino-hue/projdesk
 
-167 个提交（136 个非合并），128 个跟踪文件。测试全绿：CI 中 251 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+167 个提交（136 个非合并），128 个跟踪文件。测试全绿：CI 中 266 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 内核已发布到 Mooncakes：`moon add Tino-hue/projdesk-kernel`，仓库里 `node scripts/verify-registry-consumption.js` 会拉取已发布版本、在一个全新模块里编译并运行它，确认第三方真的能消费。
 

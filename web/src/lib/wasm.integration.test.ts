@@ -31,6 +31,7 @@ const EXPECTED_EXPORTS = [
   'verify_roundtrip',
   'verify_roundtrip_dsl',
   'check_semantics',
+  'check_schema_satisfiability',
 ];
 
 let kernel: Kernel;

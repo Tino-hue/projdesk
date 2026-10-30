@@ -29,6 +29,7 @@ ProjDesk CLI - one model description, seven projections
 Usage:
   projdesk gen <model.json|model.dsl> [options]
   projdesk check <model.json|model.dsl>
+  projdesk check-schema <schema.json>
   projdesk contrast <model.dsl>
   projdesk migrate <old.json> <new.json> [options]
   projdesk verify <model.json|model.dsl>
@@ -48,6 +49,7 @@ Examples:
   projdesk gen model.dsl --format json,sql --out ./schemas
   projdesk gen model.json --sql-dialect Sqlite --stdout
   projdesk check model.json
+  projdesk check-schema openapi.json
   projdesk contrast model.dsl
   projdesk migrate old.json new.json
   projdesk verify model.dsl
@@ -68,7 +70,7 @@ function parseArgs(argv) {
     else if (a === '--json') args.json = true;
     else if (a === '--as-json') args.scaffold = 'json';
     else if (a === '--dsl') args.scaffold = 'dsl';
-    else if (['gen', 'check', 'contrast', 'migrate', 'verify', 'init'].includes(a)) args.cmd = a;
+    else if (['gen', 'check', 'check-schema', 'contrast', 'migrate', 'verify', 'init'].includes(a)) args.cmd = a;
     else args._.push(a);
   }
   return args;
@@ -161,6 +163,36 @@ async function main() {
       }
     }
     if (result.conflict_count > 0) process.exit(1);
+    return;
+  }
+
+  // ---- check-schema: does anything satisfy this JSON Schema at all? ----
+  //
+  // The ecosystem's validators answer "does this value satisfy the schema?".
+  // This answers the other question: can anything satisfy it? A schema with
+  // `minimum: 10` and `maximum: 5` passes every conformance suite and
+  // rejects every value that reaches it.
+  if (args.cmd === 'check-schema') {
+    const inputPath = resolve(args._[0]);
+    if (!existsSync(inputPath)) { console.error(`File not found: ${inputPath}`); process.exit(1); }
+    const raw = readText(inputPath);
+    const result = JSON.parse(kernel.check_schema_satisfiability(raw));
+    const findings = result.findings || [];
+    if (args.json) {
+      console.log(JSON.stringify({
+        ok: result.ok,
+        findings,
+        finding_count: result.finding_count,
+      }, null, 2));
+    } else if (findings.length === 0) {
+      console.log('No contradictions found. The schema admits at least one value.');
+    } else {
+      console.log(`${findings.length} contradiction(s) found:`);
+      for (const f of findings) {
+        console.log(`  [${f.kind}] ${f.path || '(root)'} — ${f.message}`);
+      }
+    }
+    if (findings.length > 0) process.exit(1);
     return;
   }
 
