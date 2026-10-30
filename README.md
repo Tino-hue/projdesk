@@ -254,6 +254,38 @@ cd ../web && npm install && npm run build && npm run test
 npm run dev  # http://127.0.0.1:3000
 ```
 
+## Using the kernel as a dependency
+
+The kernel is published to Mooncakes as `Tino-hue/projdesk-kernel`:
+
+```bash
+moon add Tino-hue/projdesk-kernel
+```
+
+It exports the WASM ABI, so it is a foreign library — a consuming package imports it under an alias:
+
+```
+# cmd/demo/moon.pkg
+import {
+  "Tino-hue/projdesk-kernel/main" @projdesk,
+}
+
+pkgtype(kind: "executable")
+```
+
+```moonbit
+// cmd/demo/main.mbt
+fn main {
+  // the kernel compiles a DSL source and projects it
+  let projections = @projdesk.dsl_project(
+    "model User {\n  id: Big @unique\n  name: Text [shortest=1, longest=64]\n}",
+  )
+  println(projections)
+}
+```
+
+The alias is not optional in practice: the kernel's package is called `main`, and so is the package you would import it from.
+
 ---
 
 ## Architecture

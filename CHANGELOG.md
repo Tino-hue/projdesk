@@ -31,6 +31,7 @@ The MoonBit kernel (`moonbit/`) is published separately as
   release that spells the 32-bit integer `Int32` the way the `moonmodel`
   package is published. The compatibility patch that adjusted the dependency
   at build time is gone: the dependency is used exactly as published.
+- The kernel is published to Mooncakes as `Tino-hue/projdesk-kernel`.
 
 ### Fixed
 
