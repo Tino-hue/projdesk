@@ -113,7 +113,7 @@ let schema = @moon_zod.object({
 })
 ```
 
-`min` and `max` are applied one at a time and never checked against each other. The JSON Schema it exports — the file `examples/moon_zod_dead_schema.json` in this repository, byte for byte what `moon_zod` produced — says:
+`min` and `max` are applied one at a time and never checked against each other. The JSON Schema it exports — the file `examples/moon_zod_dead_schema.json` in this repository — 618 bytes, sha256 `3b4ee18b9e41aa6b…`, byte for byte what `moon_zod` 0.9.2 produced — says:
 
 ```json
 "level": { "type": "number", "minimum": 10, "maximum": 5 },

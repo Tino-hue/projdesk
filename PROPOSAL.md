@@ -21,7 +21,7 @@ moon_zod、moonschema、colmugx/json-schema、moonbitstack/moonschema 都是实�
 @moon_zod.number().min(10).max(5)        // 静默接受，不报错
 ```
 
-被导出成 `minimum: 10, maximum: 5`——一份没有任何值能满足的 schema。运行时它会拒绝每一个值，报错还像是"值的问题"（`Value must be <= 5, got: Number(10)`）。仓库里的 `examples/moon_zod_dead_schema.json` 就是 moon_zod 自己导出的那份产物，618 字节，逐字节未改。
+被导出成 `minimum: 10, maximum: 5`——一份没有任何值能满足的 schema。运行时它会拒绝每一个值，报错还像是"值的问题"（`Value must be <= 5, got: Number(10)`）。仓库里的 `examples/moon_zod_dead_schema.json` 就是 moon_zod 0.9.2 自己导出的那份产物，618 字节，sha256 `3b4ee18b9e41aa6b…`，逐字节未改。
 
 ProjDesk 的第六个引擎就是回答这个问题的——读 JSON Schema，判定它**还有没有解**，并指出矛盾在哪儿：
 
@@ -106,7 +106,7 @@ $ projdesk check examples/moon_zod_dead_schema.json
 
 https://github.com/Tino-hue/projdesk
 
-181 个提交（143 个非合并），133 个跟踪文件。测试全绿：CI 中 268 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+180 个以上有效提交，134 个跟踪文件。测试全绿：CI 中 268 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 内核已发布到 Mooncakes：`moon add Tino-hue/projdesk-kernel`，仓库里 `node scripts/verify-registry-consumption.js` 会拉取已发布版本、在一个全新模块里编译并运行它，确认第三方真的能消费。
 

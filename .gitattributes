@@ -1,0 +1,9 @@
+# The MoonBit toolchain writes LF, so keeping the sources LF in the working
+# tree stops the formatter from turning every file into a spurious diff.
+moonbit/**/*.mbt text eol=lf
+moonbit/**/*.mbti text eol=lf
+
+# examples/*.json are quoted as byte-for-byte what an external tool exported.
+# Pinning the line endings makes that true on every platform, not just on the
+# one where it was produced.
+examples/*.json text eol=lf
