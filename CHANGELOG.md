@@ -40,6 +40,18 @@ The MoonBit kernel (`moonbit/`) is published separately as
   appears once a cross-field reference is resolved: `low`'s own bound is
   satisfiable on its own, and `high` borrows it. It is the sharpest
   illustration of what a per-field validator cannot see.
+- **A schema solvability checker** — the sixth engine. It reads a JSON Schema
+  and answers the question no schema library in the ecosystem answers: does
+  *any* value satisfy it? Interval algebra over `allOf`, `anyOf`, `oneOf`,
+  `not` and `$ref`; enums checked against the bounds around them; dangling
+  references; a `multipleOf` that is not positive. Findings carry a JSON
+  Pointer.
+  `node cli/index.js check-schema <file.json>` and the twelfth ABI export,
+  `check_schema_satisfiability`, both use it.
+  `examples/moon_zod_dead_schema.json` is byte for byte what `moon_zod` 0.9.2
+  exported from `number().min(10).max(5)` and `string().min(5).max(2)` — a
+  schema that no value can satisfy, which `moon_zod` itself accepts silently
+  and then rejects every value of. The checker names it instead.
 
 ### Changed
 

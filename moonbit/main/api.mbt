@@ -148,6 +148,13 @@ pub fn check_semantics_entry(dsl : String) -> String {
 }
 
 ///|
+/// Check a JSON Schema for contradictions: does anything satisfy it at all?
+#export_name("check_schema_satisfiability")
+pub fn check_schema_satisfiability_entry(schema_json : String) -> String {
+  check_json_schema_str(schema_json)
+}
+
+///|
 #export_name("get_presets_json")
 pub fn get_presets_json() -> String {
   let arr : Array[Json] = []

@@ -4,7 +4,7 @@
 
 A pure-browser toolchain for the **correctness of a data model**: is the model itself consistent, are two versions compatible, does projecting it to JSON Schema / OpenAPI / SQL / GraphQL / TypeScript / Zod / Prisma lose anything, and does the definition survive the round-trip.
 
-**Core value**: Five independent MoonBit algorithm engines. The MoonBit ecosystem already has schema libraries ([moon_zod](https://mooncakes.io/packages/Betterlol/moon_zod), [moonschema](https://mooncakes.io/packages/QuietlyChan/moonschema), [moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel)) that turn a model into artifacts, and schema-diff tools ([moon_schema_plan](https://mooncakes.io/packages/kath61105/moon_schema_plan), [moon-data-contract](https://mooncakes.io/packages/lyjttio/moon-data-contract)) that compare two models. ProjDesk answers the question those tools leave open: **is the model right, and is the artifact faithful?** The ecosystem generates; this verifies.
+**Core value**: Six independent MoonBit algorithm engines. The MoonBit ecosystem already has schema libraries ([moon_zod](https://mooncakes.io/packages/Betterlol/moon_zod), [moonschema](https://mooncakes.io/packages/QuietlyChan/moonschema), [moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel)) that turn a model into artifacts, and schema-diff tools ([moon_schema_plan](https://mooncakes.io/packages/kath61105/moon_schema_plan), [moon-data-contract](https://mooncakes.io/packages/lyjttio/moon-data-contract)) that compare two models. ProjDesk answers the question those tools leave open: **is the model right, and is the artifact faithful?** The ecosystem generates; this verifies.
 
 ---
 
@@ -86,7 +86,54 @@ Stated plainly, because parts of this do overlap:
 | [mizchi/codegen](https://mooncakes.io/packages/mizchi/codegen), [moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel) | Generic IR and multi-target emitters | **Overlapping on three emitters** — see below |
 | [Orion](https://mooncakes.io/packages/wflixu/Orion) | Schema DSL, CRUD, migration SQL | The migration engine here reasons over *model semantics* (constraints, references, value sets), not table structure |
 
-The honest part: of the seven projection targets, JSON Schema / OpenAPI / SQL / GraphQL come from `moonmodel`. The TypeScript / Zod / Prisma emitters are ours, and that **does** overlap with a generic code generator. They are ours because they must understand model semantics — constraints, references, value sets — which a generic IR does not express. But all three sit behind the same `Projector` trait, so an ecosystem emitter that understands model semantics could replace them. The overlap is three emitters; the five engines are not in it.
+The honest part: of the seven projection targets, JSON Schema / OpenAPI / SQL / GraphQL come from `moonmodel`. The TypeScript / Zod / Prisma emitters are ours, and that **does** overlap with a generic code generator. They are ours because they must understand model semantics — constraints, references, value sets — which a generic IR does not express. But all three sit behind the same `Projector` trait, so an ecosystem emitter that understands model semantics could replace them. The overlap is three emitters; the six engines are not in it.
+
+---
+
+## The question no validator in the ecosystem asks
+
+Every schema library in the ecosystem answers one question: **does this value satisfy the schema?** `moon_zod`'s `parse`, `moonschema`'s validator, `colmugx/json-schema`'s `valid` — all of them take an instance.
+
+None of them answers the other one: **can anything satisfy this schema at all?**
+
+That is not a corner case. `moon_zod` builds a schema without a word of complaint:
+
+```moonbit
+// with Betterlol/moon_zod 0.9.2
+let schema = @moon_zod.object({
+  "level": @moon_zod.number().min(10).max(5),
+  "code": @moon_zod.string().min(5).max(2),
+})
+```
+
+`min` and `max` are applied one at a time and never checked against each other. The JSON Schema it exports — the file `examples/moon_zod_dead_schema.json` in this repository, byte for byte what `moon_zod` produced — says:
+
+```json
+"level": { "type": "number", "minimum": 10, "maximum": 5 },
+"code":  { "type": "string", "minLength": 5, "maxLength": 2 }
+```
+
+A schema that no value can satisfy. `moon_zod` then rejects every value handed to it, and the error blames the value:
+
+```
+[level] Value must be <= 5 (code: TooBig("number", 5, true), got: Number(10))
+```
+
+The sixth engine answers the question the schema itself should have answered:
+
+```bash
+node cli/index.js check-schema examples/moon_zod_dead_schema.json
+```
+
+```
+2 contradiction(s) found:
+  [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
+  [empty_length] /properties/code — no string satisfies these length bounds
+```
+
+`moonbit/main/schema_check.mbt` is a static satisfiability analyser for JSON Schema: interval algebra over `allOf`, `anyOf`, `oneOf`, `not` and `$ref`, enums checked against the bounds around them, dangling references, and `multipleOf` that is not positive. It reports where the contradiction is, by JSON Pointer.
+
+**This is also why the custom notation is not necessary.** The checker needs no notation of ours at all — it reads the format the ecosystem already speaks, and it works on the artifact `moon_zod` exports. The DSL remains useful for what JSON Schema cannot express, but nothing in this project *requires* it any more: a team that already has schemas can have them checked instead.
 
 ---
 
@@ -96,11 +143,12 @@ Everything this project claims can be checked from this repository alone. Each r
 
 | Claim | Implemented in | Check it with |
 |---|---|---|
-| Five independent MoonBit engines | `moonbit/main/` — the table below lists every file and its size | `wc -l moonbit/main/roundtrip.mbt` |
-| 251 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
+| Six independent MoonBit engines | `moonbit/main/` — the table below lists every file and its size | `wc -l moonbit/main/roundtrip.mbt` |
+| A JSON Schema that no value can satisfy is reported, not blamed on the value | `moonbit/main/schema_check.mbt` | `node cli/index.js check-schema examples/moon_zod_dead_schema.json` |
+| 266 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
 | The kernel compiles with zero warnings | the same source | `cd moonbit && moon check` |
 | 95 frontend tests, 26 of them against the real compiled kernel | `web/src/lib/*.test.ts` | `cd web && npm run test` |
-| 11 exports on the compiled kernel | `moonbit/main/api.mbt` | the command below |
+| 12 exports on the compiled kernel | `moonbit/main/api.mbt` | the command below |
 | Seven projections, each with a typed drop report | `moonbit/main/codegen.mbt` `moonbit/main/projector.mbt` | `node cli/index.js gen models/Order.dsl && cat projdesk-out/drops.txt` |
 | Cross-field constraints resolve; reference cycles are reported | `moonbit/main/dsl_resolve.mbt` | `node cli/index.js verify models/CrossField.dsl` |
 | The solver finds conflicts the projection carries in silence | `moonbit/main/independence_test.mbt` | `node cli/index.js contrast examples/Conflicting.dsl` |
@@ -121,14 +169,14 @@ node -e "const fs=require('fs');WebAssembly.instantiate(fs.readFileSync('web/pub
 Three commands, about two minutes:
 
 ```bash
-cd moonbit && moon check && moon test   # the kernel: zero warnings, 251 tests
+cd moonbit && moon check && moon test   # the kernel: zero warnings, 266 tests
 cd ../web && npm run test               # the frontend: 95 tests
 cd .. && node cli/index.js verify models/CrossField.dsl
 ```
 
 ---
 
-## Five Independent MoonBit Engines
+## Six Independent MoonBit Engines
 
 | # | Engine | Source | Lines | What it does |
 |---|--------|--------|-------|--------------|
@@ -137,11 +185,12 @@ cd .. && node cli/index.js verify models/CrossField.dsl
 | 3 | **Migration Engine** | `migration.mbt` | 364 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
 | 4 | **Equivalence Checker** | `equiv.mbt` | 229 | Type subtyping + constraint containment + classification |
 | 5 | **Round-trip Verifier** | `roundtrip.mbt` | 433 | Source-level generate-parse-compare, comparing every field, type and constraint; failures are typed, not prose |
-| | **Five engines** | | **3732** | |
+| 6 | **Schema Solvability Checker** | `schema_check.mbt` | 767 | Static satisfiability analysis of a JSON Schema: does *any* value satisfy it? Interval algebra over `allOf`/`anyOf`/`oneOf`/`not`/`$ref`, enum-versus-bounds, dangling references |
+| | **Six engines** | | **4499** | |
 
-On top of the engines the kernel carries **2008 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **5740 lines** of MoonBit implementation, plus **3225 lines** of test code.
+On top of the engines the kernel carries **2015 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **6514 lines** of MoonBit implementation, plus **3361 lines** of test code.
 
-**251 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **95 frontend tests** (26 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
+**266 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **95 frontend tests** (26 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
 
 ---
 
@@ -190,7 +239,7 @@ Parse errors carry a line and column, and the parser recovers to continue with t
 
 ## Engine Usage
 
-All five engines — plus the semantic checker — are exposed through the WASM ABI (**11 exports**) and are runnable in the browser via the **Engine Playground** panel (6 tabs: DSL Compiler, Constraint Solver, Migration, Equivalence, Round-trip, Semantic Check):
+All six engines — plus the semantic checker — are exposed through the WASM ABI (**12 exports**) and are runnable in the browser via the **Engine Playground** panel (6 tabs: DSL Compiler, Constraint Solver, Migration, Equivalence, Round-trip, Semantic Check):
 
 | ABI export | Input | Output |
 |------------|-------|--------|
@@ -202,6 +251,7 @@ All five engines — plus the semantic checker — are exposed through the WASM 
 | `verify_roundtrip_dsl(dsl)` | DSL source | Pass / Fail + message + failure kind and stage |
 | `dsl_to_model(dsl)` | DSL source | The model as JSON, for the other commands |
 | `check_semantics(dsl)` | DSL source | Unresolved references, self-references, cycles |
+| `check_schema_satisfiability(schema)` | JSON Schema text | Whether any value satisfies it, and where it does not |
 | `project_from_json(model_json)` | Model JSON | Seven projections + drop reasons |
 | `import_from_json_schema_str(schema)` | JSON Schema text | Model JSON (reverse import) |
 | `get_presets_json()` | — | Preset models |
@@ -220,7 +270,7 @@ All five engines — plus the semantic checker — are exposed through the WASM 
 | **Type subtyping + equivalence classification** | **this project** |
 | **Round-trip formal verification** | **this project** |
 
-The five engines cover what a projection library cannot: they reason *about* the model rather than merely reformat it. Together they form a complete workflow — write DSL, solve constraints, evolve with migrations, compare versions, verify correctness, then project. The wider ecosystem boundary — which existing libraries already cover which of these — is set out in [Why this, and not a schema library](#why-this-and-not-a-schema-library).
+The six engines cover what a projection library cannot: they reason *about* the model rather than merely reformat it. Together they form a complete workflow — write DSL, solve constraints, evolve with migrations, compare versions, verify correctness, then project. The wider ecosystem boundary — which existing libraries already cover which of these — is set out in [Why this, and not a schema library](#why-this-and-not-a-schema-library).
 
 ## What the engines do that projection does not
 
@@ -309,7 +359,7 @@ moonbit/                 MoonBit kernel (wasm-gc)
     abi.mbt              JSON <-> moonmodel.Model conversion
     api.mbt              WASM ABI exports (10)
     jsonparse/           Minimal JSON wrapper (name-collision workaround)
-    *_test.mbt           Engine test suites (15 files, 251 tests)
+    *_test.mbt           Engine test suites (15 files, 266 tests)
 web/                    React + TypeScript frontend (31 files)
   src/components/
     EnginePanel.tsx      Engine playground (6 interactive engine tabs)
@@ -473,7 +523,7 @@ It resolves the package from the registry, compiles a throwaway consumer module 
 
 | Suite | Count | Command |
 |-------|-------|---------|
-| MoonBit kernel | 251 | `cd moonbit && moon test` |
+| MoonBit kernel | 266 | `cd moonbit && moon test` |
 | &nbsp;&nbsp;— property-based | 16 | (12 invariants over 100+ random models, 4 PRNG properties) |
 | &nbsp;&nbsp;— performance benchmarks | 7 | (100–200 field models, `monotonic_clock` budgets) |
 | Frontend unit | 69 | `cd web && npm run test` |
@@ -495,7 +545,7 @@ Beyond hand-picked examples, the kernel is verified with **property-based testin
 
 Performance budgets are asserted with `monotonic_clock` for models of 100-200 fields across projection, solving, parsing, diffing, round-trip, and equivalence.
 
-**How CI verifies the kernel.** The `Kernel tests` workflow installs the MoonBit toolchain, fetches the `moonmodel` dependency, and runs `moon check` and `moon test` on the kernel source — all 251 tests, on every push and pull request that touches `moonbit/`. The toolchain cannot be pinned (the distribution host publishes only the `latest` and `nightly` archives), so the job installs `latest`; the kernel compiles and passes against both that release and the older one it was developed against.
+**How CI verifies the kernel.** The `Kernel tests` workflow installs the MoonBit toolchain, fetches the `moonmodel` dependency, and runs `moon check` and `moon test` on the kernel source — all 266 tests, on every push and pull request that touches `moonbit/`. The toolchain cannot be pinned (the distribution host publishes only the `latest` and `nightly` archives), so the job installs `latest`; the kernel compiles and passes against both that release and the older one it was developed against.
 
 The compiled kernel is verified separately: the artifact (`web/public/projdesk.wasm`) is committed to the repository and exercised by 26 real-WASM integration tests, and the `ProjDesk Generate` action runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
 
