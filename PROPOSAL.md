@@ -13,7 +13,7 @@
 
 **生态里的 Schema 库回答的是"这个值合不合法"，没有一个回答"这份 schema 还有没有解"。**
 
-moon_zod、moonschema、colmugx/json-schema、moonbitstack/moonschema 都是实例级的：定义模型、校验数据、导出 JSON Schema。moon_schema_plan、moon-data-contract、moonpack、moon_proto 把"两个模型之间发生了什么"做透了。这两类工具都不回答第三类问题——**模型定义自身是否自洽**。
+moon_zod、moonschema、colmugx/json-schema、moonbitstack/moonschema 都是实例级的：定义模型、校验数据、导出 JSON Schema。moon_schema_plan、moon-data-contract、moonpack、moon_proto 把"两个模型之间发生了什么"做透了。这两类工具都不回答第三类问题——**这份 schema 自己还有没有解**。
 
 这不是边角情况。moon_zod 0.9.2 的 min/max 是一个一个套用的、从不互相比对，于是
 
@@ -26,14 +26,14 @@ moon_zod、moonschema、colmugx/json-schema、moonbitstack/moonschema 都是实�
 ProjDesk 的第六个引擎就是回答这个问题的——读 JSON Schema，判定它**还有没有解**，并指出矛盾在哪儿：
 
 ```
-$ projdesk check examples/moon_zod_dead_schema.json
+$ node cli/index.js check examples/moon_zod_dead_schema.json
 3 contradiction(s) found:
   [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
   [empty_length] /properties/code — no string satisfies these length bounds
   [empty_items] /properties/tags — no array satisfies these item-count bounds
 ```
 
-**这个能力不需要我们自己的记法**：它读的是生态的格式，吃的是生态的产物。已经有 schema 的团队不必改用我们的 DSL——`projdesk check openapi.json` 直接就能查。
+**这个能力不需要我们自己的记法**：它读的是生态的格式，吃的是生态的产物。已经有 schema 的团队不必改用我们的 DSL——把他们的 schema 交给 `projdesk check` 就能查。
 
 在此之上是另外五个从零手写的 MoonBit 算法引擎（共 4586 行，整个内核 6601 行实现 + 3378 行测试），把同一类"模型本身对不对"的问题在模型一侧做完：约束系统有没有解、两个版本是否兼容、投影丢了什么、定义在工具链中是否无损。
 
