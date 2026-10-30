@@ -161,6 +161,7 @@ Everything this project claims can be checked from this repository alone. Each r
 | Claim | Implemented in | Check it with |
 |---|---|---|
 | Six independent MoonBit engines | `moonbit/main/` — the table below lists every file and its size | `wc -l moonbit/main/roundtrip.mbt` |
+| Every number in these documents matches the code | `scripts/audit-claims.js` | `node scripts/audit-claims.js` |
 | A JSON Schema that no value can satisfy is reported, not blamed on the value | `moonbit/main/schema_check.mbt` | `node cli/index.js check examples/moon_zod_dead_schema.json` |
 | 268 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
 | The kernel compiles with zero warnings | the same source | `cd moonbit && moon check` |
@@ -367,6 +368,7 @@ moonbit/                 MoonBit kernel (wasm-gc)
     migration.mbt        Diff + SQL migration engine
     equiv.mbt            Semantic equivalence engine
     roundtrip.mbt        Round-trip verification
+    schema_check.mbt     JSON Schema satisfiability checker
     property.mbt         xorshift64* PRNG + random model generator
     projector.mbt        Projector trait + DropReason ADT
     codegen.mbt          TypeScript / Zod / Prisma projections
@@ -374,10 +376,10 @@ moonbit/                 MoonBit kernel (wasm-gc)
     project.mbt          Projection pipeline
     presets.mbt          Preset models
     abi.mbt              JSON <-> moonmodel.Model conversion
-    api.mbt              WASM ABI exports (10)
+    api.mbt              WASM ABI exports (12)
     jsonparse/           Minimal JSON wrapper (name-collision workaround)
-    *_test.mbt           Engine test suites (15 files, 268 tests)
-web/                    React + TypeScript frontend (31 files)
+    *_test.mbt           Engine test suites (16 files, 268 tests)
+web/                    React + TypeScript frontend (32 files)
   src/components/
     EnginePanel.tsx      Engine playground (6 interactive engine tabs)
     OutputPanels.tsx     Seven projection panels
