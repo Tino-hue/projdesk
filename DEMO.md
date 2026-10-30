@@ -1,6 +1,6 @@
 # ProjDesk 3-Minute Demo Script
 
-> **Framing (say this first):** "ProjDesk is a model engineering workbench. Five independent MoonBit algorithm engines manage a model's full lifecycle — define, analyze, evolve, compare, verify. Projection is the last step, not the product."
+> **Framing (say this first):** "MoonBit already has schema libraries — moon_zod, moonschema — and schema-diff tools like moon_schema_plan. Those turn a model into artifacts and compare two models. ProjDesk answers the question they leave open: **is the model itself consistent, and did the projection lose anything?** The ecosystem generates; this verifies. Five independent MoonBit algorithm engines — constraint reasoning, round-trip verification, migration, equivalence, and a compiler front end."
 
 ---
 
@@ -34,6 +34,8 @@ model User {
 3. Re-run -> red conflict: `[CONFLICT] x: least(10) > most(5): empty range`
 
 > "Not a fixed message table. Interval analysis, implication and redundancy detection, containment relations, option-set cross-validation — a real constraint reasoner."
+
+> **The distinction that matters:** "moon_zod asks whether *this value* is valid. This asks whether *the model* has a solution at all — before any data exists. `least=0` with `most=-1` is a contradiction in the model, not in a payload."
 
 ---
 
@@ -74,14 +76,20 @@ model User {
 
 ## Backup Q&A
 
-**"Isn't the projection just moonmodel?"**
-> "Projection is one step of seven outputs. The five engines are what moonmodel doesn't cover — a compiler frontend, a constraint reasoner, a migration engine, a type-equivalence checker, and a formal verifier. That's 3691 lines of independent MoonBit code."
+**"Isn't this just another schema library, like moon_zod or moonschema?"**
+> "Those judge a *value* — you hand them an instance and they say yes or no. This judges the *model*, statically, with no data at all: is the constraint system satisfiable, do two versions stay compatible, did the projection drop anything, does the definition survive the round-trip. And I'm not claiming they are wrong — `moonmodel`, the library I build on, writes `minimum: 0` next to `maximum: -1` and emits a schema no value can satisfy. The demo shows that side by side. The ecosystem generates; this verifies."
 
-**"Why MoonBit for this?"**
-> "The kernel compiles to wasm-gc and runs entirely in the browser — one binary, no server. The pattern matching and ADT support made the compiler frontend and type-equivalence engine direct rather than ceremony."
+**"Isn't the projection just moonmodel?"**
+> "Four of the seven targets are — that is deliberate, I don't rebuild what exists. The TypeScript / Zod / Prisma emitters are mine, and that does overlap a generic code generator; I'm not going to pretend otherwise. They are mine because they have to understand model semantics, and they sit behind a trait so a model-aware emitter could replace them. The five engines are the product, and none of them is a projection."
+
+**"Then why write a custom modeling language?"**
+> "For exactly one reason: a field's constraint has to be able to reference another field's constraint — `b: Int [over=a.least]`. In JSON Schema or Zod a constraint is a constant hanging off one field, so there is nowhere to put 'a constraint that depends on another constraint'. Cross-field satisfiability needs a notation that can say it. Everything else I reuse: model data structures and four projection backends from `moonmodel`, runtime validation from libraries like `moon_zod`."
 
 **"What did you build that Prisma/Drizzle don't?"**
 > "They generate code from a model. This one reasons about the model: whether its constraints are satisfiable, whether two versions are compatible, what SQL migration a change implies, and whether it survives a round-trip."
+
+**"Why MoonBit for this?"**
+> "The kernel compiles to wasm-gc and runs entirely in the browser — one binary, no server. The pattern matching and ADT support made the compiler frontend and type-equivalence engine direct rather than ceremony."
 
 **"How do you know it works?"**
 > "251 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 26 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."

@@ -2,15 +2,91 @@
 
 **Live Demo**: https://tino-hue.github.io/projdesk/
 
-A pure-browser workbench for the full lifecycle of a data model: **define → analyze → evolve → compare → verify**, with projection to JSON Schema / OpenAPI / SQL / GraphQL / TypeScript / Zod / Prisma as one of its outputs.
+A pure-browser toolchain for the **correctness of a data model**: is the model itself consistent, are two versions compatible, does projecting it to JSON Schema / OpenAPI / SQL / GraphQL / TypeScript / Zod / Prisma lose anything, and does the definition survive the round-trip.
 
-**Core value**: Five independent MoonBit algorithm engines that manage a model's lifecycle. Projection is delegated to [moonbitstack/moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel) — one step in the pipeline, not the product.
+**Core value**: Five independent MoonBit algorithm engines. The MoonBit ecosystem already has schema libraries ([moon_zod](https://mooncakes.io/packages/Betterlol/moon_zod), [moonschema](https://mooncakes.io/packages/QuietlyChan/moonschema), [moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel)) that turn a model into artifacts, and schema-diff tools ([moon_schema_plan](https://mooncakes.io/packages/kath61105/moon_schema_plan), [moon-data-contract](https://mooncakes.io/packages/lyjttio/moon-data-contract)) that compare two models. ProjDesk answers the question those tools leave open: **is the model right, and is the artifact faithful?** The ecosystem generates; this verifies.
 
 ---
 
 ## Core Job
 
 > "Manage a data model like you manage code: define it in a language, analyze its constraints, evolve it safely with migrations, compare versions for equivalence, and verify it round-trips — then project it wherever you need it."
+
+---
+
+## Why this, and not a schema library
+
+The MoonBit ecosystem is not empty. It already contains schema libraries that define and validate models, diff tools that compare two models and plan migrations, and code generators that emit JSON Schema or Zod. So the interesting question is not "is this new?" but **"which question does this answer that they do not?"**
+
+Three, and each one is checkable from this repository.
+
+### 1. Is the model itself consistent — before any data exists?
+
+Schema validators judge a *value*: `moon_zod`'s `parse`/`safe_parse` and `moonschema`'s validator both take an instance and report whether it satisfies the schema. The constraint solver here judges the *constraint system*: given only a model, it decides whether the system has a solution at all — interval algebra, fixed-point propagation across fields, implication and redundancy analysis, containment relations.
+
+The sharpest case is a conflict that **no per-field check can see**, because one field's constraint is fine on its own and the contradiction only appears once a reference between fields is resolved:
+
+```bash
+node cli/index.js contrast examples/CrossFieldConflict.dsl
+```
+
+```
+Model: Pair
+
+  low (Int)
+    projection (moonmodel)  format: int32  minimum: 10
+    solver (this project)   no findings
+  high (Int)
+    projection (moonmodel)  format: int32  maximum: 5  exclusiveMinimum: 10
+    solver (this project)   [CONFLICT] high: over(10) >= most(5): impossible
+
+The projection carries these through without saying anything about them.
+```
+
+`low`'s own bound is perfectly satisfiable. `high` borrows `low`'s lower bound, and *that* is what makes `over(10)` and `most(5)` contradict each other. The projection writes the impossible range out — `exclusiveMinimum: 10` together with `maximum: 5` — and says nothing about it. A validator cannot report this: it would have to judge a value that satisfies `low` against `high`, and it has no way to ask whether the constraint system as a whole has a solution.
+
+Two more kinds of the same question, on `examples/Conflicting.dsl`: `least=0` together with `most=-1` is an empty range, and `Text [longest=3, options=[toolong]]` is a closed set that does not fit its length bound.
+
+```bash
+node cli/index.js check examples/Conflicting.dsl
+```
+
+None of these depend on a value existing, so none of them are validation questions.
+
+### 2. Does the projection lose anything — and is that visible?
+
+Every projector silently drops what its target cannot express. Here it is reported: per target, per field, per constraint, with the reason (9 typed drop reasons).
+
+```bash
+node cli/index.js gen models/Order.dsl && cat projdesk-out/drops.txt
+```
+
+And it is not only our own output that gets measured. `moonmodel` — the library this project builds on — writes `minimum: 0` next to `maximum: -1` and emits a schema no value can satisfy, without saying so:
+
+```bash
+node cli/index.js contrast examples/Conflicting.dsl
+```
+
+### 3. Does the definition survive the toolchain?
+
+Parse, print, parse again, compare every field, every type and every constraint — nested models and all twelve constraint kinds included. The schema libraries in the ecosystem do not own a printer, so they cannot ask this question at all.
+
+### And the custom notation has exactly one reason to exist
+
+A field's constraint may reference another field's constraint: `b: Int [over=a.least]` means "b's lower bound comes from a's lower bound". In the data model behind JSON Schema, Zod and `moon_zod`, a constraint is a constant attached to a single field — there is nowhere to put *a constraint that depends on another constraint*. Judging satisfiability across fields needs a notation that can express it, so that is the one thing the notation is for. Everything else is reused from the ecosystem: the model data structures and four of the projection backends come from `moonmodel`, and runtime validation belongs to libraries like `moon_zod`.
+
+### Where the overlap actually is
+
+Stated plainly, because parts of this do overlap:
+
+| Ecosystem | What it does | Relationship |
+|---|---|---|
+| [moon_zod](https://mooncakes.io/packages/Betterlol/moon_zod), [moonschema](https://mooncakes.io/packages/QuietlyChan/moonschema), [moonbitstack/moonschema](https://mooncakes.io/packages/moonbitstack/moonschema), [colmugx/json-schema](https://mooncakes.io/packages/colmugx/json-schema) | Schema definition and **instance-level** runtime validation; export to JSON Schema | Complementary: they judge whether a *value* is valid; this judges whether the *model* is consistent — statically, with no data |
+| [moon_schema_plan](https://mooncakes.io/packages/kath61105/moon_schema_plan), [moon-data-contract](https://mooncakes.io/packages/lyjttio/moon-data-contract), [moonpack](https://mooncakes.io/packages/001-Elsa/moonpack), [moon_proto](https://mooncakes.io/packages/123123213weqw/moon_proto) | Schema diff, migration planning, destructive-change gates, old/new compatibility checks | Complementary: we provide the semantic diff and compatibility *engines*, plus the two things these do not cover — projection fidelity and definition round-trip |
+| [mizchi/codegen](https://mooncakes.io/packages/mizchi/codegen), [moonmodel](https://mooncakes.io/packages/moonbitstack/moonmodel) | Generic IR and multi-target emitters | **Overlapping on three emitters** — see below |
+| [Orion](https://mooncakes.io/packages/wflixu/Orion) | Schema DSL, CRUD, migration SQL | The migration engine here reasons over *model semantics* (constraints, references, value sets), not table structure |
+
+The honest part: of the seven projection targets, JSON Schema / OpenAPI / SQL / GraphQL come from `moonmodel`. The TypeScript / Zod / Prisma emitters are ours, and that **does** overlap with a generic code generator. They are ours because they must understand model semantics — constraints, references, value sets — which a generic IR does not express. But all three sit behind the same `Projector` trait, so an ecosystem emitter that understands model semantics could replace them. The overlap is three emitters; the five engines are not in it.
 
 ---
 
@@ -29,6 +105,9 @@ Everything this project claims can be checked from this repository alone. Each r
 | Cross-field constraints resolve; reference cycles are reported | `moonbit/main/dsl_resolve.mbt` | `node cli/index.js verify models/CrossField.dsl` |
 | The solver finds conflicts the projection carries in silence | `moonbit/main/independence_test.mbt` | `node cli/index.js contrast examples/Conflicting.dsl` |
 | The round-trip verifier compares every field, type and constraint | `moonbit/main/roundtrip.mbt` | `node cli/index.js verify models/Order.dsl` |
+| The model is judged consistent before any data exists | `moonbit/main/solver.mbt` `moonbit/main/solver_propagate.mbt` | `node cli/index.js contrast examples/CrossFieldConflict.dsl` |
+| What each projection target silently drops is reported per constraint | `moonbit/main/projector.mbt` | `node cli/index.js gen models/Order.dsl && cat projdesk-out/drops.txt` |
+| The boundary against the existing ecosystem is stated, not implied | this file | the "Why this, and not a schema library" section |
 | A failed round-trip says what failed and where, as data | `moonbit/main/roundtrip.mbt` (`RoundTripError`) | `node cli/index.js verify examples/Unprintable.dsl --json` |
 | The kernel's own tests run on every push | `.github/workflows/kernel.yml` | the "Kernel tests" check on any commit |
 | The published kernel is consumable by a module that has nothing to do with this repository | `scripts/verify-registry-consumption.js` | `node scripts/verify-registry-consumption.js` |
@@ -129,7 +208,7 @@ All five engines — plus the semantic checker — are exposed through the WASM 
 
 ---
 
-## Relationship with moonmodel
+## What is ours, and what the ecosystem already provides
 
 | Capability | Implemented by |
 |------------|----------------|
@@ -141,7 +220,7 @@ All five engines — plus the semantic checker — are exposed through the WASM 
 | **Type subtyping + equivalence classification** | **this project** |
 | **Round-trip formal verification** | **this project** |
 
-The five engines cover what a projection library cannot: they reason *about* the model rather than merely reformat it. Together they form a complete workflow — write DSL, solve constraints, evolve with migrations, compare versions, verify correctness, then project.
+The five engines cover what a projection library cannot: they reason *about* the model rather than merely reformat it. Together they form a complete workflow — write DSL, solve constraints, evolve with migrations, compare versions, verify correctness, then project. The wider ecosystem boundary — which existing libraries already cover which of these — is set out in [Why this, and not a schema library](#why-this-and-not-a-schema-library).
 
 ## What the engines do that projection does not
 
@@ -154,6 +233,12 @@ $ projdesk contrast examples/Conflicting.dsl
 
 Model: Reading
 
+  id (Big)
+    projection (moonmodel)  format: int64
+    solver (this project)   no findings
+  floor (Int)
+    projection (moonmodel)  format: int32  minimum: 0
+    solver (this project)   no findings
   ceiling (Int)
     projection (moonmodel)  format: int32  minimum: 0  maximum: -1
     solver (this project)   [CONFLICT] ceiling: least(0) > most(-1): empty range
@@ -176,6 +261,8 @@ A verifier that can only say "something is wrong" is a verifier nobody can act o
 $ projdesk verify examples/Unprintable.dsl --json
 {
   "ok": false,
+  "issues": [],
+  "issue_count": 0,
   "roundtrip": "parse errors in printed DSL: line 2:22: expected =, got ]",
   "roundtrip_reason": "parse_error",
   "roundtrip_stage": "printed"

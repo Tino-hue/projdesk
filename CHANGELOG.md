@@ -36,6 +36,20 @@ The MoonBit kernel (`moonbit/`) is published separately as
   The ABI adds `reason` and `stage` beside the existing `ok` and `message`.
 - `examples/Unprintable.dsl` is a model the printer cannot reproduce, so the
   typed failure can be seen from the command line.
+- `examples/CrossFieldConflict.dsl` is a model whose contradiction only
+  appears once a cross-field reference is resolved: `low`'s own bound is
+  satisfiable on its own, and `high` borrows it. It is the sharpest
+  illustration of what a per-field validator cannot see.
+
+### Changed
+
+- The README, the proposal and the submission text now state the boundary
+  against the existing MoonBit ecosystem explicitly — which library covers
+  which part, where the overlap really is (three emitters), and which three
+  questions this project answers that the ecosystem does not. The custom
+  notation is justified by exactly one capability: a constraint that
+  references another field's constraint, which the schema data model has
+  nowhere to put.
 
 ### Changed
 
