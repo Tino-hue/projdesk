@@ -13,7 +13,7 @@ GitHub 仓库链接：https://github.com/Tino-hue/projdesk
 
 ProjDesk 用 MoonBit 实现的是**模型定义的正确性工具链**：判定一个数据模型自身是否自洽、两个版本是否兼容、投影成契约时到底丢了什么、以及定义在整条工具链里是否无损。
 
-核心是六个从零手写的 MoonBit 算法引擎，共 4499 行独立实现（整个内核 6514 行实现代码 + 3361 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证、JSON Schema 可满足性判定六个领域。
+核心是六个从零手写的 MoonBit 算法引擎，共 4586 行独立实现（整个内核 6601 行实现代码 + 3378 行测试代码），分别落在编译器前端、约束求解、版本演化、类型理论、形式化验证、JSON Schema 可满足性判定六个领域。
 
 **与生态现有方案是互补，不是重复。** MoonBit 生态里已经有成熟的 Schema 库（Betterlol/moon_zod、QuietlyChan/moonschema、moonbitstack/moonschema、colmugx/json-schema 等）负责"把模型变成产物"，也有 schema diff / 迁移 / 兼容性工具（kath61105/moon_schema_plan、lyjttio/moon-data-contract、001-Elsa/moonpack、123123213weqw/moon_proto）负责"两个模型之间发生了什么"。ProjDesk 负责的是这些工具**不回答**的那一类问题：
 
@@ -119,7 +119,7 @@ The projection carries these through without saying anything about them.
 3. 浏览器工作台：模型编辑器（拖拽/搜索/暗色）、关系图、约束诊断、迁移预览、版本 Diff、Engine Playground（6 个引擎页签）
 4. WASM ABI 12 导出
 5. CLI（gen/check/contrast/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端
-6. 测试与 CI：CI 直接安装 MoonBit 工具链，对内核源码跑 moon check（零警告）与 moon test（266 个测试），另有 95 个前端测试（含 26 个加载真实 WASM 内核的集成测试）全部通过，并自动部署演示站点
+6. 测试与 CI：CI 直接安装 MoonBit 工具链，对内核源码跑 moon check（零警告）与 moon test（268 个测试），另有 95 个前端测试（含 26 个加载真实 WASM 内核的集成测试）全部通过，并自动部署演示站点
 
 九、项目类型说明
 
@@ -135,7 +135,7 @@ The projection carries these through without saying anything about them.
 
 https://github.com/Tino-hue/projdesk
 
-167 个提交（136 个非合并），128 个跟踪文件。测试全绿：CI 中 266 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
+175 个提交（140 个非合并），133 个跟踪文件。测试全绿：CI 中 268 个 MoonBit 测试（moon check 零警告）与 95 个前端测试全部通过；另有 26 个真实 WASM 集成测试验证已编译内核，并自动部署演示站点。
 
 内核已发布到 Mooncakes：`moon add Tino-hue/projdesk-kernel`，仓库里 `node scripts/verify-registry-consumption.js` 会拉取已发布版本、在一个全新模块里编译并运行它，确认第三方真的能消费。
 
