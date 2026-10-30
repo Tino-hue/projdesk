@@ -71,9 +71,10 @@ model User {
 1. In a terminal:
 ```
 $ node cli/index.js check-schema examples/moon_zod_dead_schema.json
-2 contradiction(s) found:
+3 contradiction(s) found:
   [empty_range] /properties/level — no number satisfies these bounds: [10, 5]
   [empty_length] /properties/code — no string satisfies these length bounds
+  [empty_items] /properties/tags — no array satisfies these item-count bounds
 ```
 
 2. Show the file it just read — `examples/moon_zod_dead_schema.json` is **byte for byte** what `moon_zod` 0.9.2 exported from this:
@@ -82,6 +83,7 @@ $ node cli/index.js check-schema examples/moon_zod_dead_schema.json
 @moon_zod.object({
   "level": @moon_zod.number().min(10).max(5),
   "code": @moon_zod.string().min(5).max(2),
+  "tags": @moon_zod.array(@moon_zod.string()).min(5).max(2),
 })
 ```
 
@@ -93,9 +95,9 @@ $ node cli/index.js check-schema examples/moon_zod_dead_schema.json
 
 ## Closing (20s)
 
-> "Six independent MoonBit engines, 4499 lines of engine code, 266 tests including property-based verification over 100 random models. That's ProjDesk."
+> "Six independent MoonBit engines, 4586 lines of engine code, 268 tests including property-based verification over 100 random models. That's ProjDesk."
 
-**Run `moon test` live to show 266 green tests.**
+**Run `moon test` live to show 268 green tests.**
 
 ---
 
@@ -120,4 +122,4 @@ $ node cli/index.js check-schema examples/moon_zod_dead_schema.json
 > "The kernel compiles to wasm-gc and runs entirely in the browser — one binary, no server. The pattern matching and ADT support made the compiler frontend and type-equivalence engine direct rather than ceremony."
 
 **"How do you know it works?"**
-> "266 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 26 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."
+> "268 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 26 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."

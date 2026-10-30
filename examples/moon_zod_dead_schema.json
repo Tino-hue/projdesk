@@ -15,6 +15,14 @@
       "minLength": 5,
       "maxLength": 2
     },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 5,
+      "maxItems": 2
+    },
     "name": {
       "type": "string",
       "minLength": 1,
@@ -26,6 +34,7 @@
     "id",
     "level",
     "code",
+    "tags",
     "name"
   ]
 }

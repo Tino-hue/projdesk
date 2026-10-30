@@ -46,6 +46,13 @@ priv struct LengthWindow {
 }
 
 ///|
+/// The item-count window that applies to one array instance
+priv struct ItemWindow {
+  fewest : Int32?
+  most : Int32?
+}
+
+///|
 /// A window with no bounds at all
 fn empty_window() -> Window {
   Window::{ lo: None, lo_open: false, hi: None, hi_open: false, }
@@ -323,12 +330,64 @@ fn value_fits(schema : Json, v : Json) -> Bool {
 }
 
 ///|
+/// The item-count window a schema's own keywords describe
+///
+/// `minItems` and `maxItems` are what an array's bounds look like in JSON
+/// Schema, and they are what a Zod-style `array().min(n).max(m)` exports to.
+fn item_window_of(schema : Json) -> ItemWindow {
+  match schema {
+    Object(map) => {
+      let fewest = match map.get("minItems") {
+        Some(Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      let most = match map.get("maxItems") {
+        Some(Number(n, ..)) => Some(n.to_int())
+        _ => None
+      }
+      ItemWindow::{ fewest, most, }
+    }
+    _ => ItemWindow::{ fewest: None, most: None, }
+  }
+}
+
+///|
+/// The intersection of two item-count windows
+fn item_window_intersect(a : ItemWindow, b : ItemWindow) -> ItemWindow {
+  let fewest = match (a.fewest, b.fewest) {
+    (Some(x), Some(y)) => Some(if x > y { x } else { y })
+    (Some(x), None) => Some(x)
+    (None, Some(y)) => Some(y)
+    (None, None) => None
+  }
+  let most = match (a.most, b.most) {
+    (Some(x), Some(y)) => Some(if x < y { x } else { y })
+    (Some(x), None) => Some(x)
+    (None, Some(y)) => Some(y)
+    (None, None) => None
+  }
+  ItemWindow::{ fewest, most, }
+}
+
+///|
+/// Whether an item-count window admits no array at all
+fn item_window_empty(w : ItemWindow) -> Bool {
+  match (w.fewest, w.most) {
+    (Some(f), Some(m)) => f > m
+    _ => false
+  }
+}
+
+///|
 /// Whether the schema's own keywords already leave no value
 fn local_empty(schema : Json) -> Bool {
   if window_empty(window_of(schema)) {
     return true
   }
   if length_empty(length_of(schema)) {
+    return true
+  }
+  if item_window_empty(item_window_of(schema)) {
     return true
   }
   match enum_of(schema) {
@@ -447,11 +506,13 @@ fn satisfiable(root : Json, schema : Json, seen : Array[String]) -> Bool {
           }
           let own = window_of(schema)
           let own_len = length_of(schema)
+          let own_items = item_window_of(schema)
           // allOf: every branch applies to the same instance
           match branches_of(map, "allOf") {
             Some(branches) => {
               let mut merged = own
               let mut merged_len = own_len
+              let mut merged_items = own_items
               for b in branches {
                 let target = deref(root, b)
                 if !satisfiable(root, target, seen) {
@@ -459,8 +520,14 @@ fn satisfiable(root : Json, schema : Json, seen : Array[String]) -> Bool {
                 }
                 merged = window_intersect(merged, window_of(target))
                 merged_len = length_intersect(merged_len, length_of(target))
+                merged_items = item_window_intersect(
+                  merged_items,
+                  item_window_of(target),
+                )
               }
-              if window_empty(merged) || length_empty(merged_len) {
+              if window_empty(merged) ||
+                length_empty(merged_len) ||
+                item_window_empty(merged_items) {
                 return false
               }
             }
@@ -555,6 +622,14 @@ fn collect(
           message: "no string satisfies these length bounds",
         })
       }
+      let own_items = item_window_of(schema)
+      if item_window_empty(own_items) {
+        out.push(SchemaFinding::{
+          path,
+          kind: "empty_items",
+          message: "no array satisfies these item-count bounds",
+        })
+      }
       // an enum that no value of it can satisfy
       match enum_of(schema) {
         Some(values) =>
@@ -593,10 +668,15 @@ fn collect(
         Some(branches) => {
           let mut merged = own
           let mut merged_len = own_len
+          let mut merged_items = own_items
           for b in branches {
             let target = deref(root, b)
             merged = window_intersect(merged, window_of(target))
             merged_len = length_intersect(merged_len, length_of(target))
+            merged_items = item_window_intersect(
+              merged_items,
+              item_window_of(target),
+            )
           }
           if window_empty(merged) && !window_empty(own) {
             out.push(SchemaFinding::{
@@ -611,6 +691,13 @@ fn collect(
               path,
               kind: "empty_length",
               message: "the allOf branches together leave no string",
+            })
+          }
+          if item_window_empty(merged_items) && !item_window_empty(own_items) {
+            out.push(SchemaFinding::{
+              path,
+              kind: "empty_items",
+              message: "the allOf branches together leave no array",
             })
           }
           for i = 0; i < branches.length(); i = i + 1 {

@@ -103,6 +103,23 @@ test "schema: a contradiction inside a property is reported with its path" {
 }
 
 ///|
+test "schema: item-count bounds that no array satisfies are reported" {
+  // this is what a Zod-style array().min(5).max(2) exports to
+  let out = @main.check_json_schema_str(
+    "{\"type\":\"array\",\"minItems\":5,\"maxItems\":2}",
+  )
+  assert_true(out.contains("empty_items"))
+}
+
+///|
+test "schema: allOf branches that together leave no array are reported" {
+  let out = @main.check_json_schema_str(
+    "{\"allOf\":[{\"minItems\":0},{\"maxItems\":-1}]}",
+  )
+  assert_true(out.contains("empty_items"))
+}
+
+///|
 test "schema: a healthy schema reports nothing" {
   let out = @main.check_json_schema_str(
     "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"minimum\":1},\"name\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":64},\"status\":{\"type\":\"string\",\"enum\":[\"open\",\"closed\"]}},\"required\":[\"id\"]}",

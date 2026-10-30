@@ -43,15 +43,18 @@ The MoonBit kernel (`moonbit/`) is published separately as
 - **A schema solvability checker** — the sixth engine. It reads a JSON Schema
   and answers the question no schema library in the ecosystem answers: does
   *any* value satisfy it? Interval algebra over `allOf`, `anyOf`, `oneOf`,
-  `not` and `$ref`; enums checked against the bounds around them; dangling
-  references; a `multipleOf` that is not positive. Findings carry a JSON
-  Pointer.
+  `not` and `$ref`; numeric bounds, string lengths and array item counts each
+  checked against the others; enums checked against the bounds around them;
+  dangling references; a `multipleOf` that is not positive. Findings carry a
+  JSON Pointer.
   `node cli/index.js check-schema <file.json>` and the twelfth ABI export,
-  `check_schema_satisfiability`, both use it.
+  `check_schema_satisfiability`, both use it. `check-schema -` reads the
+  schema from stdin, so a projection can be piped into it.
   `examples/moon_zod_dead_schema.json` is byte for byte what `moon_zod` 0.9.2
-  exported from `number().min(10).max(5)` and `string().min(5).max(2)` — a
-  schema that no value can satisfy, which `moon_zod` itself accepts silently
-  and then rejects every value of. The checker names it instead.
+  exported from `number().min(10).max(5)`, `string().min(5).max(2)` and
+  `array().min(5).max(2)` — a schema that no value can satisfy, which
+  `moon_zod` itself accepts silently and then rejects every value of. The
+  checker names it instead.
 
 ### Changed
 
