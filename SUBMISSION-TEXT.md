@@ -13,6 +13,8 @@
 
 MoonBit 生态里的 Schema 库（moon_zod、moonschema、colmugx/json-schema）回答的是"这个值合不合法"，schema diff 与迁移工具（moon_schema_plan、moon-data-contract、moonpack、moon_proto）回答的是"两个模型之间发生了什么"。ProjDesk 回答这两类工具都不回答的第三类问题：**这份 schema 自己还有没有解**。moon_zod 0.9.2 的 min/max 是一个一个套用的、从不互相比对，于是 `number().min(10).max(5)` 被静默接受，导出成 `minimum: 10, maximum: 5`——一份没有任何值能满足的 schema。ProjDesk 的第六个引擎读 JSON Schema，判定它还有没有解并指出矛盾在哪儿；仓库里的 `examples/moon_zod_dead_schema.json` 就是 moon_zod 自己导出的那份产物（618 字节，sha256 `3b4ee18b9e41aa6b…`），`node cli/index.js check examples/moon_zod_dead_schema.json` 可复现这个判定。
 
+自有 DSL 只是这套能力的一个输入前端，另一个前端就是生态的 JSON Schema；引入它的唯一理由是字段的约束可以引用另一字段的约束（`b: Int [over=a.least]`），这种"约束依赖约束"在 JSON Schema / Zod / moon_zod 的数据模型里无处安放。
+
 ## 项目方向与通用性
 
 面向所有需要管理数据模型的开发者，以及所有已经有 schema 的团队。六个引擎分别对应编译器前端、约束求解、版本演化、类型理论、形式化验证与 schema 可满足性判定，都是通用算法，不绑定任何前端框架、后端语言或数据库。能力不限于 Web：CLI 可在 CI 校验模型与 schema，VS Code 插件可在开发时即时检查，GitHub Action 可在 PR 中阻止破坏性变更合入，各入口共用同一份 WASM 内核。内核已发布到 Mooncakes（`moon add Tino-hue/projdesk-kernel`），任何项目都能直接消费。

@@ -83,7 +83,7 @@ const wasmTests = countCases(
   readFileSync(join(ROOT, 'web', 'src', 'lib', 'wasm.integration.test.ts'), 'utf8'),
 );
 
-const DOCS = ['README.md', 'SUBMISSION-TEXT.md', 'DEMO.md'];
+const DOCS = ['README.md', 'SUBMISSION-TEXT.md', 'DEMO.md', 'REVIEW-ANSWERS.md'];
 const text = DOCS.map((d) => readFileSync(join(ROOT, d), 'utf8')).join('\n');
 
 const EXPECTATIONS = [
