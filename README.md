@@ -158,6 +158,8 @@ node cli/index.js gen models/Order.dsl --format json --stdout | node cli/index.j
 
 Everything this project claims can be checked from this repository alone. Each row names the code that implements the claim and the command that shows it.
 
+If the panel asks how this differs from the rest of the ecosystem, [REVIEW-ANSWERS.md](REVIEW-ANSWERS.md) answers each objection with a command that reproduces it.
+
 | Claim | Implemented in | Check it with |
 |---|---|---|
 | Six independent MoonBit engines | `moonbit/main/` — the table below lists every file and its size | `wc -l moonbit/main/roundtrip.mbt` |
