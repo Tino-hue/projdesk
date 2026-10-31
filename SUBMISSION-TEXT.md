@@ -27,7 +27,7 @@ MoonBit 生态里的 Schema 库（moon_zod、moonschema、colmugx/json-schema）
 - **约束求解器**：区间冲突、蕴含与冗余、包含关系、固定点区间传播；跨字段约束引用符号化解析，检出未知引用与引用环路。
 - **Round-trip 验证**：DSL → AST → DSL → AST 逐字段逐类型逐约束比对，覆盖嵌套模型与全部 12 种约束，失败是类型化的。
 - **契约保真度**：每个投影目标承载不了的约束都输出类型化丢弃报告，逐条说明丢了什么、为什么，而非静默丢弃。
-- **迁移引擎**：结构化语义 diff（非文本对比），生成含破坏性变更标记的 ALTER TABLE，覆盖 Postgres / SQLite / MySQL。
+- **迁移引擎**：结构化语义 diff（非文本对比）——按约束名配对，判定改动是否真的改变了取值范围；被别的约束蕴含的改动记为冗余（不破坏），让字段一个值都满足不了的改动单独报出；边界移动按方向判定破坏与否，生成含破坏性变更标记的 ALTER TABLE，覆盖 Postgres / SQLite / MySQL。
 - **等价检测**：类型加宽链、约束包含、嵌套与集合递归判定，分类为 Equivalent / SubtypeOf / SupertypeOf / Incompatible。
 - **工具链**：WASM ABI 12 导出；CLI（gen/check/check-schema/contrast/migrate/verify/init）、VS Code 插件、GitHub Action、Workers 后端；浏览器工作台含模型编辑器、关系图、约束诊断、迁移预览、版本 Diff 与 6 个引擎页签。
 
@@ -44,7 +44,7 @@ MoonBit 生态里的 Schema 库（moon_zod、moonschema、colmugx/json-schema）
 
 ## GitHub 仓库链接
 
-https://github.com/Tino-hue/projdesk —— 180 个以上有效提交，无空提交、无重复提交信息、无无意义拆分（提交改动行数中位数 146）。CI 全绿：268 个 MoonBit 测试（`moon check` 零警告）与 95 个前端测试全部通过，另有 26 个真实 WASM 集成测试验证已编译内核。在线演示：https://tino-hue.github.io/projdesk/ 。评审可自行复现：
+https://github.com/Tino-hue/projdesk —— 180 个以上有效提交，无空提交、无重复提交信息、无无意义拆分（提交改动行数中位数 146）。CI 全绿：276 个 MoonBit 测试（`moon check` 零警告）与 95 个前端测试全部通过，另有 26 个真实 WASM 集成测试验证已编译内核。在线演示：https://tino-hue.github.io/projdesk/ 。评审可自行复现：
 
     node cli/index.js check examples/moon_zod_dead_schema.json
     node cli/index.js contrast examples/CrossFieldConflict.dsl

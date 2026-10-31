@@ -104,6 +104,33 @@ The MoonBit kernel (`moonbit/`) is published separately as
 - `examples/ContradictorySchema.json`: the artifact `moon_zod` produced
   covers the same kinds of contradiction, with a third party as the author.
 
+### Added
+
+- **The migration engine now judges constraints by meaning, not by text.**
+  A schema diff compares the text of the constraints, which cannot answer two
+  questions that matter: whether a constraint change changes anything at all,
+  and whether it leaves the field with no satisfying value.
+  - A constraint another constraint already implies — `least=0` where `over=0`
+    exists — is reported as **redundant** and is **not** breaking, because the
+    field accepts the same values before and after.
+  - A change that leaves the field with **no satisfying value** is reported as
+    such, with the solver's own diagnosis, instead of as a constraint swap.
+  - A bound that moved is **one** change with a direction, so widening an
+    upper bound is no longer counted as breaking. It was.
+  - A constraint set that differs only in the values of its enum was not
+    detected at all before, because only the number of options was compared.
+    It is now, and the diff says which values changed.
+- **A reusable GitHub Action**, `.github/actions/check-schema`, so a project
+  can fail its build when a JSON Schema has no satisfying value:
+
+  ```yaml
+  - uses: Tino-hue/projdesk/.github/actions/check-schema@main
+    with:
+      schema: openapi/schema.json
+  ```
+
+  It needs nothing but Node — the kernel is committed to the repository.
+
 ### Fixed
 
 - `projdesk check` on a JSON Schema reported nothing at all: it handed the
