@@ -57,8 +57,8 @@ jobs:
       - name: Verify the schema solvability checker
         run: |
           set -uo pipefail
-          # The dead schema moon_zod exports must be reported as dead, and a
-          # healthy one must not be reported at all.
+          # The dead schema moon_zod exports must be reported, and a
+          # healthy one must not be.
           status=0
           if node cli/index.js check-schema examples/moon_zod_dead_schema.json; then
             echo "::error::the dead schema was not reported"
@@ -66,15 +66,19 @@ jobs:
           else
             echo "OK: the dead schema is reported"
           fi
-          node cli/index.js gen models/Order.dsl --format json --stdout \
-            > /tmp/order-schema.json
-          if node cli/index.js check-schema /tmp/order-schema.json; then
+          node cli/index.js gen models/Order.dsl --format json --stdout > order-schema.json
+          if node cli/index.js check-schema order-schema.json; then
             echo "OK: the projection this kernel writes is healthy"
           else
             echo "::error::the kernel's own projection was reported as broken"
             status=1
           fi
           exit $status
+
+      - name: The reusable action accepts a healthy schema
+        uses: ./.github/actions/check-schema
+        with:
+          schema: order-schema.json
 
   generate:
     name: Generate projections

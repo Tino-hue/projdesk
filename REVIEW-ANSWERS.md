@@ -6,7 +6,7 @@
 
 我们把"重叠"拆成具体的项目逐个点名，而不是泛泛地说"我们不一样"：
 
-- **moon_schema_plan / moon-data-contract / moonpack / moon_proto** 做的是**两份 schema 之间**的 diff、迁移规划与门禁，输入是 schema 本身。
+- **moon_schema_plan / moon-data-contract / moonpack / moon_proto** 做的是**两份 schema 之间**的 diff、迁移规划与门禁，输入是 schema 本身。我们的 diff 按约束名配对，而不是比文本：被别的约束蕴含的改动记为冗余、让字段一个值都满足不了的改动单独报出、边界移动按方向判定破坏与否。
 - 我们做的是**模型语义**层面的 diff 与兼容判定：这次改动**有效约束集**变了没有、两个版本的约束系统还相容吗、两版的有效约束集是否等价。在此之上还有生态里没有的两件事——**投影的保真度**（每个目标承载不了的约束被逐条列出）与**定义的往返无损**（逐字段逐类型逐约束比对）。
 - 主动交代重叠：TypeScript / Zod / Prisma 三个 emitter 与通用 codegen 库（如 mizchi/codegen）确有功能重叠，我们承认。三个都在同一个 `Projector` trait 后面，生态一旦提供模型语义的 emitter 可直接替换。**重叠面只有三个 emitter，五个引擎不在里面。**
 
@@ -46,12 +46,12 @@ node cli/index.js check examples/moon_zod_dead_schema.json
 
 - 不主张迁移引擎与 moon_schema_plan / moon-data-contract 没有重叠——有，我们提供的是模型语义那一层的引擎，它们做的是 schema 那一层。
 - 不主张 TypeScript / Zod / Prisma 三个 emitter 是我们独有的。
-- 不主张内核没有依赖：它依赖 `moonbitstack/moonmodel`（Apache-2.0）提供 Model/Field/Check 数据结构与四种投影后端，相当于编译器的 AST 定义与后端代码生成；六个引擎、DSL 前端、求解算法、迁移生成、类型系统、验证框架与 schema 可满足性判定共 4586 行均为自主实现。
+- 不主张内核没有依赖：它依赖 `moonbitstack/moonmodel`（Apache-2.0）提供 Model/Field/Check 数据结构与四种投影后端，相当于编译器的 AST 定义与后端代码生成；六个引擎、DSL 前端、求解算法、迁移生成、类型系统、验证框架与 schema 可满足性判定共 4845 行均为自主实现。
 
 ## 被追问时的一句话
 
 - "你们和 moon_zod 差在哪？" —— 它判**值**合不合法，我们判**schema** 还有没有解；这份 schema 是它自己导出的。
-- "迁移和 diff 呢？" —— 那部分确实和 moon_schema_plan 一类工具重叠，我们提供的是模型语义那一层的引擎，另外多了投影保真度和定义往返两项生态没有的检查。
+- "迁移和 diff 呢？" —— diff 这一层确实和 moon_schema_plan 一类工具重叠，我们提供的是模型语义那一层的引擎：按约束名配对而不是比文本，被别的约束蕴含的改动记为冗余（不破坏），让字段一个值都满足不了的改动单独报出，边界移动按方向判定破坏与否。另外多了投影保真度和定义往返两项生态没有的检查。
 - "为什么要写 DSL？" —— 只有一处需要它：跨字段的约束引用。JSON Schema 无处安放。其余输入走生态的 JSON Schema。
 - "凭什么说你们不是套壳？" —— 内核只依赖一个库（moonmodel），六千余行引擎代码没有一行取自他人项目；而我们的工具能报出 moon_zod 自己的产物里的矛盾——延展别人项目做不到这件事。
 

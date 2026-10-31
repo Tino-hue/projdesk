@@ -44,6 +44,72 @@ pub fn Diagnosis::severity(self : Diagnosis) -> String {
 }
 
 ///|
+/// A constraint that another constraint of the same field already implies
+///
+/// The solver works this out when it reports a redundant constraint; this
+/// exposes the same judgement by name, so that a diff can tell a constraint
+/// change that changes nothing from one that does.
+pub(all) struct Subsumed {
+  /// the constraint, in the notation the diff uses
+  part : String
+  /// why it is implied
+  reason : String
+} derive(Eq, Debug)
+
+///|
+pub extend Subsumed with Eq::{equal, not_equal}
+
+///|
+pub extend Subsumed with Debug::{to_repr}
+
+///|
+/// Which of a field's constraints another constraint already implies
+///
+/// `least` is implied by `over` when it is not tighter, and `most` is implied
+/// by `under` in the same way. Adding or removing such a constraint does not
+/// change what the field accepts.
+pub fn subsumed_constraints(check : @moonmodel.Check) -> Array[Subsumed] {
+  let out = []
+  match (check.least, check.over) {
+    (Some(lo), Some(over)) =>
+      if lo <= over {
+        out.push(Subsumed::{
+          part: "least=\{lo}",
+          reason: "least(\{lo}) subsumed by over(\{over})",
+        })
+      }
+    _ => ()
+  }
+  match (check.most, check.under) {
+    (Some(hi), Some(under)) =>
+      if hi >= under {
+        out.push(Subsumed::{
+          part: "most=\{hi}",
+          reason: "most(\{hi}) subsumed by under(\{under})",
+        })
+      }
+    _ => ()
+  }
+  out
+}
+
+///|
+/// The conflicts a field's own constraints produce
+///
+/// Used to tell a change that leaves a field with no satisfying value from a
+/// change that merely narrows it.
+pub fn field_conflicts(check : @moonmodel.Check) -> Array[String] {
+  let out = []
+  for d in analyze_field("", check) {
+    match d {
+      Conflict(_, msg) => out.push(msg)
+      _ => ()
+    }
+  }
+  out
+}
+
+///|
 /// Analyze constraints of a single field
 pub fn analyze_field(
   name : String,
@@ -104,20 +170,8 @@ pub fn analyze_field(
   }
 
   // --- Redundancy: over/under subsume least/most ---
-  match (c.least, c.over) {
-    (Some(lo), Some(over)) =>
-      if lo <= over {
-        diags.push(Redundant(name, "least(\{lo}) subsumed by over(\{over})"))
-      }
-    _ => ()
-  }
-
-  match (c.most, c.under) {
-    (Some(hi), Some(under)) =>
-      if hi >= under {
-        diags.push(Redundant(name, "most(\{hi}) subsumed by under(\{under})"))
-      }
-    _ => ()
+  for s in subsumed_constraints(c) {
+    diags.push(Redundant(name, s.reason))
   }
 
   // --- Redundancy: longest=0 implies shortest=0 ---

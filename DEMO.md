@@ -97,9 +97,9 @@ model User {
 
 ## Closing (20s)
 
-> "Six independent MoonBit engines, 4586 lines of engine code, 268 tests including property-based verification over 100 random models. That's ProjDesk."
+> "Six independent MoonBit engines, 4845 lines of engine code, 276 tests including property-based verification over 100 random models. That's ProjDesk."
 
-**Run `moon test` live to show 268 green tests.**
+**Run `moon test` live to show 276 green tests.**
 
 ---
 
@@ -124,4 +124,4 @@ model User {
 > "The kernel compiles to wasm-gc and runs entirely in the browser — one binary, no server. The pattern matching and ADT support made the compiler frontend and type-equivalence engine direct rather than ceremony."
 
 **"How do you know it works?"**
-> "268 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 26 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."
+> "276 MoonBit tests, 16 of them property-based — a deterministic PRNG generates random models and asserts 12 invariants like round-trip preservation and diff symmetry. Plus 26 frontend tests that load the real WASM binary and 4 that render the workbench to check all seven panels."

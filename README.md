@@ -152,6 +152,24 @@ node cli/index.js gen models/Order.dsl --format json --stdout | node cli/index.j
 
 **This is also why the custom notation is not necessary.** The checker needs no notation of ours at all — it reads the format the ecosystem already speaks, and it works on the artifact `moon_zod` exports. The DSL remains useful for what JSON Schema cannot express, but nothing in this project *requires* it any more: a team that already has schemas can have them checked instead.
 
+### Use it in your own CI
+
+The check is one command and needs nothing but Node:
+
+```bash
+node cli/index.js check-schema openapi.json
+```
+
+It is also a reusable GitHub Action, so a project can add it in three lines:
+
+```yaml
+- uses: Tino-hue/projdesk/.github/actions/check-schema@main
+  with:
+    schema: openapi/schema.json
+```
+
+A schema that no value can satisfy fails the build instead of failing in production.
+
 ---
 
 ## Verify the claims
@@ -165,7 +183,7 @@ If the panel asks how this differs from the rest of the ecosystem, [REVIEW-ANSWE
 | Six independent MoonBit engines | `moonbit/main/` — the table below lists every file and its size | `wc -l moonbit/main/roundtrip.mbt` |
 | Every number in these documents matches the code | `scripts/audit-claims.js` | `node scripts/audit-claims.js` |
 | A JSON Schema that no value can satisfy is reported, not blamed on the value | `moonbit/main/schema_check.mbt` | `node cli/index.js check examples/moon_zod_dead_schema.json` |
-| 268 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
+| 276 kernel tests | `moonbit/main/*_test.mbt` | `cd moonbit && moon test` |
 | The kernel compiles with zero warnings | the same source | `cd moonbit && moon check` |
 | 95 frontend tests, 26 of them against the real compiled kernel | `web/src/lib/*.test.ts` | `cd web && npm run test` |
 | 12 exports on the compiled kernel | `moonbit/main/api.mbt` | the command below |
@@ -189,7 +207,7 @@ node -e "const fs=require('fs');WebAssembly.instantiate(fs.readFileSync('web/pub
 Three commands, about two minutes:
 
 ```bash
-cd moonbit && moon check && moon test   # the kernel: zero warnings, 268 tests
+cd moonbit && moon check && moon test   # the kernel: zero warnings, 276 tests
 cd ../web && npm run test               # the frontend: 95 tests
 cd .. && node cli/index.js verify models/CrossField.dsl
 ```
@@ -201,16 +219,16 @@ cd .. && node cli/index.js verify models/CrossField.dsl
 | # | Engine | Source | Lines | What it does |
 |---|--------|--------|-------|--------------|
 | 1 | **DSL Compiler** | `dsl_lexer.mbt` `dsl_parser.mbt` `dsl_expr.mbt` `dsl_codegen.mbt` `dsl_printer.mbt` `dsl_semantic.mbt` `dsl_resolve.mbt` | 2127 | Hand-written lexer + recursive descent parser + constraint-expression evaluator + AST codegen + inverse AST printer + semantic checks + cross-field bound resolution |
-| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 579 | Conflict / redundancy / containment analysis, cross-field bound resolution, fixed-point interval propagation, reference-cycle detection |
-| 3 | **Migration Engine** | `migration.mbt` | 364 | Structured model diff + SQL `ALTER TABLE` + breaking-change detection |
+| 2 | **Constraint Solver** | `solver.mbt` `solver_propagate.mbt` | 633 | Conflict / redundancy / containment analysis, cross-field bound resolution, fixed-point interval propagation, reference-cycle detection |
+| 3 | **Migration Engine** | `migration.mbt` | 569 | Constraint-aware model diff: a constraint another one already implies changes nothing, a change that leaves the field with no satisfying value is reported as such, and a bound that moved is one change with a direction |
 | 4 | **Equivalence Checker** | `equiv.mbt` | 229 | Type subtyping + constraint containment + classification |
 | 5 | **Round-trip Verifier** | `roundtrip.mbt` | 433 | Source-level generate-parse-compare, comparing every field, type and constraint; failures are typed, not prose |
 | 6 | **Schema Solvability Checker** | `schema_check.mbt` | 854 | Static satisfiability analysis of a JSON Schema: does *any* value satisfy it? Interval algebra over `allOf`/`anyOf`/`oneOf`/`not`/`$ref`, enum-versus-bounds, dangling references |
-| | **Six engines** | | **4586** | |
+| | **Six engines** | | **4845** | |
 
-On top of the engines the kernel carries **2015 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **6601 lines** of MoonBit implementation, plus **3378 lines** of test code.
+On top of the engines the kernel carries **2015 lines** of supporting infrastructure and property-test machinery (`projector.mbt` `codegen.mbt` `import.mbt` `project.mbt` `presets.mbt` `abi.mbt` `api.mbt` `property.mbt`) — **6860 lines** of MoonBit implementation, plus **3530 lines** of test code.
 
-**268 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **95 frontend tests** (26 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
+**276 MoonBit tests** (16 property-based — 12 invariants asserted over 100+ random models, plus 4 PRNG properties — and 7 performance benchmarks) + **95 frontend tests** (26 load the real WASM kernel end-to-end, and 4 render the workbench to assert that all seven projection panels appear).
 
 ---
 
@@ -380,7 +398,7 @@ moonbit/                 MoonBit kernel (wasm-gc)
     abi.mbt              JSON <-> moonmodel.Model conversion
     api.mbt              WASM ABI exports (12)
     jsonparse/           Minimal JSON wrapper (name-collision workaround)
-    *_test.mbt           Engine test suites (16 files, 268 tests)
+    *_test.mbt           Engine test suites (16 files, 276 tests)
 web/                    React + TypeScript frontend (32 files)
   src/components/
     EnginePanel.tsx      Engine playground (6 interactive engine tabs)
@@ -544,7 +562,7 @@ It resolves the package from the registry, compiles a throwaway consumer module 
 
 | Suite | Count | Command |
 |-------|-------|---------|
-| MoonBit kernel | 268 | `cd moonbit && moon test` |
+| MoonBit kernel | 276 | `cd moonbit && moon test` |
 | &nbsp;&nbsp;— property-based | 16 | (12 invariants over 100+ random models, 4 PRNG properties) |
 | &nbsp;&nbsp;— performance benchmarks | 7 | (100–200 field models, `monotonic_clock` budgets) |
 | Frontend unit | 69 | `cd web && npm run test` |
@@ -566,7 +584,7 @@ Beyond hand-picked examples, the kernel is verified with **property-based testin
 
 Performance budgets are asserted with `monotonic_clock` for models of 100-200 fields across projection, solving, parsing, diffing, round-trip, and equivalence.
 
-**How CI verifies the kernel.** The `Kernel tests` workflow installs the MoonBit toolchain, fetches the `moonmodel` dependency, and runs `moon check` and `moon test` on the kernel source — all 268 tests, on every push and pull request that touches `moonbit/`. The toolchain cannot be pinned (the distribution host publishes only the `latest` and `nightly` archives), so the job installs `latest`; the kernel compiles and passes against both that release and the older one it was developed against.
+**How CI verifies the kernel.** The `Kernel tests` workflow installs the MoonBit toolchain, fetches the `moonmodel` dependency, and runs `moon check` and `moon test` on the kernel source — all 276 tests, on every push and pull request that touches `moonbit/`. The toolchain cannot be pinned (the distribution host publishes only the `latest` and `nightly` archives), so the job installs `latest`; the kernel compiles and passes against both that release and the older one it was developed against.
 
 The compiled kernel is verified separately: the artifact (`web/public/projdesk.wasm`) is committed to the repository and exercised by 26 real-WASM integration tests, and the `ProjDesk Generate` action runs the kernel over every model in `models/`, failing the build on a constraint conflict or a reference cycle.
 

@@ -87,17 +87,17 @@ const DOCS = ['README.md', 'SUBMISSION-TEXT.md', 'DEMO.md', 'REVIEW-ANSWERS.md']
 const text = DOCS.map((d) => readFileSync(join(ROOT, d), 'utf8')).join('\n');
 
 const EXPECTATIONS = [
-  ['4586', 'six engines', engine],
-  ['6601', 'implementation total', impl],
-  ['3378', 'test code', testCode],
+  ['4845', 'six engines', engine],
+  ['6860', 'implementation total', impl],
+  ['3530', 'test code', testCode],
   ['2127', 'dsl compiler', groupLines(GROUPS['DSL compiler'])],
-  ['579', 'solver', groupLines(GROUPS.Solver)],
-  ['364', 'migration', lines(join(MAIN, 'migration.mbt'))],
+  ['633', 'solver', groupLines(GROUPS.Solver)],
+  ['569', 'migration', lines(join(MAIN, 'migration.mbt'))],
   ['229', 'equivalence', lines(join(MAIN, 'equiv.mbt'))],
   ['433', 'round-trip', lines(join(MAIN, 'roundtrip.mbt'))],
   ['854', 'schema solvability', groupLines(GROUPS['Schema solvability'])],
   ['2015', 'infrastructure', infra],
-  ['268', 'MoonBit tests', moonTests],
+  ['276', 'MoonBit tests', moonTests],
   ['95', 'frontend tests', frontendTests],
   ['26', 'WASM integration tests', wasmTests],
   ['12 exports', 'wasm exports', exports.length],

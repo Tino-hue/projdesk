@@ -58,6 +58,8 @@ pub fn eval_expr(Expr, Map[String, Double]) -> Result[Double, ExprError]
 
 pub fn eval_expr_in(Expr, Env) -> Result[Double, ExprError]
 
+pub fn field_conflicts(@moonmodel.Check) -> Array[String]
+
 pub fn generate_migration(@moonmodel.Model, @moonmodel.Model) -> String
 
 pub fn generate_migration_entry(String, String) -> String
@@ -121,6 +123,8 @@ pub fn roundtrip_model(@moonmodel.Model, Array[@moonmodel.Model]) -> RoundTrip
 pub fn solve_constraints(@moonmodel.Model) -> String
 
 pub fn solve_constraints_entry(String) -> String
+
+pub fn subsumed_constraints(@moonmodel.Check) -> Array[Subsumed]
 
 pub fn unbounded() -> Interval
 
@@ -360,6 +364,9 @@ pub(all) enum Migration {
   TypeChanged(String, String, String)
   ConstraintAdded(String, String)
   ConstraintRemoved(String, String)
+  ConstraintChanged(String, String, String, String, Bool)
+  RedundantConstraint(String, String)
+  Unsatisfiable(String, String)
   RequiredChanged(String, Bool, Bool)
   NullableChanged(String, Bool, Bool)
   Renamed(String, String)
@@ -477,6 +484,14 @@ pub(all) struct SqlProj {
 pub fn SqlProj::project(Self, @moonmodel.Model, Array[@moonmodel.Model]) -> (String, Array[DropReason])
 pub fn SqlProj::target_name(Self) -> String
 pub impl Projector for SqlProj
+
+pub(all) struct Subsumed {
+  part : String
+  reason : String
+} derive(Eq, @debug.Debug)
+pub fn Subsumed::equal(Self, Self) -> Bool
+pub fn Subsumed::not_equal(Self, Self) -> Bool
+pub fn Subsumed::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Token {
   Ident(String)
