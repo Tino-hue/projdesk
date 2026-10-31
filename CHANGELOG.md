@@ -58,6 +58,11 @@ The MoonBit kernel (`moonbit/`) is published separately as
 
 ### Changed
 
+- The kernel is published as **0.3.0**. Its public interface changed with
+  it: `Migration` gained `RedundantConstraint`, `ConstraintChanged` and
+  `Unsatisfiable`, and the solver exposes `subsumed_constraints` and
+  `field_conflicts` so that the diff and the solver agree by construction.
+  0.1.0 and 0.2.0 stay as they were published.
 - The kernel serializes to JSON with the language's `derive(ToJson)` wherever
   the shape is a fixed record. The wire shapes are now declared once, as
   types, instead of being assembled key by key: 138 hand-written

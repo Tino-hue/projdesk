@@ -1,6 +1,6 @@
 name = "Tino-hue/projdesk-kernel"
 
-version = "0.2.0"
+version = "0.3.0"
 
 readme = "README.md"
 
@@ -8,7 +8,7 @@ license = "MIT"
 
 preferred_target = "wasm-gc"
 
-description = "ProjDesk MoonBit kernel — five independent algorithm engines (DSL compiler, constraint solver, migration, equivalence, round-trip) over one model description, projected to seven targets"
+description = "ProjDesk MoonBit kernel — six independent algorithm engines (DSL compiler, constraint solver, migration, equivalence, round-trip, schema solvability) over one model description, projected to seven targets"
 
 repository = "https://github.com/Tino-hue/projdesk"
 
@@ -25,6 +25,7 @@ keywords = [
   "constraint",
   "equivalence",
   "modeling",
+  "schema-solvability",
 ]
 
 import {
